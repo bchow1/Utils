@@ -410,8 +410,7 @@ def runSci(prjName,myEnv=None,binDir=None,templateName='',KeyNml=None,nFlt=30,rT
     myEnv = Env()
 
   if binDir or not myEnv.tail:
-    print 'not binDir or not tail'
-    myEnv.setEnv(myEnv,binDir=binDir)
+    setEnv(myEnv,binDir=binDir)
 
   tail = myEnv.tail
 
