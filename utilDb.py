@@ -145,7 +145,6 @@ def createSam(nDat,vnames,sCur,smpLoc):
       smpID = (i-1)/nvar+1
       (xSmp,ySmp) = map(float,(smpLoc[smpID-1][0:2]))
       insertStr = insertStr + "(%d, '%s', '%03d',%15.5f,%15.5f,'%s')"%(i,vname,smpID,xSmp,ySmp,smpLoc[smpID-1][3])
-      #print insertStr
       sCur.execute(insertStr)
       i += 1 
   
@@ -163,9 +162,8 @@ def addData(line,nDat,sCur,nt,isReverse=1.):
   rtime = tmpData[0]
   #print 'Inserting into smpTable for time = ',rtime/3600.,' hr, max = ',max(tmpData[1:])
   initStr = "INSERT into smpTable VALUES (%13.5e, %15.1f, "%(rtime/3600.,allPrj.EpStartTime + isReverse*rtime)
-  for i in range(1,nDat):
+  for i in range(1,nDat+1):
     insertStr = initStr + "%d, %13.5e)"%(i,tmpData[i])
-    #print i, insertStr
     sCur.execute(insertStr)
     i += 1 
   return(nt)
