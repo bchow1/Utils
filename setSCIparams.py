@@ -292,7 +292,7 @@ class samList:
     if matList:
       self.matList = matList
 
-  def createSam(self,matList=None,samLoc=None):
+  def createSam(self,matList=None,samLoc=None,outKey=None):
     if len(self.samLoc) < 1:
       raise RuntimeError('Error: samLoc must not be empty')
     samOut = open(self.samFile,"w",0)
@@ -305,7 +305,9 @@ class samList:
     for (xSrc,ySrc) in self.samLoc:
       for matName in self.matList:
         nSen += 1
-        samOut.write('%8.3f %8.3f %8.3f CONC %s:1 Sensor%d\n'%(xSrc,ySrc,0.,matName,nSen))
+        if not outKey:
+          outKey = CONC
+        samOut.write('%8.3f %8.3f %8.3f %s %s:1 Sensor%d\n'%(xSrc,ySrc,0.,outKey,matName,nSen))
     samOut.close()
 
 # Function to copy inFile to outFile and change namelist based
