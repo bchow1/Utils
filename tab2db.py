@@ -5,8 +5,6 @@ import ast
 import sqlite3
 import fileinput
 import numpy as np
-# local modules
-import smp2db
 '''
 Convert data table from ASCII to db. Use the column names
 from first line which may or may not start with '#'.
@@ -72,6 +70,8 @@ def makeDb(fName):
   return
 
 if __name__ == '__main__':
+  # local modules
+  import utilDb
   if sys.argv.__len__() < 2:
     print 'Usage: tab2db.py table1.txt [ table2.txt ... ]'
     sys.exit()
@@ -80,5 +80,5 @@ if __name__ == '__main__':
     fName = sys.argv[i]
     makeDb(fName)
     dbFile = fName + '.db'
-    #dataArray = smp2db.db2Array(dbFile,'select fAll,scr from dataTable')
-    #print dataArray
+    dataArray = utilDb.db2Array(dbFile,'select * from dataTable')
+    print dataArray
