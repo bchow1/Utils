@@ -42,34 +42,63 @@ REST_TICK  = "/usr/share/sounds/gnome/default/alerts/drip.ogg"
 ALARM      = "/usr/share/sounds/gnome/default/alerts/drip.ogg"
 DEV_NULL   = open("/dev/null","w")
 
-def tick(duration, tick):
+def tick(msg, duration, tick):
     "Plays a the ticking sound specified by tick for duration time"
-    cmd = ["mpg123", "--loop", "-1" , tick]
-    p = subprocess.Popen(cmd, stdout = DEV_NULL, stderr = subprocess.PIPE)
-    try:
-        time.sleep(duration)
-    except KeyboardInterrupt:
+    #cmd = ["mpg123", "--loop", "-1" , tick]
+    #p = subprocess.Popen(cmd, stdout = DEV_NULL, stderr = subprocess.PIPE)
+    tStep = 1
+    n4 = int(duration/tStep)
+    display(msg + ' karo %d'%(n4*tStep))
+    for m5 in range(n4):
+      try:
+        time.sleep(tStep*60)
+        #time.sleep(tStep)
+        display(' %d'%(tStep*(n4-m5-1)))
+      except KeyboardInterrupt:
         display("Interrupting")
-    p.kill()
+    #p.kill()
     
-def alarm(alarm):
+def alarm(msg, alarm):
     "Plays the alarm sound specified by alarm"
-    cmd = ["mpg123", alarm]
-    p = subprocess.Popen(cmd, stdout = DEV_NULL, stderr = subprocess.PIPE)
-    p.wait()
+    #cmd = ["mpg123", alarm]
+    #p = subprocess.Popen(cmd, stdout = DEV_NULL, stderr = subprocess.PIPE)
+    #p.wait()
+    display(msg + " khatam")
     
 def main(args):
-    if len(args[1:]) != 2:
-        print "Usage : %s work_time rest_time"%args[0]
-        return -1
-    twork, trest = args[1:]
-    display("Work now")
-    tick(int(twork)*60, WORK_TICK)
-    alarm(ALARM)
-    display("Rest now")
-    tick(int(trest)*60, REST_TICK)
-    alarm(ALARM)
-    display("Cycle complete")
+    if len(args[1:]) < 2:
+      print "Usage : %s work_time rest_time"%args[0]
+      return -1
+    twork, trest = map(float,args[1:3])
+    totwrk = 0
+    totrst = 0
+    if len(args[1:]) == 3:
+      m20t = int(args[3])
+    else:
+      m20t = 4
+    while True:
+      for m20 in range(m20t): 
+        msg = " Kaam"
+        tick('(%d)\n'%(m20+1) + msg, twork, WORK_TICK)
+        totwrk += twork
+        alarm(msg, ALARM)
+        if m20 == m20t-1:
+          msg = ' Aish'
+          tick(msg, trest*2, REST_TICK)
+          totrst += trest*2
+          alarm(msg, ALARM)
+          display("\nKaam %d, Aish %d"%(totwrk,totrst))
+          doMore = raw_input('\nContinue(y)? ')
+          ans = doMore.strip().upper()[0] 
+          print ans
+          if ans != 'Y':
+            return 0
+        else:
+          msg = ' Mauj'
+          tick(msg, trest, REST_TICK)
+          totrst += trest
+          alarm(msg, ALARM)
+    #display("")
     return 0
 
 if __name__ == "__main__":
