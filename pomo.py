@@ -31,8 +31,12 @@ try:
     osd.set_align(pyosd.ALIGN_CENTER)
     osd.set_pos(pyosd.POS_MID)
     display = osd.display
+    show = osd.display
 except:
     display = lambda x: sys.stdout.write(str(x)+"\n")
+    def show(msg):
+      sys.stdout.write(msg + " ")
+      sys.stdout.flush()
     
 #WORK_TICK = "/home/noufal/scratch/clock-ticking-4.mp3"
 #REST_TICK = "/home/noufal/scratch/clock-ticking-5.mp3"
@@ -46,16 +50,16 @@ def tick(msg, duration, tick):
     "Plays a the ticking sound specified by tick for duration time"
     #cmd = ["mpg123", "--loop", "-1" , tick]
     #p = subprocess.Popen(cmd, stdout = DEV_NULL, stderr = subprocess.PIPE)
-    tStep = 1
+    tStep = 2
     n4 = int(duration/tStep)
     display(msg + ' karo %d'%(n4*tStep))
     for m5 in range(n4):
-      try:
-        time.sleep(tStep*60)
-        #time.sleep(tStep)
-        display(' %d'%(tStep*(n4-m5-1)))
-      except KeyboardInterrupt:
-        display("Interrupting")
+      time.sleep(tStep*60)
+      #time.sleep(tStep)
+      if m5 == 0:
+        show('     %d'%(tStep*(n4-m5-1)))
+      else:
+        show(' %d'%(tStep*(n4-m5-1)))
     #p.kill()
     
 def alarm(msg, alarm):
@@ -63,7 +67,15 @@ def alarm(msg, alarm):
     #cmd = ["mpg123", alarm]
     #p = subprocess.Popen(cmd, stdout = DEV_NULL, stderr = subprocess.PIPE)
     #p.wait()
-    display(msg + " khatam")
+    display(" ")
+
+def doMore():
+  doMore = raw_input('\nContinue(y)? ')
+  ans = doMore.strip().upper()[0] 
+  if ans == 'Y':
+    return True
+  return False
+  
     
 def main(args):
     if len(args[1:]) < 2:
@@ -77,27 +89,26 @@ def main(args):
     else:
       m20t = 4
     while True:
-      for m20 in range(m20t): 
-        msg = " Kaam"
-        tick('(%d)\n'%(m20+1) + msg, twork, WORK_TICK)
-        totwrk += twork
-        alarm(msg, ALARM)
-        if m20 == m20t-1:
-          msg = ' Aish'
-          tick(msg, trest*2, REST_TICK)
-          totrst += trest*2
+      try: 
+        for m20 in range(m20t): 
+          msg = " Kaam"
+          tick('(%02d)'%(m20+1) + msg, twork, WORK_TICK)
+          totwrk += twork
           alarm(msg, ALARM)
-          display("\nKaam %d, Aish %d"%(totwrk,totrst))
-          doMore = raw_input('\nContinue(y)? ')
-          ans = doMore.strip().upper()[0] 
-          print ans
-          if ans != 'Y':
-            return 0
-        else:
-          msg = ' Mauj'
-          tick(msg, trest, REST_TICK)
-          totrst += trest
-          alarm(msg, ALARM)
+          if m20 == m20t-1:
+            msg = '     Aish'
+            tick(msg, trest*2, REST_TICK)
+            totrst += trest*2
+            alarm(msg, ALARM)
+            display("\nKaam %d, Aish %d"%(totwrk,totrst))
+            if not doMore(): return 0
+          else:
+            msg = '     Mauj'
+            tick(msg, trest, REST_TICK)
+            totrst += trest
+            alarm(msg, ALARM)
+      except KeyboardInterrupt:
+        if not doMore(): return 0
     #display("")
     return 0
 
