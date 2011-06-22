@@ -79,7 +79,7 @@ def doMore():
     
 def main(args):
     if len(args[1:]) < 2:
-      print "Usage : %s work_time rest_time"%args[0]
+      print "Usage : %s work_time rest_time [ntimes]"%args[0]
       return -1
     twork, trest = map(float,args[1:3])
     totwrk = 0
@@ -91,7 +91,8 @@ def main(args):
     while True:
       try: 
         for m20 in range(m20t): 
-          msg = " Kaam"
+          (tm_year,tm_mon,tm_mday,tm_hour,tm_min,tm_sec,tm_wday,tm_yday,tm_isdst) = time.localtime()
+          msg = " Kaam(%02d:%02d)"%(tm_hour,tm_min)
           tick('(%02d)'%(m20+1) + msg, twork, WORK_TICK)
           totwrk += twork
           alarm(msg, ALARM)
