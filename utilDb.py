@@ -77,7 +77,18 @@ def createSmpDb(prjNames,samFiles=None):
   print '\nSampler start %s(%d)'%(time.ctime(allPrj.EpStartTime),allPrj.EpStartTime)
   print 'Sampler end %s(%d)'%(time.ctime(allPrj.EpEndTime),allPrj.EpEndTime)
 
-def db2Array(cur,selectStr):
+def db2Array(cur,selectStr,dim=None):
+  if dim == 1:
+    dbList = db2List(cur,selectStr)
+    Array = []
+    for v in dbList:
+      Array.append(v[0]) 
+    Array = np.array(Array)
+  else:
+    Array = np.array(db2List(cur,selectStr),dtype=float)
+  return Array
+
+def db2List(cur,selectStr):
   dbCur = None
   dbConn = None
   if isinstance(cur,sqlite3.Cursor):
@@ -90,13 +101,12 @@ def db2Array(cur,selectStr):
       raise RuntimeError('Error: First argument not a cursor or db file')
   dbCur.execute(selectStr)
   Rows  = dbCur.fetchall()
-  Array = []
+  dbList = []
   for Row in Rows: 
-    Array.append(list(Row))
-  Array = np.array(Array,dtype=float)
+    dbList.append(list(Row))
   if dbConn:
     dbConn.close() 
-  return Array
+  return dbList
 
 def getEpTime(*args):
   if len(args) == 1:
@@ -161,7 +171,7 @@ def addData(line,nDat,sCur,nt,isReverse=1.):
   tmpData = map(float,line.split())
   rtime = tmpData[0]
   #print 'Inserting into smpTable for time = ',rtime/3600.,' hr, max = ',max(tmpData[1:])
-  initStr = "INSERT into smpTable VALUES (%13.5e, %15.1f, "%(rtime/3600.,allPrj.EpStartTime + isReverse*rtime)
+  initStr = "INSERT into smpTable VALUES (%13.5e, %16.5f, "%(rtime/3600.,allPrj.EpStartTime + isReverse*rtime)
   for i in range(1,nDat+1):
     insertStr = initStr + "%d, %13.5e)"%(i,tmpData[i])
     sCur.execute(insertStr)
@@ -342,7 +352,7 @@ def sen2db(startTimeString,senFile,samList=None):
         (xSen,ySen,cSen,tDur) = map(float,(senList[1],senList[2],senList[7],senList[10]))
         if matType.strip() == 'N':
           cSen = 0.
-        insertStr += "('%s','%s','%s',%13.2f,%10.3f,%10.3f,%10.3f,%10.3f,%13.5e)"% \
+        insertStr += "('%s','%s','%s',%13.2f,%16.5f,%10.3f,%10.3f,%10.3f,%13.5e)"% \
                       (matName,matType,timeString,epTime,tHr,tDur,xSen,ySen,cSen)
         #print insertStr
         senCur.execute(insertStr)
