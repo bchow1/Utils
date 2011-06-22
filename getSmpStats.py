@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 pattSmpT  = re.compile("(HPAC)|(SCIPUFF)\s*",re.I)  # Sampler type
 pattSmp1  = re.compile("(.+)001")                   # First sampler
 
-def getStat(samFile,smpFile,cScale=1.):
+def getStat(samFile,smpFile,cScale=1.,yCol=1,lPrint=None):
 
   # Read samfile
   smpLoc = []
@@ -23,8 +23,9 @@ def getStat(samFile,smpFile,cScale=1.):
       smpLoc.append(line.split()[0:3])
   fileinput.close()
   smpLoc = np.array(smpLoc,dtype=float)
-  xSmp = np.array(smpLoc[:,0],dtype=float)
-  ySmp = np.array(smpLoc[:,1],dtype=float)
+  xCol = 1-yCol
+  xSmp = np.array(smpLoc[:,xCol],dtype=float)
+  ySmp = np.array(smpLoc[:,yCol],dtype=float)
   zSmp = np.array(smpLoc[:,2],dtype=float)
   nSmp = len(smpLoc)
   #print 'Number of samplers = ',nSmp
@@ -56,83 +57,86 @@ def getStat(samFile,smpFile,cScale=1.):
   for vName in smpHead:
     if vName.endswith('001'):
       nVar += 1
-  #print 'nVar = ',nVar,'nSkipRows = ',nSkipRows
+  print 'nVar = ',nVar,'nSkipRows = ',nSkipRows
+  if nVar < 3:
+    print 'Error: Need time scale for dosage'
+    return (0.,0.,0.,0.,0.,0.)
   #
   cdata = np.loadtxt(smpFile,skiprows=nSkipRows)
   tcol  = cdata[:,0]
-  dtcol = np.diff(tcol)
   nt = len(tcol)
   cmean = np.zeros((nt,nSmp),float)
   cvar  = np.zeros((nt,nSmp),float)
+  clen  = np.zeros((nt,nSmp),float)
   for i in range(nSmp):
     cmean[:,i] = cdata[:,i*nVar+1]*cScale
     cvar[:,i]  = cdata[:,i*nVar+2]*cScale*cScale
+    clen[:,i]  = cdata[:,i*nVar+3]
+  
+  # convert to m
+  ySmp = ySmp*1e3
+  maxC,sigCbyC,sigY,sigT,maxD,sigDbyD = calcStat(tcol,cmean,cvar,ySmp,clen=clen)
+  if lPrint:
+    print 'maxC, sigCbyC,sigY,sigT,maxD,sigDbyD'
+    print '%s%13.5f %13.5f %13.5f %13.5f %13.5f %13.5f'%\
+          ('Pre',maxC,sigCbyC,sigY,sigT,maxD,sigDbyD)
+
+  return (maxC,sigCbyC,sigY,sigT,maxD,sigDbyD)
+
+def calcStat(tcol,cmean,cvar,ySmp,clen=None,dmean=None,dvar=None):
+
+  if clen is None and dmean is None:
+    print 'Error: Must provide timescale or dosage mean for dosage calculations'
+    return (0.,0.,0.,0.,0.,0.)
+  (nt,nSmp) = np.shape(cmean)
+  dtcol = np.diff(tcol)
   cmax = np.zeros((nt),float)
-  dmean = np.zeros(nSmp,float)
-  dvar  = np.zeros(nSmp,float)
-  dmax  = 0.
-  idmax = 0
-  for i in range(nSmp):
-    dmean[i] = cmean[0,i]*dtcol[0]
-    dvar[i]  = cvar[0,i]*dtcol[0]*dtcol[0]
-    #print '\ni= ',i
-    for it in range(1,nt):
-      dmean[i] += cmean[it,i]*dtcol[it-1]
-      dvar[i]  += cvar[it,i]*dtcol[it-1]*dtcol[it-1]
-    if dmean[i] > dmax:
-      dmax  = dmean[i]
-      idmax = i
-    #print dmean[i],dvar[i]
-  #print idmax, dmean[idmax], dvar[idmax]
+  if clen is not None:
+    dmean = np.zeros(nSmp,float)
+    dvar  = np.zeros(nSmp,float)
+    for i in range(nSmp):
+      dmean[i] = cmean[0,i]*dtcol[0]
+      dvar[i]  = cvar[0,i]*dtcol[0]*clen[0,i]
+      for it in range(1,nt):
+        dmean[i] += cmean[it,i]*dtcol[it-1]
+        dvar[i]  += cvar[it,i]*dtcol[it-1]*clen[it,i]
+  dmax  = max(dmean)
+  idmax = np.where(dmean == dmax)[0][0]
+  print '\n','Max dosage and variance = ',dmean[idmax], dvar[idmax],' for ismp = ',idmax
 
-  maxC  = 0.
-  # print '\nit   time   cmax   ccmax'
-  for it in range(nt):
-    cmax[it] = max(cmean[it,:])
-    if cmax[it] > maxC:
-      maxC = cmax[it]
-      itMax = it 
-    #if cmax[it] > 0.:
-     #print it,tcol[it],cmax[it],max(cvar[it,:])
-     #print cmean[it,:]
-     #print cvar[it,:]
-
-  for iSmp,cM in enumerate(cmean[itMax,:]):
-    if cM == cmax[itMax]:
-      isMax = iSmp
-      break
-
-  #print '\n','Max concentration = ',maxC,' at time = ',tcol[itMax],' for it, ismp = ',itMax,isMax
+  maxC = np.max(cmean)
+  its = np.where(cmean==maxC)
+  itMax = its[0][0]
+  isMax = its[1][0]
+  print 'Max concentration = ',maxC,' at time = ',tcol[itMax],' for it, ismp = ',itMax,isMax,'\n'
 
   cm   = cmean[itMax,:]
   cy   = ySmp[:]*cmean[itMax,:]
+  
   cy2  = cy[:]*ySmp[:]
   sigy = np.sqrt(sum(cy2)/sum(cm) - (sum(cy)/sum(cm))**2)
-  #print 'sigY = ',sigy*1.e3      # Convert to m
 
   cm   = cmean[:,isMax]
   ct   = tcol[:]*cmean[:,isMax]
   ct2  = ct[:]*tcol[:]
   sigt = np.sqrt(sum(ct2)/sum(cm) - (sum(ct)/sum(cm))**2)
 
-  #print 'sigT = ',sigt
-  print '%s%13.5f %13.5f %13.5f %13.5f %13.5f %13.5f'%\
-        ('Pre',maxC,np.sqrt(cvar[itMax,isMax])/maxC,sigy*1e3,sigt,dmean[idmax],np.sqrt(dvar[idmax])/dmean[idmax])
-
-  return([maxC,np.sqrt(cvar[itMax,isMax])/maxC,sigy*1e3,sigt,
+  return([maxC,np.sqrt(cvar[itMax,isMax])/maxC,sigy,sigt,
          dmean[idmax],np.sqrt(dvar[idmax])/dmean[idmax]])
 
 # Main program for testing
 
 if __name__ == '__main__':
 
-  for ir in range(1,18):
-    samFile = '../../../../Inputs/Experimental/DTRAPhaseI/r%02dm.sam'%ir
-    smpFile = 'r%02dm.smp'%ir
-    temp = 290.
-    pres = 0.85518
-    cScale = 1.0e+6*(22.4/42.08)*(temp/273.15)/pres 
-    getStat(samFile,smpFile,cScale)
+  #for ir in range(1,18):
+  #  samFile = '../../../../Inputs/Experimental/DTRAPhaseI/r%02dm.sam'%ir
+  #  smpFile = 'r%02dm.smp'%ir
+  samFile = 't01.sam'
+  smpFile = 't01.smp'
+  temp = 290.
+  pres = 0.85518
+  cScale = 1.0e+6*(22.4/42.08)*(temp/273.15)/pres 
+  getStat(samFile,smpFile,cScale,lPrint=True)
 
   '''
   # Parse arguments
