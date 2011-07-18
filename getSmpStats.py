@@ -108,18 +108,26 @@ def calcStat(tcol,cmean,cvar,ySmp,clen=None,dmean=None,dvar=None):
   its = np.where(cmean==maxC)
   itMax = its[0][0]
   isMax = its[1][0]
-  print 'Max concentration = ',maxC,' at time = ',tcol[itMax],' for it, ismp = ',itMax,isMax,'\n'
+  if clen is not None:
+    print 'Max concentration, variance and scale = ',maxC,cvar[itMax,isMax],clen[itMax,isMax]
+  else:
+    print 'Max concentration, variance, dosage and dosage variance  = ',maxC,cvar[itMax,isMax],dmean[itMax,isMax],dvar[itMax,isMax]
+  print ' at time = ',tcol[itMax],' for it, ismp = ',itMax,isMax,'\n'
 
-  cm   = cmean[itMax,:]
-  cy   = ySmp[:]*cmean[itMax,:]
+  cm    = cmean[itMax,:]
+  cmi   = sum(cm)
+  cy    = ySmp[:]*cmean[itMax,:]
+  ybar  = sum(cy)/cmi
   
   cy2  = cy[:]*ySmp[:]
-  sigy = np.sqrt(sum(cy2)/sum(cm) - (sum(cy)/sum(cm))**2)
+  sigy = np.sqrt(sum(cy2)/cmi - ybar**2)
 
   cm   = cmean[:,isMax]
+  cmi  = sum(cm)
   ct   = tcol[:]*cmean[:,isMax]
+  tbar = sum(ct)/cmi
   ct2  = ct[:]*tcol[:]
-  sigt = np.sqrt(sum(ct2)/sum(cm) - (sum(ct)/sum(cm))**2)
+  sigt = np.sqrt(sum(ct2)/cmi - tbar**2)
 
   return([maxC,np.sqrt(cvar[itMax,isMax])/maxC,sigy,sigt,
          dmean[idmax],np.sqrt(dvar[idmax])/dmean[idmax]])
@@ -131,11 +139,12 @@ if __name__ == '__main__':
   #for ir in range(1,18):
   #  samFile = '../../../../Inputs/Experimental/DTRAPhaseI/r%02dm.sam'%ir
   #  smpFile = 'r%02dm.smp'%ir
-  samFile = 't01.sam'
-  smpFile = 't01.smp'
+  samFile = 'r01m.sam'
+  smpFile = 'r01m.smp'
   temp = 290.
   pres = 0.85518
   cScale = 1.0e+6*(22.4/42.08)*(temp/273.15)/pres 
+  print 'Get stats from ',smpFile
   getStat(samFile,smpFile,cScale,lPrint=True)
 
   '''
