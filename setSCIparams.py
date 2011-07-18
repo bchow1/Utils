@@ -338,7 +338,10 @@ def chngNml(inFile,outFile,KeyNml,KeyPatt,tail):
         pattKey  = KeyPatt[nmlKey]    
         matchKey = pattKey.match(line)
         if matchKey:
-          line = matchKey.group(1) + nmlVal + matchKey.group(3) + tail
+          addNmlEnd = ''
+          if line.strip().endswith('/'):
+            addNmlEnd = '/'
+          line = matchKey.group(1) + nmlVal + matchKey.group(3) + addNmlEnd + tail
           if nmlKey == 'metfile':
             nLen = len(line.strip().split('@')[1])
             line = matchKey.group(1) + '%03d'%nLen + nmlVal + matchKey.group(3) + tail
@@ -394,7 +397,7 @@ def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,compiler=None,version=Non
       if not SCIPUFF_BASEDIR:
         SCIPUFF_BASEDIR="/home/user/bnc/SourceEstimation/FilterTests/src/gitP2/UNIX/FULL/bin/linux/gfort"
     myEnv.env["SCIPUFF_BASEDIR"] = SCIPUFF_BASEDIR
-    myEnv.env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
+    myEnv.env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran/x86_32:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
     myEnv.env["LD_LIBRARY_PATH"] = myEnv.env["LD_LIBRARY_PATH"] + ':' + SCIPUFF_BASEDIR
     myEnv.hpacstub  = ["%s/hpacstub" % SCIPUFF_BASEDIR,"-I:","-M:10000"]
     myEnv.plotstub  = ["%s/plotstub" % SCIPUFF_BASEDIR,"-I:"]
