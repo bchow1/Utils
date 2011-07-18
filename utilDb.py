@@ -32,6 +32,7 @@ class prj():
       self.sciFiles.samFile = samFile
     self.calDb = '%s.db'%(self.sciFiles.smpFile)
     # Create database for calculated data 
+    print 'Create smpDb ',self.calDb
     (self.sCur,self.createCaldb) = Smp2Db(self.calDb,self.sciFiles,mySCIpattern,self.createCaldb)
     return
 
@@ -45,7 +46,7 @@ def createSmpDb(prjNames,samFiles=None):
  
   mySCIpattern = SCI.Pattern()
   
-  print 'In dbUtil.createSmpDb, prjNames = ',prjNames
+  print 'In dbUtil.createSmpDb, prjNames(must be a list) = ',prjNames
  
   # Set calculated data file and create database
   myPrj = [[] for i in range(len(prjNames))]
