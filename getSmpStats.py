@@ -120,14 +120,16 @@ def calcStat(tcol,cmean,cvar,ySmp,clen=None,dmean=None,dvar=None):
   ybar  = sum(cy)/cmi
   
   cy2  = cy[:]*ySmp[:]
-  sigy = np.sqrt(sum(cy2)/cmi - ybar**2)
+  #sigy = np.sqrt(sum(cy2)/cmi - ybar**2)
+  sigy = ybar
+  sigt = np.sqrt(sum(cy2)/cmi - ybar**2)
 
   cm   = cmean[:,isMax]
   cmi  = sum(cm)
   ct   = tcol[:]*cmean[:,isMax]
   tbar = sum(ct)/cmi
   ct2  = ct[:]*tcol[:]
-  sigt = np.sqrt(sum(ct2)/cmi - tbar**2)
+  #sigt = np.sqrt(sum(ct2)/cmi - tbar**2)
 
   return([maxC,np.sqrt(cvar[itMax,isMax])/maxC,sigy,sigt,
          dmean[idmax],np.sqrt(dvar[idmax])/dmean[idmax]])
