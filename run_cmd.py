@@ -12,9 +12,15 @@ def Command(env,cmd,Inputs,tail):
       Must set env and tail. If errors are generated, print error and return
       IOstat = -1 otherwise return the Outputs. '''
   print 'Running ',cmd,'...'
-  h = subprocess.Popen(cmd, env=env, bufsize=0, shell=False,
+   
+  if sys.platform != 'win32':
+    h = subprocess.Popen(cmd, env=env, bufsize=0, shell=False,
                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE, close_fds=True)
+  else:
+    h = subprocess.Popen(cmd, env=env, bufsize=0, shell=False,
+                       stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE)
   (Outputs, Errors) = h.communicate(input=Inputs)
   h.wait()
   lines=Errors.split(tail)
