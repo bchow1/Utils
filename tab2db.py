@@ -57,7 +57,7 @@ def makeDb(fName):
             insertStr += ')'
           else:
             insertStr += ', '
-        print insertStr
+        #print insertStr
         dbCur.execute(insertStr)
       else:   # skip blank lines
        continue
