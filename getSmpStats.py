@@ -83,7 +83,7 @@ def getStat(samFile,smpFile,cScale=1.,yCol=1,lPrint=None):
 
   return (maxC,sigCbyC,sigY,sigT,maxD,sigDbyD)
 
-def calcStat(tcol,cmean,cvar,ySmp,clen=None,dmean=None,dvar=None):
+def calcStat(tcol,cmean,cvar,ySmp,clen=None,dmean=None,dvar=None,tAvg=None,cAvg=None):
 
   if clen is None and dmean is None:
     print 'Error: Must provide timescale or dosage mean for dosage calculations'
@@ -104,32 +104,92 @@ def calcStat(tcol,cmean,cvar,ySmp,clen=None,dmean=None,dvar=None):
   idmax = np.where(dmean == dmax)[0][0]
   print '\n','Max dosage and variance = ',dmean[idmax], dvar[idmax],' for ismp = ',idmax
 
-  maxC = np.max(cmean)
-  its = np.where(cmean==maxC)
-  itMax = its[0][0]
-  isMax = its[1][0]
-  if clen is not None:
-    print 'Max concentration, variance and scale = ',maxC,cvar[itMax,isMax],clen[itMax,isMax]
+  useCavg = False
+  if tAvg is not None:
+    if cAvg is not None:
+      useCavg = True
+    else:
+      print 'Error: must provide cAvg for using time averaged mean values'
+
+  print useCavg
+     
+  if useCavg:
+    maxC = cAvg.max()
+    its  = np.where(cAvg==maxC)
+    iTavgMax = its[0][0]
+    dtAvg = tAvg[1] - tAvg[0]
+    dt = tcol[1] - tcol[0]
+    itMax = int((float(iTavgMax)*dtAvg + tAvg[0] - tcol[0])/dt)
+    it0 = max(0,itMax-int(dtAvg/dt*0.5))
+    it1 = min(len(tcol)-1,itMax+int(dtAvg/dt*0.5)-1) 
+    nt = float(it1-it0+1)
+    print len(tcol),len(tAvg),dt,dtAvg,itMax,iTavgMax,tcol[itMax],tAvg[iTavgMax],it0,it1
   else:
-    print 'Max concentration, variance, dosage and dosage variance  = ',maxC,cvar[itMax,isMax],dmean[itMax,isMax],dvar[itMax,isMax]
+    maxC = cmean.max()
+    its = np.where(cmean==maxC)
+    itMax = its[0][0]
+
+  isMax = its[1][0]
+
+  if clen is not None:
+    print 'Max concentration, variance and scale = ',cmean[itMax,isMax],cvar[itMax,isMax],clen[itMax,isMax]
+  else:
+    print 'Max concentration, variance = ',cmean[itMax,isMax],cvar[itMax,isMax]
   print ' at time = ',tcol[itMax],' for it, ismp = ',itMax,isMax,'\n'
 
-  cm    = cmean[itMax,:]
-  cmi   = sum(cm)
-  cy    = ySmp[:]*cmean[itMax,:]
-  ybar  = sum(cy)/cmi
-  
-  cy2  = cy[:]*ySmp[:]
-  #sigy = np.sqrt(sum(cy2)/cmi - ybar**2)
-  sigy = ybar
-  sigt = np.sqrt(sum(cy2)/cmi - ybar**2)
+  if useCavg:
+     print 'Using max time avg concentration  = ',cAvg[iTavgMax,isMax],' at time ',tAvg[iTavgMax],'\n'
 
-  cm   = cmean[:,isMax]
-  cmi  = sum(cm)
-  ct   = tcol[:]*cmean[:,isMax]
-  tbar = sum(ct)/cmi
-  ct2  = ct[:]*tcol[:]
-  #sigt = np.sqrt(sum(ct2)/cmi - tbar**2)
+  if useCavg:
+    cm = cAvg[iTavgMax,:]
+  else:
+    cm = cmean[itMax,:]
+  cmi = np.sum(cm)
+
+  if useCavg:
+    sigyt = 0.
+    for tindx in range(it0,it1+1):
+      cy = ySmp[:]*cmean[tindx,:]
+      ybar = np.sum(cy)/cmi
+      cy2 = cmean[tindx,:]*(ySmp-ybar)**2
+      sigy = np.sqrt(sum(cy2)/cmi)
+      sigyt += sigy
+  else:
+    pass
+
+  cy   = ySmp[:]*cm
+  ybar = np.sum(cy)/cmi
+  cy2  = cy[:]*ySmp[:]
+  sigy = np.sqrt(np.sum(cy2)/cmi - ybar**2)
+  cyn2 = cm*(ySmp-ybar)**2
+  signy = np.sqrt(np.sum(cyn2)/cmi)
+  if useCavg:
+    print sigy,signy,sigyt/nt
+    sigy = sigyt/nt
+  else:
+    print sigy,signy
+   
+  if useCavg:
+    cm = cAvg[:,isMax]
+    tm = tAvg
+    cmi  = np.sum(cm)
+    ct   = tm*cm
+    tbar = np.sum(ct)/cmi
+    ct2  = ct*tm
+    sigt = np.sqrt(np.sum(ct2)/cmi - tbar**2)
+    ct2n  = cm*(tm-tbar)**2
+    sigtn = np.sqrt(np.sum(ct2n)/cmi)
+    print cmi,tbar,sigt,sigtn
+  else:
+    pass
+  cm = cmean[:,isMax]
+  tm = tcol
+  cmi  = np.sum(cm)
+  ct   = tm*cm
+  tbar = np.sum(ct)/cmi
+  ct2  = cm*(tm-tbar)**2
+  sigt = np.sqrt(np.sum(ct2)/cmi)
+  print cmi,tbar,sigt
 
   return([maxC,np.sqrt(cvar[itMax,isMax])/maxC,sigy,sigt,
          dmean[idmax],np.sqrt(dvar[idmax])/dmean[idmax]])
