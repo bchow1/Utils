@@ -111,8 +111,6 @@ def calcStat(tcol,cmean,cvar,ySmp,clen=None,dmean=None,dvar=None,tAvg=None,cAvg=
     else:
       print 'Error: must provide cAvg for using time averaged mean values'
 
-  print useCavg
-     
   if useCavg:
     maxC = cAvg.max()
     its  = np.where(cAvg==maxC)
@@ -123,7 +121,6 @@ def calcStat(tcol,cmean,cvar,ySmp,clen=None,dmean=None,dvar=None,tAvg=None,cAvg=
     it0 = max(0,itMax-int(dtAvg/dt*0.5))
     it1 = min(len(tcol)-1,itMax+int(dtAvg/dt*0.5)-1) 
     nt = float(it1-it0+1)
-    print len(tcol),len(tAvg),dt,dtAvg,itMax,iTavgMax,tcol[itMax],tAvg[iTavgMax],it0,it1
   else:
     maxC = cmean.max()
     its = np.where(cmean==maxC)
@@ -138,61 +135,47 @@ def calcStat(tcol,cmean,cvar,ySmp,clen=None,dmean=None,dvar=None,tAvg=None,cAvg=
   print ' at time = ',tcol[itMax],' for it, ismp = ',itMax,isMax,'\n'
 
   if useCavg:
-     print 'Using max time avg concentration  = ',cAvg[iTavgMax,isMax],' at time ',tAvg[iTavgMax],'\n'
+    print 'Using max time avg concentration  = ',cAvg[iTavgMax,isMax],' at time ',tAvg[iTavgMax],'\n'
+    print len(tcol),len(tAvg),dt,dtAvg,itMax,iTavgMax,tcol[itMax],tAvg[iTavgMax],it0,it1
 
   if useCavg:
-    cm = cAvg[iTavgMax,:]
-  else:
-    cm = cmean[itMax,:]
-  cmi = np.sum(cm)
-
-  if useCavg:
-    sigyt = 0.
+    sigy = 0.
+    ccoc = 0.
     for tindx in range(it0,it1+1):
+      cm = cmean[tindx,:]
+      cmi = np.sum(cm)
       cy = ySmp[:]*cmean[tindx,:]
       ybar = np.sum(cy)/cmi
       cy2 = cmean[tindx,:]*(ySmp-ybar)**2
-      sigy = np.sqrt(sum(cy2)/cmi)
-      sigyt += sigy
+      sigy += np.sqrt(sum(cy2)/cmi)
+      ccoc += np.sqrt(cvar[tindx,isMax])/cAvg[iTavgMax,isMax]
+    sigy = sigy/nt
+    ccoc = ccoc/nt
   else:
-    pass
+    cm = cmean[itMax,:]
+    cmi = np.sum(cm)
+    cy   = ySmp[:]*cm
+    ybar = np.sum(cy)/cmi
+    cy2 = cm*(ySmp-ybar)**2
+    sigy = np.sqrt(np.sum(cy2)/cmi)
+    ccoc = np.sqrt(cvar[itMax,isMax])/maxC
 
-  cy   = ySmp[:]*cm
-  ybar = np.sum(cy)/cmi
-  cy2  = cy[:]*ySmp[:]
-  sigy = np.sqrt(np.sum(cy2)/cmi - ybar**2)
-  cyn2 = cm*(ySmp-ybar)**2
-  signy = np.sqrt(np.sum(cyn2)/cmi)
-  if useCavg:
-    print sigy,signy,sigyt/nt
-    sigy = sigyt/nt
-  else:
-    print sigy,signy
-   
   if useCavg:
     cm = cAvg[:,isMax]
     tm = tAvg
-    cmi  = np.sum(cm)
-    ct   = tm*cm
-    tbar = np.sum(ct)/cmi
-    ct2  = ct*tm
-    sigt = np.sqrt(np.sum(ct2)/cmi - tbar**2)
-    ct2n  = cm*(tm-tbar)**2
-    sigtn = np.sqrt(np.sum(ct2n)/cmi)
-    print cmi,tbar,sigt,sigtn
   else:
-    pass
-  cm = cmean[:,isMax]
-  tm = tcol
+    cm = cmean[:,isMax]
+    tm = tcol
   cmi  = np.sum(cm)
   ct   = tm*cm
   tbar = np.sum(ct)/cmi
   ct2  = cm*(tm-tbar)**2
   sigt = np.sqrt(np.sum(ct2)/cmi)
-  print cmi,tbar,sigt
+  
+  dMax = dmean[idmax]
+  ddod = np.sqrt(dvar[idmax])/dMax
 
-  return([maxC,np.sqrt(cvar[itMax,isMax])/maxC,sigy,sigt,
-         dmean[idmax],np.sqrt(dvar[idmax])/dmean[idmax]])
+  return([maxC,ccoc,sigy,sigt,dMax,ddod])
 
 # Main program for testing
 
