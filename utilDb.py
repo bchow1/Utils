@@ -79,12 +79,14 @@ def createSmpDb(prjNames,samFiles=None):
   print 'Sampler end %s(%d)'%(time.ctime(allPrj.EpEndTime),allPrj.EpEndTime)
 
 def db2Array(cur,selectStr,dim=None):
-  if dim == 1:
+  if dim is not None: 
     dbList = db2List(cur,selectStr)
     Array = []
     for v in dbList:
       Array.append(v[0]) 
     Array = np.array(Array)
+    if dim == 0:
+      Array = Array[0]
   else:
     Array = np.array(db2List(cur,selectStr),dtype=float)
   return Array
