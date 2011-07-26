@@ -131,8 +131,10 @@ class Pattern(object) :
     nmlName  = None 
     nmlLines = []
     isNml    = False
+    # check if msc file and continue reading after 
+    # end of met namelist for metfiles
+    isMscFile = nmlFile.name.endswith('.msc') 
     for line in nmlFile:
-      #print 'line = ',line
       line = re.sub("\n","",line)
       line = re.sub("\r","",line)
       line.strip()
@@ -140,25 +142,35 @@ class Pattern(object) :
       matchEndNml = self.pattEndNml.match(line)
       if matchStaNml:
         #print 'match start'
-        mLine = []
-        mLine = self.addNml(line,mLine)
+        nmlLines = []
+        nmlLines = self.addNml(line,nmlLines)
         nmlName = matchStaNml.group(1).lower()
         # Namelist ending on same line
         if matchEndNml:
           #print 'match end'
           isNml = False
-          nmlLines = mLine
-          break
+          if isMscFile:
+            continue
+          else:
+            break
         else:
           isNml = True
       if isNml and matchEndNml:
         #print 'match end'
-        mLine = self.addNml(line,mLine)
+        nmlLines = self.addNml(line,nmlLines)
         isNml = False
-        nmlLines = mLine
-        break
+        if isMscFile:
+          continue
+        else:
+          break
       if isNml and not matchStaNml:
-        mLine = self.addNml(line,mLine)
+        nmlLines = self.addNml(line,nmlLines)
+      if isMscFile and len(nmlLines) > 0 and not isNml:
+        if len(line) > 0:
+          metFiles = line.split('@')
+          for i in range(1,len(metFiles),2):
+            nmlLines.append('METFILE = %s'%metFiles[i][3:])
+          break
     return(nmlName,nmlLines)
 
   def readNml(self,inFile):
@@ -176,7 +188,12 @@ class Pattern(object) :
             matchNmlKey = self.pattNml[nameList][key].match(line)
             #matchNmlKey = self.pattNameList[key].match(line)
             if matchNmlKey:
+              #print key,":",matchNmlKey.group(2)
               nmlValue.update({key:matchNmlKey.group(2)})
+          if nameList == 'met':
+            if line.startswith('METFILE'):
+              metFname = line.split('=')[1].strip()
+              nmlValue.update({'metfile':metFname})
         nmlValues.append(nmlValue)
       else:
         nmlFile.close()
