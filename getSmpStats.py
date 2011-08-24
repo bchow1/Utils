@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 pattSmpT  = re.compile("(HPAC)|(SCIPUFF)\s*",re.I)  # Sampler type
 pattSmp1  = re.compile("(.+)001")                   # First sampler
 
-def getStat(samFile,smpFile,cScale=1.,yCol=1,lPrint=None):
+def getStat(samFile,smpFile,cScale=1.,yCol=1,lPrint=None,sigYD=None):
 
   # Read samfile
   smpLoc = []
@@ -75,15 +75,20 @@ def getStat(samFile,smpFile,cScale=1.,yCol=1,lPrint=None):
   
   # convert to m
   ySmp = ySmp*1e3
-  maxC,sigCbyC,sigY,sigT,maxD,sigDbyD = calcStat(tcol,cmean,cvar,ySmp,clen=clen)
+  if sigYD is None:
+    maxC,sigCbyC,sigY,sigT,maxD,sigDbyD = calcStat(tcol,cmean,cvar,ySmp,clen=clen)
+    statList = [maxC,sigCbyC,sigY,sigT,maxD,sigDbyD]
+  else:
+    maxC,sigCbyC,sigY,sigT,maxD,sigDbyD,sigYD = calcStat(tcol,cmean,cvar,ySmp,clen=clen,sigYD=True)
+    statList = [maxC,sigCbyC,sigY,sigT,maxD,sigDbyD,sigYD]
   if lPrint:
     print 'maxC, sigCbyC,sigY,sigT,maxD,sigDbyD'
     print '%s%13.5f %13.5f %13.5f %13.5f %13.5f %13.5f'%\
           ('Pre',maxC,sigCbyC,sigY,sigT,maxD,sigDbyD)
 
-  return (maxC,sigCbyC,sigY,sigT,maxD,sigDbyD)
+  return(statList)
 
-def calcStat(tcol,cmean,cvar,ySmp,clen=None,dmean=None,dvar=None,tAvg=None,cAvg=None):
+def calcStat(tcol,cmean,cvar,ySmp,clen=None,dmean=None,dvar=None,sigYD=None):
 
   if clen is None and dmean is None:
     print 'Error: Must provide timescale or dosage mean for dosage calculations'
@@ -104,78 +109,50 @@ def calcStat(tcol,cmean,cvar,ySmp,clen=None,dmean=None,dvar=None,tAvg=None,cAvg=
   idmax = np.where(dmean == dmax)[0][0]
   print '\n','Max dosage and variance = ',dmean[idmax], dvar[idmax],' for ismp = ',idmax
 
-  useCavg = False
-  if tAvg is not None:
-    if cAvg is not None:
-      useCavg = True
-    else:
-      print 'Error: must provide cAvg for using time averaged mean values'
+  maxC = cmean.max()
+  its = np.where(cmean==maxC)
 
-  if useCavg:
-    maxC = cAvg.max()
-    its  = np.where(cAvg==maxC)
-    iTavgMax = its[0][0]
-    dtAvg = tAvg[1] - tAvg[0]
-    dt = tcol[1] - tcol[0]
-    itMax = int((float(iTavgMax)*dtAvg + tAvg[0] - tcol[0])/dt)
-    it0 = max(0,itMax-int(dtAvg/dt*0.5))
-    it1 = min(len(tcol)-1,itMax+int(dtAvg/dt*0.5)-1) 
-    nt = float(it1-it0+1)
-  else:
-    maxC = cmean.max()
-    its = np.where(cmean==maxC)
-    itMax = its[0][0]
-
+  itMax = its[0][0]
   isMax = its[1][0]
 
   if clen is not None:
     print 'Max concentration, variance and scale = ',cmean[itMax,isMax],cvar[itMax,isMax],clen[itMax,isMax]
   else:
     print 'Max concentration, variance = ',cmean[itMax,isMax],cvar[itMax,isMax]
-  print ' at time = ',tcol[itMax],' for it, ismp = ',itMax,isMax,'\n'
+  print ' at time = ',tcol[itMax],' for it, ismp = ',itMax,isMax
 
-  if useCavg:
-    print 'Using max time avg concentration  = ',cAvg[iTavgMax,isMax],' at time ',tAvg[iTavgMax],'\n'
-    print len(tcol),len(tAvg),dt,dtAvg,itMax,iTavgMax,tcol[itMax],tAvg[iTavgMax],it0,it1
+  cm = cmean[itMax,:]
+  cmi = np.sum(cm)
+  cy   = ySmp[:]*cm
+  ybar = np.sum(cy)/cmi
+  cy2 = cm*(ySmp-ybar)**2
+  sigy = np.sqrt(np.sum(cy2)/cmi)
+  print 'Conc ybar, sigY = ',ybar,sigy
+  ccoc = np.sqrt(cvar[itMax,isMax])/maxC
 
-  if useCavg:
-    sigy = 0.
-    ccoc = 0.
-    for tindx in range(it0,it1+1):
-      cm = cmean[tindx,:]
-      cmi = np.sum(cm)
-      cy = ySmp[:]*cmean[tindx,:]
-      ybar = np.sum(cy)/cmi
-      cy2 = cmean[tindx,:]*(ySmp-ybar)**2
-      sigy += np.sqrt(sum(cy2)/cmi)
-      ccoc += np.sqrt(cvar[tindx,isMax])/cAvg[iTavgMax,isMax]
-    sigy = sigy/nt
-    ccoc = ccoc/nt
-  else:
-    cm = cmean[itMax,:]
-    cmi = np.sum(cm)
-    cy   = ySmp[:]*cm
-    ybar = np.sum(cy)/cmi
-    cy2 = cm*(ySmp-ybar)**2
-    sigy = np.sqrt(np.sum(cy2)/cmi)
-    ccoc = np.sqrt(cvar[itMax,isMax])/maxC
-
-  if useCavg:
-    cm = cAvg[:,isMax]
-    tm = tAvg
-  else:
-    cm = cmean[:,isMax]
-    tm = tcol
-  cmi  = np.sum(cm)
-  ct   = tm*cm
+  cm = cmean[:,isMax]
+  tm = tcol
+  cmi = np.sum(cm)
+  ct  = tm*cm
   tbar = np.sum(ct)/cmi
   ct2  = cm*(tm-tbar)**2
   sigt = np.sqrt(np.sum(ct2)/cmi)
   
   dMax = dmean[idmax]
   ddod = np.sqrt(dvar[idmax])/dMax
+  statList = [maxC,ccoc,sigy,sigt,dMax,ddod]
 
-  return([maxC,ccoc,sigy,sigt,dMax,ddod])
+  if sigYD is not None:
+    dmi = np.sum(dmean)
+    dmy = ySmp*dmean
+    ybar = np.sum(dmy)/dmi
+    dmy2 = dmean*(ySmp-ybar)**2
+    sigYD = np.sqrt(np.sum(dmy2)/dmi)
+    print 'Dosage ybar, sigY = ',ybar,sigYD
+    statList.extend([sigYD])
+
+  print ''
+  return(statList)
 
 # Main program for testing
 
