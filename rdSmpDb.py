@@ -25,6 +25,8 @@ def readSmpDb(prjNames,cScale):
   for prjNo,prjName in enumerate(prjNames):
     print '\nProject :%s\n'%prjName
     dbName = prjName + '.smp.db'
+    if not os.path.exists(dbName):
+      createSmpDb([prjName,]) 
     smpConn.append(sqlite3.connect(dbName))
     smpConn[prjNo].row_factory = sqlite3.Row
     sCur.append(smpConn[prjNo].cursor())
