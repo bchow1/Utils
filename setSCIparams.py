@@ -323,7 +323,7 @@ class samList:
       for matName in self.matList:
         nSen += 1
         if not outKey:
-          outKey = CONC
+          outKey = 'CONC'
         samOut.write('%8.3f %8.3f %8.3f %s %s:1 Sensor%d\n'%(xSrc,ySrc,0.,outKey,matName,nSen))
     samOut.close()
 
