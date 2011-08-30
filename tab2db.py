@@ -68,9 +68,19 @@ def insertDb(dbCur,nCol,colValues):
   for i in range(nCol):
     if colTypes[i] == 'string':
       insertStr += "'" + colValues[i] + "'"
-    else:
+    else:     
       if len(colValues[i]) < 1:
         colValues[i] = '-9999'
+      else:
+        try:
+          colValue = ast.literal_eval(colValues[i].strip())
+          if (not isinstance(colValue,int) and \
+              not isinstance(colValue,float)):
+            colValues[i] = '-9999'
+        except ValueError:
+          colValues[i] = '-9999'
+        except SyntaxError:
+          colValues[i] = '-9999'
       insertStr += colValues[i]
     if i == nCol-1:
       insertStr += ')'
@@ -82,6 +92,7 @@ def insertDb(dbCur,nCol,colValues):
 
 def makeDb(fName,separator=None,headLineNo=1,colNames=None,colTypes=None):
   dbCur = None
+  lWarn = True
   for line in fileinput.input(fName):
     if fileinput.lineno() < headLineNo:
       continue
@@ -91,15 +102,17 @@ def makeDb(fName,separator=None,headLineNo=1,colNames=None,colTypes=None):
     nCol = len(colNames)
     if colTypes is not None:
       if len(colTypes) != nCol:
-        print 'Error: Column types does not match number of column names = ',colTypes
+        print 'Error: \n Number of column types in \n %s\n does not match number of column names in \n %s'%(colTypes,colNames)
         sys.exit()
     if fileinput.lineno() == headLineNo:
       continue
     if len(line) > 0:
       colValues = getColValues(line,separator)
-      if len(colValues) != nCol:
-        print 'Error: Number of values in columns does not match number of column names = ',colTypes
-        sys.exit()
+      if len(colValues) != nCol and lWarn:
+        print 'Warning: \n Number of values in \n %s\n does not match number of \n column names in %s'%(colValues,colNames)
+        colValues = colValues[:nCol]
+        print ' Using only %d columns '%(nCol)
+        lWarn = False
       if colTypes is None:
         colTypes = setColTypes(colValues)
       if dbCur is None:
@@ -133,7 +146,20 @@ if __name__ == '__main__':
   arg.set_defaults(colname=None)
   arg.set_defaults(coltype=None)
   opt,args = arg.parse_args()
+
+  # Get column separator 
   print 'Using Separator = ',opt.separator
+
+  # Get column names 
+  if opt.colname is None:
+    colNames = None
+  else:
+    if opt.separator is None:
+      colNames = opt.colname.strip().split(',')
+    else:
+      colNames = opt.colname.strip().split(opt.separator)
+  
+  # Get column types 
   if opt.coltype is None:
     colTypes = None
   else:
@@ -148,7 +174,6 @@ if __name__ == '__main__':
   print 'Using Column types = ',colTypes
   for fName in args:
     print '\nRunning makeDb for file ',fName
-    makeDb(fName,separator=opt.separator,colNames=opt.colname,colTypes=colTypes)
+    makeDb(fName,separator=opt.separator,colNames=colNames,colTypes=colTypes)
     dbFile = fName + '.db'
-    #dataArray = utilDb.db2Array(dbFile,'.schema')
-    #print dataArray
+    print str(utilDb.db2List(dbFile,'select sql from sqlite_master where type="table"')[0][0])
