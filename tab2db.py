@@ -63,7 +63,7 @@ def initDb(fName,colNames,colTypes):
   dbCur.execute(createStr)
   return (dbCur,dbConn)
 
-def insertDb(dbCur,nCol,colValues):
+def insertDb(dbCur,nCol,colTypes,colValues):
   insertStr = 'INSERT into dataTable VALUES('
   for i in range(nCol):
     if colTypes[i] == 'string':
@@ -90,7 +90,34 @@ def insertDb(dbCur,nCol,colValues):
   dbCur.execute(insertStr)
   return
 
-def makeDb(fName,separator=None,headLineNo=1,colNames=None,colTypes=None):
+def makeDb(fName,separator=None,headLineNo=1,colname=None,coltype=None):
+
+  # Get column separator 
+  print 'Using Separator = ',separator
+
+  # Get column names 
+  if colname is None:
+      colNames = None
+  else:
+    if separator is None:
+      colNames = colname.strip().split(',')
+    else:
+      colNames = colname.strip().split(separator)
+  
+  # Get column types 
+  if coltype is None:
+    colTypes = None
+  else:
+    colTypes = []
+    for cType in list(coltype.strip()):
+      if cType == 'i':
+        colTypes.append('integer')
+      elif cType == 'r':
+        colTypes.append('real')
+      else:
+        colTypes.append('string')
+  print 'Using Column types = ',colTypes
+
   dbCur = None
   lWarn = True
   for line in fileinput.input(fName):
@@ -102,14 +129,14 @@ def makeDb(fName,separator=None,headLineNo=1,colNames=None,colTypes=None):
     nCol = len(colNames)
     if colTypes is not None:
       if len(colTypes) != nCol:
-        print 'Error: \n Number of column types in \n %s\n does not match number of column names in \n %s'%(colTypes,colNames)
+        print 'Error: \n Number of column types in \n %s\n   does not match number of column names in \n %s'%(colTypes,colNames)
         sys.exit()
     if fileinput.lineno() == headLineNo:
       continue
     if len(line) > 0:
       colValues = getColValues(line,separator)
       if len(colValues) != nCol and lWarn:
-        print 'Warning: \n Number of values in \n %s\n does not match number of \n column names in %s'%(colValues,colNames)
+        print 'Warning: \n Number of values in \n %s\n   does not match number of column names in \n %s'%(colValues,colNames)
         colValues = colValues[:nCol]
         print ' Using only %d columns '%(nCol)
         lWarn = False
@@ -117,7 +144,7 @@ def makeDb(fName,separator=None,headLineNo=1,colNames=None,colTypes=None):
         colTypes = setColTypes(colValues)
       if dbCur is None:
         dbCur,dbConn = initDb(fName,colNames,colTypes)
-      insertDb(dbCur,nCol,colValues)
+      insertDb(dbCur,nCol,colTypes,colValues)
     else:   # skip blank lines
       continue
   # end file input from fName
@@ -137,6 +164,7 @@ if __name__ == '__main__':
 
   if sys.argv.__len__() < 2:
     print 'Usage: tab2db.py [-s separator] [-n colname] [-t coltype] table1.txt [table2.txt ... ]'
+    print 'Example: python ~/python/tab2db.py -s "," -n "hrs,mrate,lat,lon" -t rrrr RT970925.DAT'
     sys.exit()
   arg = optparse.OptionParser()
   arg.add_option("-s",action="store",type="string",dest="separator")
@@ -147,33 +175,8 @@ if __name__ == '__main__':
   arg.set_defaults(coltype=None)
   opt,args = arg.parse_args()
 
-  # Get column separator 
-  print 'Using Separator = ',opt.separator
-
-  # Get column names 
-  if opt.colname is None:
-    colNames = None
-  else:
-    if opt.separator is None:
-      colNames = opt.colname.strip().split(',')
-    else:
-      colNames = opt.colname.strip().split(opt.separator)
-  
-  # Get column types 
-  if opt.coltype is None:
-    colTypes = None
-  else:
-    colTypes = []
-    for cType in list(opt.coltype.strip()):
-      if cType == 'i':
-        colTypes.append('integer')
-      elif cType == 'r':
-        colTypes.append('real')
-      else:
-        colTypes.append('string')
-  print 'Using Column types = ',colTypes
   for fName in args:
     print '\nRunning makeDb for file ',fName
-    makeDb(fName,separator=opt.separator,colNames=colNames,colTypes=colTypes)
+    makeDb(fName,separator=opt.separator,colname=opt.colname,coltype=opt.coltype)
     dbFile = fName + '.db'
     print str(utilDb.db2List(dbFile,'select sql from sqlite_master where type="table"')[0][0])
