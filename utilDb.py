@@ -15,6 +15,17 @@ import math
 import run_cmd
 import setSCIparams as SCI
 
+class dbClass(object):
+
+  def __init__(self,dbName):
+    self.Conn = sqlite3.connect(dbName)
+    self.Conn.row_factory = sqlite3.Row
+    self.Cur = self.Conn.cursor()
+
+  def close(self):
+    self.Cur.close()
+    self.Conn.close()
+
 class prj():
 
   def __init__(self):
