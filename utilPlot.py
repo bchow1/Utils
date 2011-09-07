@@ -121,7 +121,8 @@ class Plot(object):
                      =  setLevels(self.clrLev,self.clrMin,self.clrMax,self.logScale,logBase=self.logBase)
     self.vmin        = self.levels[0]
     self.vmax        = self.levels[self.clrLev-1]
-    print 'In utilPlot.Plot, minmax color range = ',self.vmin,',',self.vmax
-    print 'In utilPlot.Plot, levels = ',self.levels
-    print 'In utilPlot.Plot, lnorm = ',self.lnorm
+    print 'In utilPlot.Plot:'
+    print '  color range = ',self.vmin,',',self.vmax
+    print '  levels = ',self.levels
+    print '  lnorm = ',self.lnorm,'\n'
 
