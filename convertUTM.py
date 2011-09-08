@@ -128,10 +128,8 @@ class convertUTM(object):
       print "Northing may not exceed 10,000,000 \n Results may be unreliable \n Use with caution"
     zcm = 3. + 6.*(self.utmz-1.) - 180. #Central meridian of zone
     e1 = (1. - math.sqrt(1. - self.e*self.e))/(1. + math.sqrt(1. - self.e*self.e)) #Called e1 in USGS PP 1395 also
-    print zcm, e1
     M0 = 0. #In case origin other than zero lat - not needed for standard UTM
     M = M0 + self.y/self.k0 #Arc length along standard meridian.
-    print M
     if self.sHem == True:
       M = M0+(self.y - 10000000.)/self.k
     mu = M/(self.a*(1. - self.esq*(1./4. + self.esq*(3./64. + 5.*self.esq/256.))))
