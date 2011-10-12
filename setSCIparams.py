@@ -83,9 +83,7 @@ class Pattern(object) :
       if len(list) > 0:
         self.Nml.update({nml:list})
         for vname in list.keys():
-          #cPattern = str('(.*%s\s*=\s*)(.*?)(,.*)'%vname)
-          cPattern = str('(.*%s\s*=\s*)(.*?)($)'%vname)
-          #print vname, cPattern
+          cPattern = str(r'(.*\b%s\s*=\s*)(.*?)($)'%vname)
           rPattern = re.compile(cPattern,re.I)
           if vname == 'metfile':
             rPattern = re.compile("(.*@)(\d{3}.+)(\s*.*)")
@@ -423,6 +421,24 @@ def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,compiler=None,version=Non
   print 'Path = ',myEnv.env["PATH"]
   print myEnv.hpacstub
   return (myEnv)
+
+def readKeyNml(nmlFile):
+  KeyNml = {}
+  print '\nReading new namelist values from file ',nmlFile
+  if os.path.exists(nmlFile):
+    for line in fileinput.input(nmlFile):
+      if len(line.strip()) > 1:
+        key,value = line.strip().split('=')
+        key = key.strip()
+        value = value.strip().replace(' ','') + ','
+        KeyNml.update({key.strip():value.strip()})
+    fileinput.close()
+    print '  New values - '
+    for key in KeyNml:
+      print '    ',key,':',KeyNml[key]
+  else:
+    print 'Error: Cannot find namelist value file'
+  return KeyNml
 
 def runSci(prjName,myEnv=None,binDir=None,templateName='',KeyNml=None,nFlt=30,rType='INST',createPrj=''):
 
