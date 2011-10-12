@@ -10,24 +10,36 @@ Convert data table from ASCII to db. Use the column names
 from first line which may or may not start with '#'.
 Ignores all blank lines.
 '''
-def getColValues(line,separator):
+def getColValues(line,separator,collist=None):
   line = line.split('#')[0].strip().replace('"','')
   if len(line) > 0 :
     if separator is None:
       colValues = line.split()
     else:
       colValues = line.split(separator)
+    if collist is not None:
+      cValues = []
+      for i,colValue in enumerate(colValues):
+        if i+1 in collist:
+          cValues.append(colValue)
+      colValues = cValues
   return colValues
 
-def setColNames(line,separator):
+def setColNames(line,separator,collist=None):
   if separator is None:
     colNames = line.replace('#','').strip().split()
   else:
     colNames = line.replace('#','').strip().replace('"','').split(separator)
   for i,colName in enumerate(colNames):
-   colNames[i] = colName.strip().replace(' ','')
-   if colName.startswith('_'):
-     colNames[i] = colName[1:] 
+    colNames[i] = colName.strip().replace(' ','')
+    if colName.startswith('_'):
+      colNames[i] = colName[1:] 
+  if collist is not None:
+    cNames = []
+    for i,colName in enumerate(colNames):
+      if i+1 in collist:
+        cNames.append(colName)
+    colNames = cNames
   print 'Column names = ',colNames
   return colNames
 
@@ -90,7 +102,7 @@ def insertDb(dbCur,nCol,colTypes,colValues):
   dbCur.execute(insertStr)
   return
 
-def makeDb(fName,separator=None,headLineNo=1,colname=None,coltype=None):
+def makeDb(fName,separator=None,headLineNo=1,colname=None,coltype=None,collist=None):
 
   # Get column separator 
   print 'Using Separator = ',separator
@@ -118,6 +130,23 @@ def makeDb(fName,separator=None,headLineNo=1,colname=None,coltype=None):
         colTypes.append('string')
   print 'Using Column types = ',colTypes
 
+  if collist is None:
+    colList = None
+  else:
+    if separator is None:
+      cList = collist.split(',')
+    else:
+      cList = collist.split(separator)
+    colList = []
+    for colNo in cList:
+      if '-' in colNo:
+        cstart,cend = map(int,colNo.split('-'))
+        for icol in range(cstart,cend+1):
+          colList.append(icol) 
+      else:
+        colList.append(int(colNo)) 
+    print 'Using only columns from column list = ',colList
+
   dbCur = None
   lWarn = True
   for line in fileinput.input(fName):
@@ -125,7 +154,7 @@ def makeDb(fName,separator=None,headLineNo=1,colname=None,coltype=None):
       continue
     if colNames is None:
       if fileinput.lineno() == headLineNo:
-        colNames = setColNames(line,separator)
+        colNames = setColNames(line,separator,collist=colList)
     nCol = len(colNames)
     if colTypes is not None:
       if len(colTypes) != nCol:
@@ -134,7 +163,7 @@ def makeDb(fName,separator=None,headLineNo=1,colname=None,coltype=None):
     if fileinput.lineno() == headLineNo:
       continue
     if len(line) > 0:
-      colValues = getColValues(line,separator)
+      colValues = getColValues(line,separator,collist=colList)
       if len(colValues) != nCol and lWarn:
         print 'Warning: \n Number of values in \n %s\n   does not match number of column names in \n %s'%(colValues,colNames)
         colValues = colValues[:nCol]
@@ -163,20 +192,22 @@ if __name__ == '__main__':
   import utilDb
 
   if sys.argv.__len__() < 2:
-    print 'Usage: tab2db.py [-s separator] [-n colname] [-t coltype] table1.txt [table2.txt ... ]'
-    print 'Example: python ~/python/tab2db.py -s "," -n "hrs,mrate,lat,lon" -t rrrr RT970925.DAT'
+    print 'Usage: tab2db.py [-s separator] [-n colname] [-t coltype] [-c collist] table1.txt [table2.txt ... ]'
+    print 'Example: python ~/python/tab2db.py -s "," -n "hrs,mrate,lat,lon" -t rrrr -c "1,2,5" RT970925.DAT'
     sys.exit()
   arg = optparse.OptionParser()
   arg.add_option("-s",action="store",type="string",dest="separator")
   arg.add_option("-n",action="store",type="string",dest="colname")
   arg.add_option("-t",action="store",type="string",dest="coltype")
+  arg.add_option("-c",action="store",type="string",dest="collist")
   arg.set_defaults(separator=None)
   arg.set_defaults(colname=None)
   arg.set_defaults(coltype=None)
+  arg.set_defaults(collist=None)
   opt,args = arg.parse_args()
 
   for fName in args:
     print '\nRunning makeDb for file ',fName
-    makeDb(fName,separator=opt.separator,colname=opt.colname,coltype=opt.coltype)
+    makeDb(fName,separator=opt.separator,colname=opt.colname,coltype=opt.coltype,collist=opt.collist)
     dbFile = fName + '.db'
     print str(utilDb.db2List(dbFile,'select sql from sqlite_master where type="table"')[0][0])
