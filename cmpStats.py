@@ -9,9 +9,12 @@ def writeStats(cmpOut,obsData,preData,colNames,head=False,tail='\n'):
   print 'nObs = ',nObs
 
   if head:
-    cmpOut.write('-------------------------------------------------------%s'%tail)
-    cmpOut.write('            FB    NMSE    MG    VG     FAC2  FAC5   FACBar%s'%tail)
-    cmpOut.write('-------------------------------------------------------%s'%tail)
+    #cmpOut.write('-------------------------------------------------------%s'%tail)
+    #cmpOut.write('            FB    NMSE    MG    VG     FAC2  FAC5   FACBar%s'%tail)
+    #cmpOut.write('-------------------------------------------------------%s'%tail)
+    cmpOut.write('-------------------------------------------------%s'%tail)
+    cmpOut.write('            FB    NMSE    MG    VG     FAC2  FAC5%s'%tail)
+    cmpOut.write('-------------------------------------------------%s'%tail)
 
   for ncol in range(len(colNames)):
     #
@@ -44,7 +47,8 @@ def writeStats(cmpOut,obsData,preData,colNames,head=False,tail='\n'):
     if "/" in colNames[ncol]:
       cmpOut.write( '%6s   %6.3f %6.3f %6.3f %6.3f %6s %6s %6.3f%s'%(colNames[ncol],FB,NMSE,MG,VG,'-','-',facbar,tail))
     else:
-      cmpOut.write( '%6s   %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6s%s'%(colNames[ncol],FB,NMSE,MG,VG,fac2,fac5,'-',tail))
+      #cmpOut.write( '%6s   %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6s%s'%(colNames[ncol],FB,NMSE,MG,VG,fac2,fac5,'-',tail))
+      cmpOut.write( '%6s   %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %s'%(colNames[ncol],FB,NMSE,MG,VG,fac2,fac5,tail))
   return
 
 if __name__ == '__main__':
