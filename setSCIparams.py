@@ -356,10 +356,16 @@ def chngNml(inFile,outFile,KeyNml,KeyPatt,tail):
           addNmlEnd = ''
           if line.strip().endswith('/'):
             addNmlEnd = '/'
-          line = matchKey.group(1) + nmlVal + matchKey.group(3) + addNmlEnd + tail
           if nmlKey == 'metfile':
-            nLen = len(line.strip().split('@')[1])
-            line = matchKey.group(1) + '%03d'%nLen + nmlVal + matchKey.group(3) + tail
+            metFiles = nmlVal.strip().split(';')
+            line = ''
+            for metFile in metFiles:
+              nLen = len(metFile.strip())
+              line += '   1 @%03d'%nLen + metFile.strip()
+            line += tail
+          else:
+            line = matchKey.group(1) + nmlVal + matchKey.group(3) + addNmlEnd + tail
+             
           if nmlKey == 'reltyp' and nmlVal == 'C':
             nmlFile.write(' %s%g,\n'%('TDUR = ',KeyNml['tdur']))
             print '%s = %s'%('TDUR',KeyNml['tdur'])
@@ -430,7 +436,9 @@ def readKeyNml(nmlFile):
       if len(line.strip()) > 1:
         key,value = line.strip().split('=')
         key = key.strip()
-        value = value.strip().replace(' ','') + ','
+        value = value.strip().replace(' ','')
+        if key != 'metfile':
+          value += ','
         KeyNml.update({key.strip():value.strip()})
     fileinput.close()
     print '  New values - '
@@ -455,7 +463,7 @@ def runSci(prjName,myEnv=None,binDir=None,templateName='',KeyNml=None,nFlt=30,rT
   # Remove old output files
   pattDos = re.compile(".+\.dos\d+")
   inpList = ['inp','msc','scn','sen']
-  outList = ['.smp','.log','.prj','.puf','.dos','.err','.rst']
+  outList = ['.smp','.log','.prj','.puf','.dos','.err','.rst','.smp.db']
   
   if len(templateName) > 0:
     cleanList = inpList + outList
