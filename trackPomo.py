@@ -2,6 +2,7 @@
 import os
 import sys
 import time
+import subprocess
 import fileinput
 
 class Task():
@@ -20,7 +21,10 @@ class Tasks():
    def add(self,name,estP,verbose=False):
      myTask = Task()
      myTask.add(name,float(estP))
-     self.taskList.append(myTask)
+     if name == 'Brk':
+       self.taskList.insert(0,myTask)
+     else:  
+       self.taskList.append(myTask)
      if verbose:
        tno = len(self.taskList)-1
        print 'Added task %d: %s, %g'%(tno,self.taskList[tno].name,self.taskList[tno].estP)
@@ -47,13 +51,16 @@ class Tasks():
    def update(self,taskNo,tadd,twork):
      self.taskList[taskNo].totalT += tadd
      self.taskList[taskNo].actP += tadd/twork
+     #print 'Total time = ',self.taskList[taskNo].totalT,tadd,twork,tadd/twork,\
+     #       taskNo,self.taskList[taskNo].actP 
    def show(self,startNo=0):
-     print '\n==========================='
-     print 'No.  Name  EstP  ActP Ttime'
-     print '==========================='
+     print '===================================================='
+     print 'No.  Name                            EstP ActP Ttime'
+     print '===================================================='
      for tno in range(startNo,len(self.taskList)):
-       print tno,self.taskList[tno].name,self.taskList[tno].estP,self.taskList[tno].actP,self.taskList[tno].totalT
-     print '==========================='
+       print '%02d   %-32s %3.1f  %3.1f  %3.1f'%(tno,self.taskList[tno].name,self.taskList[tno].estP,\
+             self.taskList[tno].actP,self.taskList[tno].totalT)
+     print '===================================================='
        
 display = lambda x: sys.stdout.write(str(x)+"\n")
 
@@ -61,18 +68,23 @@ def show(msg):
   sys.stdout.write(msg + " ")
   sys.stdout.flush()
 
-WORK_TICK  = "/usr/share/sounds/gnome/default/alerts/drip.ogg"
-REST_TICK  = "/usr/share/sounds/gnome/default/alerts/drip.ogg"
-ALARM      = "/usr/share/sounds/gnome/default/alerts/drip.ogg"
+WORK_TICK = "/home/user/bnc/Music/drip.ogg"
+REST_TICK = "/home/user/bnc/Music/drip.ogg"
+ALARM     = "/home/user/bnc/Music/glass2.ogg"
 DEV_NULL   = open("/dev/null","w")
 
-def tick(msg, duration, myTasks, tNo):
+def tick(msg, duration, tFile, myTasks, tNo):
   "Print remaining mins for the duration given"
   global tStep
+  
+  cmd = ["ogg123", tFile]
+  p = subprocess.Popen(cmd, stdout = DEV_NULL, stderr = subprocess.PIPE)
+  p.wait()
+
   nSteps = int(duration/tStep)
   display(msg + '  %d'%(nSteps*tStep))
   for iStep in range(nSteps):
-    time.sleep(tStep*60)
+    time.sleep(tStep*60.)
     if iStep == 0:
       show('     %d'%(tStep*(nSteps-iStep-1)))
     else:
@@ -82,9 +94,9 @@ def tick(msg, duration, myTasks, tNo):
 
 def alarm(msg, alarm):
   "Plays the alarm sound specified by alarm"
-  #cmd = ["mpg123", alarm]
-  #p = subprocess.Popen(cmd, stdout = DEV_NULL, stderr = subprocess.PIPE)
-  #p.wait()
+  cmd = ["ogg123", alarm]
+  p = subprocess.Popen(cmd, stdout = DEV_NULL, stderr = subprocess.PIPE)
+  p.wait()
   display(" ")
   return
 
@@ -100,17 +112,25 @@ def readList(inputFile):
   completeList = []
   for line in fileinput.input(inputFile):
     if not line.startswith('#'):
-      (name,estP) = line.strip().split(',')
-      completeList.append([name,estP])
+      (nbr,name,estP) = line.strip().split(',')
+      completeList.append([name,float(estP)])
+  print '======================================='
+  print 'No. Name                             Np'
+  print '======================================='
   for tno,task in enumerate(completeList):
-    print tno,task[tno][0]
-  tincl = rawinput('Enter taskNos to include').split()
+    print '%02d %-32s %2.0f '%(tno+1,task[0],task[1])
+  tincl = map(int,raw_input('\nEnter taskNos to include ').split())
+  print '\n'
+  brkP = 0
   myTasks = Tasks()
-  myTasks.add('Mauj',0)
   for tno,task in enumerate(completeList):
-    if tno in tincl: 
+    if tno+1 in tincl: 
+      name,estP = task[0].strip(),task[1]
       myTasks.add(name,estP,verbose=True)
+      brkP += estP
+  myTasks.add('Brk',brkP)
   return(myTasks)
+  print '\n'
 
 def saveList(inputFile,myTasks):
   fTask = open(inputFile,"a",0)
@@ -140,16 +160,16 @@ def runPomo(myTasks,twork,trest):
         (tm_year,tm_mon,tm_mday,tm_hour,tm_min,tm_sec,tm_wday,tm_yday,tm_isdst) = time.localtime()
         if taskNo > 0:
           msg = " %s (%02d:%02d) "%(curTask.name, tm_hour,tm_min)
-          tick('(%02d)'%(int(curTask.actP)+1) + msg, twork,  myTasks, taskNo)
+          tick('(%02d)'%(int(curTask.actP)+1) + msg, twork,  WORK_TICK, myTasks, taskNo)
           alarm(msg, ALARM)
         if tm == nTimes-1:
-          msg = '     Aish'
-          tick('(%02d)'%(int(curTask.actP)+1) + msg,  trest*2,  myTasks, taskNo)
+          msg = " %s (%02d:%02d) "%('Lbrk', tm_hour,tm_min)
+          tick('(%02d)'%(int(curTask.actP)+1) + msg,  trest*2,  REST_TICK, myTasks, 0)
           alarm(msg, ALARM)
           if not doMore(myTasks): return 0
         else:
-          msg = '     Mauj'
-          tick('(%02d)'%(int(curTask.actP)+1) + msg,  trest,  myTasks, taskNo)
+          msg = " %s (%02d:%02d) "%('Brk', tm_hour,tm_min)
+          tick('(%02d)'%(int(curTask.actP)+1) + msg,  trest,  REST_TICK, myTasks, 0)
           alarm(msg, ALARM)
     except KeyboardInterrupt:
       if not doMore(myTasks): return 0
@@ -181,10 +201,12 @@ if __name__ == "__main__":
   inputFile = '/home/user/bnc/notes/trackPomo/tasklist.tpi'
   print 'Reading tasks from ',inputFile
   myTasks = readList(inputFile)
+  print myTasks.show()
   #
   editList = raw_input('\nChange task list (y/n)? ')
-  if editList[0].lower() == 'y':
-    myTasks = chngList(inputFile,myTasks)
-    saveList(inputFile,myTasks)
+  if len(editList.strip()) > 0:
+    if editList[0].lower() == 'y':
+      myTasks = chngList(inputFile,myTasks)
+      saveList(inputFile,myTasks)
   #
-  #runPomo(myTasks,twork,trest)
+  runPomo(myTasks,twork,trest)
