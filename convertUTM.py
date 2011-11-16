@@ -51,7 +51,7 @@ class convertUTM(object):
 
     self.latd = 0. #latitude in degrees
     #self.phi = 0  #latitude (north +, south -), but uses phi in reference
-    self.lng = 0.  #Longitude (e = +, w = -) - can't use long - reserved word
+    self.lng = 0.  #Longitude (e = +, w = -) 
     self.lng0 = 0.  #longitude of central meridian
     self.lngd = 0.  #longitude in degrees
    
@@ -72,9 +72,9 @@ class convertUTM(object):
     '''Convert Latitude and Longitude to UTM'''
     #Input Geographic Coordinates lngd, latd
     if self.latd < -90. or self.latd > 90.:
-      print "Latitude must be between -90 and 90"
+      print "Latitude must be between -90 and 90. Input is ",self.latd
     if self.lngd < -180. or self.lngd > 180.:
-      print "Latitude must be between -180 and 180"
+      print "Longitude must be between -180 and 180. Input is ",self.lngd
 
     phi = self.latd*self.drad  #Convert latitude to radians
     self.lng = self.lngd*self.drad  #Convert longitude to radians

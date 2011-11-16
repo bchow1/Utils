@@ -40,7 +40,7 @@ def setColNames(line,separator,collist=None):
       if i+1 in collist:
         cNames.append(colName)
     colNames = cNames
-  print 'Column names = ',colNames
+  #print 'Column names = ',colNames
   return colNames
 
 def setColTypes(colValues):
@@ -71,7 +71,7 @@ def initDb(fName,colNames,colTypes):
       createStr += ')'
     else:
       createStr += ', '
-  print '\n',createStr
+  #print '\n',createStr
   dbCur.execute(createStr)
   return (dbCur,dbConn)
 
@@ -98,14 +98,14 @@ def insertDb(dbCur,nCol,colTypes,colValues):
       insertStr += ')'
     else:
       insertStr += ', '
-  print insertStr
+  #print insertStr
   dbCur.execute(insertStr)
   return
 
 def makeDb(fName,separator=None,headLineNo=1,colname=None,coltype=None,collist=None):
 
   # Get column separator 
-  print 'Using Separator = ',separator
+  #print 'Using Separator = ',separator
 
   # Get column names 
   if colname is None:
@@ -128,7 +128,7 @@ def makeDb(fName,separator=None,headLineNo=1,colname=None,coltype=None,collist=N
         colTypes.append('real')
       else:
         colTypes.append('string')
-  print 'Using Column types = ',colTypes
+  #print 'Using Column types = ',colTypes
 
   if collist is None:
     colList = None
@@ -145,7 +145,7 @@ def makeDb(fName,separator=None,headLineNo=1,colname=None,coltype=None,collist=N
           colList.append(icol) 
       else:
         colList.append(int(colNo)) 
-    print 'Using only columns from column list = ',colList
+    #print 'Using only columns from column list = ',colList
 
   dbCur = None
   lWarn = True
@@ -181,7 +181,7 @@ def makeDb(fName,separator=None,headLineNo=1,colname=None,coltype=None,collist=N
   if colTypes is not None:
     dbConn.commit()
     dbConn.close()
-    print 'Created db file for ',fName
+    #print 'Created db file for ',fName
   return
 
 if __name__ == '__main__':
