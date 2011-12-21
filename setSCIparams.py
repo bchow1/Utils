@@ -389,9 +389,13 @@ class Env:
     self.hpacstub = 'hpacstub'
     self.plotstub = 'plotstub'
 
-def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,compiler=None,version=None):
+def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,iniFile=None,compiler=None,version=None):
   if not myEnv:
     myEnv = Env()
+  if iniFile is not None:
+    iniFile = "-I:" + iniFile
+  else:
+    iniFile = "-I:" 
   if sys.platform == 'win32':
     if not binDir:
       SCIPUFF_BASEDIR,version = os.path.split(binDir)
@@ -408,8 +412,8 @@ def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,compiler=None,version=Non
     urbdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\nonurban"  + "\\" + version
     vendir = SCIPUFF_BASEDIR + "\\vendor" 
     myEnv.env["PATH"] = "%s;%s;%s;%s" % (bindir,urbdir,vendir,OldPath)
-    myEnv.hpacstub = ["hpacstub.exe","-I:","-M:10000"]
-    myEnv.plotstub = ["plotstub.exe","-I:"]
+    myEnv.hpacstub = ["hpacstub.exe",iniFile,"-M:10000"]
+    myEnv.plotstub = ["plotstub.exe",iniFile]
     myEnv.tail = '\r\n'
   else:
     if binDir:
@@ -420,8 +424,8 @@ def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,compiler=None,version=Non
     myEnv.env["SCIPUFF_BASEDIR"] = SCIPUFF_BASEDIR
     myEnv.env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran/x86_32:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
     myEnv.env["LD_LIBRARY_PATH"] = myEnv.env["LD_LIBRARY_PATH"] + ':' + SCIPUFF_BASEDIR
-    myEnv.hpacstub  = ["%s/hpacstub" % SCIPUFF_BASEDIR,"-I:","-M:10000"]
-    myEnv.plotstub  = ["%s/plotstub" % SCIPUFF_BASEDIR,"-I:"]
+    myEnv.hpacstub  = ["%s/hpacstub" % SCIPUFF_BASEDIR,iniFile,"-M:10000"]
+    myEnv.plotstub  = ["%s/plotstub" % SCIPUFF_BASEDIR,iniFile]
     myEnv.tail = '\n'
     print myEnv.env["LD_LIBRARY_PATH"]
   print 'Path = ',myEnv.env["PATH"]
