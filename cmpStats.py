@@ -9,12 +9,12 @@ def writeStats(cmpOut,obsData,preData,colNames,head=False,tail='\n'):
   print 'nObs = ',nObs
 
   if head:
-    #cmpOut.write('-------------------------------------------------------%s'%tail)
-    #cmpOut.write('            FB    NMSE    MG    VG     FAC2  FAC5   FACBar%s'%tail)
-    #cmpOut.write('-------------------------------------------------------%s'%tail)
-    cmpOut.write('-------------------------------------------------%s'%tail)
-    cmpOut.write('            FB    NMSE    MG    VG     FAC2  FAC5%s'%tail)
-    cmpOut.write('-------------------------------------------------%s'%tail)
+    cmpOut.write('----------------------------------------------------------%s'%tail)
+    cmpOut.write('            FB    NMSE    MG    VG     FAC2  FAC5   FACBar%s'%tail)
+    cmpOut.write('----------------------------------------------------------%s'%tail)
+    #cmpOut.write('-------------------------------------------------%s'%tail)
+    #cmpOut.write('            FB    NMSE    MG    VG     FAC2  FAC5%s'%tail)
+    #cmpOut.write('-------------------------------------------------%s'%tail)
 
   for ncol in range(len(colNames)):
     #
@@ -26,6 +26,15 @@ def writeStats(cmpOut,obsData,preData,colNames,head=False,tail='\n'):
     #
     FB = 2.*(obsAvg-preAvg)/(obsAvg+preAvg)
     NMSE = np.mean((obs-pre)**2)/(obsAvg*preAvg)
+    if ncol == 5:
+      sd = 0.
+      for i in range(len(obs)):
+        sd += np.log(obs[i]) - np.log(pre[i])
+        print '%7.2f %7.2f %7.2f %7.2f %7.2f %7.2f'%(obs[i],pre[i],np.log(obs[i]),np.log(pre[i]),np.log(obs[i]) - np.log(pre[i])-0.16,sd)
+      print '%7.2f %7.2f'%(sd/float(len(obs)),np.exp(sd/float(len(obs))))
+      gom = np.mean(np.log(obs))
+      gpm = np.mean(np.log(pre))
+      print '%7.2f %7.2f %7.2f'%(gom,gpm,np.exp(gom-gpm))
     MG = np.exp(np.mean(np.log(obs) - np.log(pre)))
     VG = np.exp(np.mean((np.log(obs) - np.log(pre))**2))
     fac2 = -999.
@@ -49,6 +58,9 @@ def writeStats(cmpOut,obsData,preData,colNames,head=False,tail='\n'):
     else:
       #cmpOut.write( '%6s   %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6s%s'%(colNames[ncol],FB,NMSE,MG,VG,fac2,fac5,'-',tail))
       cmpOut.write( '%6s   %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %s'%(colNames[ncol],FB,NMSE,MG,VG,fac2,fac5,tail))
+  if head:
+    cmpOut.write('----------------------------------------------------------%s'%tail)
+  cmpOut.close()
   return
 
 if __name__ == '__main__':
