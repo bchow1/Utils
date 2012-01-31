@@ -38,7 +38,6 @@ def readImc(fName):
   nEqul = 0 
   nAmbt = 0 
   for spVal in spList:
-    spNam = '['+spVal[0].strip()+']'
     spTyp = spVal[1]
     if spTyp == 'F':
       nFast += 1
@@ -53,21 +52,27 @@ def readImc(fName):
     #print '\n=========='
     #print 'Species = ',spNam
     #print '=========='
-    nEqn = 0
-    for eqVal in eqList:
-      indx = eqVal.index(';')
-      eqn = eqVal[:indx]
-      if spNam in eqn:
-        #print eqn
-        nEqn += 1
-    print spNam,spTyp,nEqn
   print nFast,nSlow,nPart,nEqul,nAmbt, nFast+nSlow+nPart+nEqul+nAmbt
-  
+  return(spList,eqList)
+
+def getEqns(spNam,eqList):
+  print spNam
+  nEqn = 0
+  for eqVal in eqList:
+    indx = eqVal.index(';')
+    eqn = eqVal[:indx]
+    if spNam in eqn:
+      nEqn += 1
+      print nEqn,':',eqn
   return
     
 if __name__ == "__main__":
-    fName = raw_input('Enter imc file name :')
-    if len(fName) > 1:
-      if not fName.endswith('.imc'):
-        fName = fName + '.imc'
-    readImc(fName)
+  fName = raw_input('Enter imc file name :')
+  if len(fName) > 1:
+    if not fName.endswith('.imc'):
+      fName = fName + '.imc'
+  spList,eqList = readImc(fName)
+  print spList
+  spNam = raw_input('Enter species name :')
+  spNam = '['+spNam.strip()+']'
+  getEqns(spNam,eqList)
