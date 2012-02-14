@@ -348,7 +348,7 @@ def chngNml(inFile,outFile,KeyNml,KeyPatt,tail):
     print '\nCopying %s to %s' % (inNewFile,outNewFile)
     for line in fileinput.input(inNewFile):
       delKeyList = []
-      for nmlKey,nmlVal in KeyNml.iteritems():     
+      for nmlKey,nmlVal in KeyNml.iteritems():
         # Replace nmlKey
         pattKey  = KeyPatt[nmlKey]    
         matchKey = pattKey.match(line)
@@ -378,7 +378,12 @@ def chngNml(inFile,outFile,KeyNml,KeyPatt,tail):
     nmlFile.close()
     if outFile == 'TemporaryOut.tmp':
       # Replace the infile with outfile
-      os.rename(outNewFile,inNewFile)
+      if sys.platform == 'win32':
+        shutil.move(outNewFile,inNewFile)
+      else:
+        os.rename(outNewFile,inNewFile)
+      print outNewFile,' -> ',inNewFile
+      
     if len(KeyNml) == 0:
       break
 
@@ -387,7 +392,7 @@ class Env:
     self.env = os.environ.copy()
     self.tail = None
     self.hpacstub = 'hpacstub'
-    self.plotstub = 'plotstub'
+    self.scipp    = 'scipp'
 
 def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,iniFile=None,compiler=None,version=None):
   if not myEnv:
@@ -402,19 +407,21 @@ def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,iniFile=None,compiler=Non
       SCIPUFF_BASEDIR,compiler = os.path.split(SCIPUFF_BASEDIR)
     else:
       if not SCIPUFF_BASEDIR:
-        SCIPUFF_BASEDIR = "d:\SourceEstimation\Docs\Aamar\Paper2\Sources\bin"
+        SCIPUFF_BASEDIR = "d:\\hpac\\gitP2\\bin"
       if not compiler:
         compiler = 'intel'
       if not version:
         version = 'release'
     OldPath = myEnv.env["PATH"]
     bindir = SCIPUFF_BASEDIR + "\\" + compiler + "\\" + version
-    urbdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\nonurban"  + "\\" + version
+    urbdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\urban"  + "\\" + version
+    nurdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\nonurban"  + "\\" + version
     vendir = SCIPUFF_BASEDIR + "\\vendor" 
-    myEnv.env["PATH"] = "%s;%s;%s;%s" % (bindir,urbdir,vendir,OldPath)
+    #myEnv.env["PATH"] = "%s;%s;%s;%s" % (bindir,urbdir,vendir,OldPath)
+    myEnv.env["PATH"] = "%s;%s;%s;%s" % (bindir,urbdir,nurdir,vendir)
     myEnv.hpacstub = ["hpacstub.exe",iniFile,"-M:10000"]
-    myEnv.plotstub = ["plotstub.exe",iniFile]
-    myEnv.tail = '\r\n'
+    myEnv.scipp = ["scipp.exe",iniFile]
+    myEnv.tail = '\n'
   else:
     if binDir:
       SCIPUFF_BASEDIR = binDir
@@ -425,7 +432,7 @@ def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,iniFile=None,compiler=Non
     myEnv.env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran/x86_32:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
     myEnv.env["LD_LIBRARY_PATH"] = myEnv.env["LD_LIBRARY_PATH"] + ':' + SCIPUFF_BASEDIR
     myEnv.hpacstub  = ["%s/hpacstub" % SCIPUFF_BASEDIR,iniFile,"-M:10000"]
-    myEnv.plotstub  = ["%s/plotstub" % SCIPUFF_BASEDIR,iniFile]
+    myEnv.scipp  = ["%s/scipp" % SCIPUFF_BASEDIR,iniFile]
     myEnv.tail = '\n'
     print myEnv.env["LD_LIBRARY_PATH"]
   print 'Path = ',myEnv.env["PATH"]
@@ -523,12 +530,14 @@ def runSci(prjName,myEnv=None,binDir=None,templateName='',KeyNml=None,nFlt=30,rT
     else:
       isCont = 'n' + tail 
     # Setup Inputs for reverse run
-    Inputs = ('%s%s%s%d%s'% (prjName+tail,'y'+tail,isCont,nFlt,tail))
+    Inputs = ('%s%s%d%s'% (prjName+tail,isCont,nFlt,tail))
   else:
     # Setup Inputs for forward run
     Inputs = ('%s%s'% (prjName+tail,tail))
 
   # Run hpacstub
+  print 'Inputs = ',Inputs
+  
   run_cmd.Command(myEnv.env,myEnv.hpacstub,Inputs,tail)
 
 # Main Program
