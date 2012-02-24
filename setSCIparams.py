@@ -395,22 +395,22 @@ class Env:
     self.scipp    = 'scipp'
 
 def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,iniFile=None,compiler=None,version=None):
-  if not myEnv:
+  if myEnv is None:
     myEnv = Env()
   if iniFile is not None:
     iniFile = "-I:" + iniFile
   else:
     iniFile = "-I:" 
   if sys.platform == 'win32':
-    if not binDir:
+    if binDir is not None:
       SCIPUFF_BASEDIR,version = os.path.split(binDir)
       SCIPUFF_BASEDIR,compiler = os.path.split(SCIPUFF_BASEDIR)
     else:
-      if not SCIPUFF_BASEDIR:
+      if SCIPUFF_BASEDIR is not None:
         SCIPUFF_BASEDIR = "d:\\hpac\\gitP2\\bin"
-      if not compiler:
+      if compiler is not None:
         compiler = 'intel'
-      if not version:
+      if version is not None:
         version = 'release'
     OldPath = myEnv.env["PATH"]
     bindir = SCIPUFF_BASEDIR + "\\" + compiler + "\\" + version
@@ -418,15 +418,15 @@ def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,iniFile=None,compiler=Non
     nurdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\nonurban"  + "\\" + version
     vendir = SCIPUFF_BASEDIR + "\\vendor" 
     #myEnv.env["PATH"] = "%s;%s;%s;%s" % (bindir,urbdir,vendir,OldPath)
-    myEnv.env["PATH"] = "%s;%s;%s;%s" % (bindir,urbdir,nurdir,vendir)
-    myEnv.hpacstub = ["hpacstub.exe",iniFile,"-M:10000"]
+    myEnv.env["PATH"] = "%s;%s;%s;%s" % (bindir,nurdir,urbdir,vendir)
+    myEnv.hpacstub = [bindir+"\\hpacstub.exe",iniFile,"-M:10000"]
     myEnv.scipp = ["scipp.exe",iniFile]
     myEnv.tail = '\n'
   else:
-    if binDir:
+    if binDir is not None:
       SCIPUFF_BASEDIR = binDir
     else:
-      if not SCIPUFF_BASEDIR:
+      if SCIPUFF_BASEDIR is not None:
         SCIPUFF_BASEDIR="/home/user/bnc/SourceEstimation/FilterTests/src/gitP2/UNIX/FULL/bin/linux/gfort"
     myEnv.env["SCIPUFF_BASEDIR"] = SCIPUFF_BASEDIR
     myEnv.env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran/x86_32:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
@@ -459,21 +459,24 @@ def readKeyNml(nmlFile):
     print 'Error: Cannot find namelist value file'
   return KeyNml
 
-def runSci(prjName,myEnv=None,binDir=None,templateName='',KeyNml=None,nFlt=30,rType='INST',createPrj=''):
+def runSci(prjName,myEnv=None,binDir=None,templateName='',inpList=None,KeyNml=None,nFlt=30,rType='INST',createPrj=''):
 
   mySCIpattern = Pattern()
 
-  if not myEnv:
+  if myEnv is None:
     myEnv = Env()
 
-  if binDir or not myEnv.tail:
+  if binDir is not None or myEnv.tail is None:
     setEnv(myEnv,binDir=binDir)
 
   tail = myEnv.tail
 
+  print '\nPATH = ',myEnv.env["PATH"],'\n'
+
   # Remove old output files
   pattDos = re.compile(".+\.dos\d+")
-  inpList = ['inp','msc','scn','sen']
+  if inpList is None:
+    inpList = ['inp','msc','scn','sen']
   outList = ['.smp','.log','.prj','.puf','.dos','.err','.rst','.smp.db']
   
   if len(templateName) > 0:
@@ -507,7 +510,7 @@ def runSci(prjName,myEnv=None,binDir=None,templateName='',KeyNml=None,nFlt=30,rT
         print 'Warning: cannot find ',templateName+'.'+sfx
 
   #  Change namelists if requested
-  if KeyNml:
+  if KeyNml is not None:
     chngNml(prjName,prjName,KeyNml,mySCIpattern.pattNameList,tail)
 
   # Get run mode from inp file
