@@ -44,7 +44,10 @@ def readSmpDb(prjNames,cScale):
     # Get start and end times
     timeArray = db2Array(dbCur,'SELECT DISTINCT time,EpTime from smpTable')
     (timeMin,timeMax) = (min(timeArray[:,0]),max(timeArray[:,0]))
-    dtCol = np.diff(timeArray[:,1])
+    if len(timeArray) > 1:
+      dtCol = np.diff(timeArray[:,1])
+    else:
+      dtCol = np.array([0])
     print 'tMin = ',timeMin,', tMax = ',timeMax,', dt = ',dtCol[0],'(s)'
     (epTimeMin,epTimeMax) = (min(timeArray[:,1]),max(timeArray[:,1]))
     print 'epTMin = ',epTimeMin,', epTMax = ',epTimeMax
