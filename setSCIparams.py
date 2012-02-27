@@ -410,18 +410,18 @@ def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,iniFile=None,compiler=Non
       SCIPUFF_BASEDIR,version = os.path.split(binDir)
       SCIPUFF_BASEDIR,compiler = os.path.split(SCIPUFF_BASEDIR)
     else:
-      if SCIPUFF_BASEDIR is not None:
+      # set default directories
+      if SCIPUFF_BASEDIR is None:
         SCIPUFF_BASEDIR = "d:\\hpac\\gitP2\\bin"
-      if compiler is not None:
+      if compiler is None:
         compiler = 'intel'
-      if version is not None:
+      if version is None:
         version = 'release'
-    OldPath = myEnv.env["PATH"]
+    #OldPath = myEnv.env["PATH"]
     bindir = SCIPUFF_BASEDIR + "\\" + compiler + "\\" + version
     urbdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\urban"  + "\\" + version
     nurdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\nonurban"  + "\\" + version
     vendir = SCIPUFF_BASEDIR + "\\vendor" 
-    #myEnv.env["PATH"] = "%s;%s;%s;%s" % (bindir,urbdir,vendir,OldPath)
     myEnv.env["PATH"] = "%s;%s;%s;%s" % (bindir,nurdir,urbdir,vendir)
     myEnv.hpacstub = [bindir+"\\hpacstub.exe",iniFile,"-M:10000"]
     myEnv.scipp = [bindir+"\\scipp.exe",iniFile]
