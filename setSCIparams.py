@@ -111,6 +111,10 @@ class Pattern(object) :
     self.pattRelTime = re.compile("^Time(.+)\((.+?)\s+(.+)\s+\)")
     self.pattRelLoc  = re.compile("^Field max(.+):\s*(.+?)\s+(.+?)\s+(.+)")
 
+    # ini file keywords
+    self.pattSrcEst = re.compile(".*[SourceEstimation].*")
+    self.maxHits    = re.compile(".*MaxAdjointHits=(\d+)")
+    
     # sum file keywords
     self.pattMassEst = re.compile("^\s*Mass\s+Estimate(.+)")
 
@@ -420,7 +424,7 @@ def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,iniFile=None,compiler=Non
     #myEnv.env["PATH"] = "%s;%s;%s;%s" % (bindir,urbdir,vendir,OldPath)
     myEnv.env["PATH"] = "%s;%s;%s;%s" % (bindir,nurdir,urbdir,vendir)
     myEnv.hpacstub = [bindir+"\\hpacstub.exe",iniFile,"-M:10000"]
-    myEnv.scipp = ["scipp.exe",iniFile]
+    myEnv.scipp = [bindir+"\\scipp.exe",iniFile]
     myEnv.tail = '\n'
   else:
     if binDir is not None:
