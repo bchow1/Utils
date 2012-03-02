@@ -168,16 +168,16 @@ def createDb(fList,dbName):
     #print '\n Functions =\n',fncList,'\n'
     #print '\n Externals =\n',extList,'\n'
     #print '\n called subroutines =\n',calledList,'\n'
-    for fullSubName in subList:
-      subName = fullSubName.split('::')[-1].lower()
+    for fullSubName in subList+fncList:
+      subName = fullSubName.split('::')[-1].lower().strip()
       insertStr = "INSERT into subTable VALUES(%d, '%s', %d,'%s')"%(fileNo,fullSubName.split('::')[0],subNo,subName)
       #print '\n',insertStr
       dbCur.execute(insertStr)
       subNo += 1
-      for calledSub in calledList:
+      for calledSub in calledList+extList:
         callingSubName = calledSub.split('::')[1].lower()
         if subName == callingSubName:
-          insertStr = "INSERT into callTable VALUES('%s','%s')"%(subName,calledSub.split('::')[-1].lower())
+          insertStr = "INSERT into callTable VALUES('%s','%s')"%(subName,calledSub.split('::')[-1].lower().strip())
           #print '   ',insertStr
           dbCur.execute(insertStr)
     dbConn.commit()
@@ -186,10 +186,10 @@ def createDb(fList,dbName):
   return
 
 def getCallers(dbCur,subName):
-  selectStr = 'SELECT subName from callTable where calledSub="%s"'%subName
+  selectStr = 'SELECT subName from callTable where calledSub="%s"'%subName.lower().strip()
   callingSubs = utilDb.db2List(dbCur,selectStr)
   if len(callingSubs) == 0:
-   print '*******************'
+   print '*******************\n'
   for callingSub in callingSubs:
    subSubName = str(callingSub[0])
    print subName,'<-',subSubName
@@ -199,9 +199,20 @@ def getCallers(dbCur,subName):
   
 def getTree(subName,dbName):
   #
+  print os.getcwd()
   dbConn,dbCur = openDb(dbName)
+
+  selectStr = 'SELECT calledSub from callTable where subName="%s"'%subName.lower().strip()
+  calledSubs = utilDb.db2List(dbCur,selectStr)
   print '\n=========================='
-  print subName
+  print 'called from ',subName
+  print '=========================='
+  for calledSub in calledSubs:
+   subSubName = str(calledSub[0])
+   print '    ->',subSubName
+   
+  print '\n=========================='
+  print 'callers to ',subName
   print '=========================='
 
   callingSubs = getCallers(dbCur,subName)
@@ -209,14 +220,25 @@ def getTree(subName,dbName):
 
 if __name__ == '__main__':
 
-  #dbFile = 'SciEpri.db'
-  dbFile = 'scichem_v1900.db'
-  skipDirs = ['CVS']
-  if not os.path.exists(dbFile):
+  ver,subName = raw_input('Version [f|m], subroutine ? ').split(' ')
+  if ver == 'f':
+    dbFile = 'SciEpri.db'
+  elif ver == 'm':
+    dbFile = 'scichem_v1900.db'
+  else:
+    dbFile = None
+    
+  if dbFile is not None:
+    skipDirs = ['CVS']
+    #
     if dbFile == 'SciEpri.db':
-      fList = getFnames('d:\\hpac\\gitEPRI\\UNIX\\EPRI\\src')
+      baseDir = 'd:\\hpac\\gitEPRI\\UNIX\\EPRI\\src'
     if dbFile == 'scichem_v1900.db':
+      baseDir = 'd:\\EPRI\\SCICHEM_MADRID\\V1900\\src'
       skipDirs = ['pcscipuf','contri','ncar','noDll','ntinc','util','CVS']
-      fList = getFnames('d:\\EPRI\\SCICHEM_MADRID\\V1900\\src',skipDirs=skipDirs)
-    createDb(fList,dbFile)
-  getTree('init_diagnostics',dbFile)
+    #
+    os.chdir(baseDir)
+    if not os.path.exists(dbFile):
+      fList = getFnames(baseDir,skipDirs=skipDirs)
+      createDb(fList,dbFile)
+    getTree(subName,dbFile)
