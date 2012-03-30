@@ -52,7 +52,8 @@ def readImc(fName):
     #print '\n=========='
     #print 'Species = ',spNam
     #print '=========='
-  print nFast,nSlow,nPart,nEqul,nAmbt, nFast+nSlow+nPart+nEqul+nAmbt
+  print 'F: ',nFast,', S: ',nSlow,', P: ',nPart,', E: ',nEqul,', A: ',nAmbt,\
+        'Total: ',nFast+nSlow+nPart+nEqul+nAmbt
   return(spList,eqList)
 
 def getEqns(spNam,eqList):
@@ -67,12 +68,35 @@ def getEqns(spNam,eqList):
   return
     
 if __name__ == "__main__":
-  fName = raw_input('Enter imc file name :')
-  if len(fName) > 1:
-    if not fName.endswith('.imc'):
-      fName = fName + '.imc'
+  os.chdir('d:\\EPRI\\git\\runs\\cumberland')
+  fName = '071599_vo3.imc'
+  #fName = raw_input('Enter imc file name :')
+  #if len(fName) > 1:
+  #  if not fName.endswith('.imc'):
+  #    fName = fName + '.imc'
   spList,eqList = readImc(fName)
-  print spList
-  spNam = raw_input('Enter species name :')
-  spNam = '['+spNam.strip()+']'
-  getEqns(spNam,eqList)
+  #print spList
+  ambList = []
+  for spVal in spList:
+    spTyp = spVal[1]
+    if spTyp != 'E':
+      ambList.append(spVal[0])
+  nsp = len(ambList)+1
+  print nsp
+  newAmbFile = open('newAmb.dat','w')
+  for line in fileinput.input('ambient.dat'):
+    if fileinput.lineno() == 1:
+      newAmbFile.write('%s'%line)
+      newAmbFile.write('%d\n'%(nsp-1))
+      for ambName in ambList:
+        newAmbFile.write('%8s\n'%ambName)
+    else :
+      newAmbFile.write('%s'%line)
+    spNo = (fileinput.lineno()-3)%nsp
+    #if spNo >= 0 and spNo < 36:
+    #  print spNo+1,ambList[spNo],line.strip()
+    #if fileinput.lineno()/nsp == 2:
+    #  break
+  #spNam = raw_input('Enter species name :')
+  #spNam = '['+spNam.strip()+']'
+  #getEqns(spNam,eqList)
