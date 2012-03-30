@@ -185,17 +185,26 @@ def createDb(fList,dbName):
 
   return
 
-def getCallers(dbCur,subName):
+def getCallers(dbCur,subName,subList,lastSubList):
   selectStr = 'SELECT subName from callTable where calledSub="%s"'%subName.lower().strip()
   callingSubs = utilDb.db2List(dbCur,selectStr)
   if len(callingSubs) == 0:
-   print '*******************\n'
+    print '*******************\n'
   for callingSub in callingSubs:
-   subSubName = str(callingSub[0])
-   print subName,'<-',subSubName
-   if subName != subSubName:
-     getCallers(dbCur,subSubName)
-  return
+    subSubName = str(callingSub[0])
+    subString = subName + ':' + subSubName
+    if subName != subSubName and subString not in subList:
+      if len(subList) > 0:
+        if subList[-1] != lastSubList and subList[-1].split(':')[1] == subName:
+          print '            |<- ',subSubName
+        else:
+          print subName,'<-',subSubName
+        lastSubList = subList[-1]
+      else:
+        print subName,'<-',subSubName
+      subList.append(subString)
+      getCallers(dbCur,subSubName,subList,lastSubList)
+  return subList
   
 def getTree(subName,dbName):
   #
@@ -208,14 +217,16 @@ def getTree(subName,dbName):
   print 'called from ',subName
   print '=========================='
   for calledSub in calledSubs:
-   subSubName = str(calledSub[0])
-   print '    ->',subSubName
+    subSubName = str(calledSub[0])
+    print '    ->',subSubName
    
   print '\n=========================='
   print 'callers to ',subName
-  print '=========================='
+  print '==========================\n'
 
-  callingSubs = getCallers(dbCur,subName)
+  subList = []
+  lSub = ''
+  getCallers(dbCur,subName,subList,lSub)
   closeDb(dbConn,dbCur)
 
 if __name__ == '__main__':
