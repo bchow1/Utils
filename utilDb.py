@@ -167,8 +167,8 @@ def createSam(nDat,vnames,sCur,smpLoc):
     for vname in vnames:
       insertStr = "INSERT into samTable VALUES"
       smpID = (i-1)/nvar+1
-      (xSmp,ySmp) = map(float,(smpLoc[smpID-1][0:2]))
-      insertStr = insertStr + "(%d, '%s', '%03d',%15.5f,%15.5f,'%s')"%(i,vname,smpID,xSmp,ySmp,smpLoc[smpID-1][3])
+      (xSmp,ySmp,zSmp) = map(float,(smpLoc[smpID-1][0:3]))
+      insertStr = insertStr + "(%d, '%s', '%03d',%15.5f,%15.5f,%15.5f,'%s')"%(i,vname,smpID,xSmp,ySmp,zSmp,smpLoc[smpID-1][3])
       sCur.execute(insertStr)
       i += 1 
   
@@ -291,7 +291,7 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern,createTable):
 
     # Read sampler output data
     sCur.execute('DROP table if exists samTable')
-    sCur.execute('CREATE table samTable (colNo integer, varName string, smpID string, xSmp real, ySmp real, matName string)')
+    sCur.execute('CREATE table samTable (colNo integer, varName string, smpID string, xSmp real, ySmp real, zSmp real, matName string)')
     nt = 0
     for line in fileinput.input( mySciFiles.smpFile ):
       #print fileinput.lineno(),': ',line
@@ -326,8 +326,10 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern,createTable):
           elif nNames > nDat:
              nt = addData(line,nDat,sCur,nt,isReverse=isReverse)
     print 'No. of time breaks = ',nt  
-    smpConn.commit()   
+    smpConn.commit()
     sCur.execute('select max(value) from smpTable d,samTable c where d.colNo = c.colNo and varName=?',(vnames[0],))
+    sCur.execute('CREATE index colID on samTable(colNo)')
+    sCur.execute('CREATE index colID on smpTable(colNo)')
     #c.execute('SELECT DISTINCT itime,timeString FROM indr WHERE itime_local = ?',(it,))
     print 'Max %s = %15.5e'%(vnames[0],float(sCur.fetchone()[0]))
     fileinput.close()
@@ -441,11 +443,13 @@ if __name__ == '__main__':
   arg.add_option("-a",action="store",type="string",dest="samFiles")
   arg.set_defaults(prjNames=None,samFiles=None)
   opt,args = arg.parse_args()
+  #
+  os.chdir('d:\\EPRI\\git\\runs\\cumberland')
+  prjNames = ['071599_vo3_sm']
   # Check arguments
   if not opt.prjNames:
     print 'Error: prjNames must be specified'
     print 'Usage: smp2db.py -p prjName1[:prjName2...] [-a prj1.sam[:prj2.sam...]]'
-    sys.exit()
   else:
     prjNames = opt.prjNames.split(':')
   if opt.samFiles:
