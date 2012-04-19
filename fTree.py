@@ -205,33 +205,49 @@ def getCallers(dbCur,subName,subList,lastSubList):
       subList.append(subString)
       getCallers(dbCur,subSubName,subList,lastSubList)
   return subList
+
+def getCalled(dbCur,subName,subList,indent):
+  selectStr = 'SELECT DISTINCT calledSub from callTable where subName="%s"'%subName.lower().strip()
+  calledSubs = utilDb.db2List(dbCur,selectStr)
   
+  if len(calledSubs) > 0:
+    indent += "|--"
+    for calledSub in calledSubs:
+      subSubName = str(calledSub[0]) 
+      print '%s->%s'%(indent,subSubName)
+      if subSubName not in subList:
+        subList.append(subSubName)
+        getCalled(dbCur,subSubName,subList,indent)
+  else:
+    indent = indent[:-2]
+  return
+
 def getTree(subName,dbName):
   #
   print os.getcwd()
   dbConn,dbCur = openDb(dbName)
 
-  selectStr = 'SELECT calledSub from callTable where subName="%s"'%subName.lower().strip()
-  calledSubs = utilDb.db2List(dbCur,selectStr)
   print '\n=========================='
   print 'called from ',subName
-  print '=========================='
-  for calledSub in calledSubs:
-    subSubName = str(calledSub[0])
-    print '    ->',subSubName
-   
+  print '============================'
+  subList = []
+  indent = ""
+  getCalled(dbCur,subName,subList,indent)
+  
   print '\n=========================='
   print 'callers to ',subName
   print '==========================\n'
 
   subList = []
   lSub = ''
-  getCallers(dbCur,subName,subList,lSub)
+  #getCallers(dbCur,subName,subList,lSub)
   closeDb(dbConn,dbCur)
 
 if __name__ == '__main__':
 
-  ver,subName = raw_input('Version [f|m], subroutine ? ').split(' ')
+  #ver,subName = raw_input('Version [f|m], subroutine ? ').split(' ')
+  ver = 'f'
+  subName = 'stepchem'
   if ver == 'f':
     dbFile = 'SciEpri.db'
   elif ver == 'm':
@@ -243,7 +259,7 @@ if __name__ == '__main__':
     skipDirs = ['CVS']
     #
     if dbFile == 'SciEpri.db':
-      baseDir = 'd:\\hpac\\gitEPRI\\UNIX\\EPRI\\src'
+      baseDir = 'd:\\hpac\\gitEPRI\\src'
     if dbFile == 'scichem_v1900.db':
       baseDir = 'd:\\EPRI\\SCICHEM_MADRID\\V1900\\src'
       skipDirs = ['pcscipuf','contri','ncar','noDll','ntinc','util','CVS']
