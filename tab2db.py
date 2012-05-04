@@ -40,14 +40,19 @@ def setColNames(line,separator,collist=None):
       if i+1 in collist:
         cNames.append(colName)
     colNames = cNames
-  #print 'Column names = ',colNames
+
+  # Rename duplicates
+  for colNo in range(len(colNames)-1):
+    if colNames[colNo] == colNames[colNo-1]:
+      colNames[colNo-1] = colNames[colNo] + '1'
+      colNames[colNo]   = colNames[colNo] + '2'
   return colNames
 
 def setColTypes(colValues):
   colTypes = []
   for colValue in colValues: 
     try:
-      colValue = ast.literal_eval(colValue)
+      colValue = ast.literal_eval(colValue.strip())
       if isinstance(colValue,int):
         colTypes.append('integer')
       elif isinstance(colValue,float):
@@ -149,6 +154,7 @@ def makeDb(fName,separator=None,headLineNo=1,colname=None,coltype=None,collist=N
 
   dbCur = None
   lWarn = True
+  fileinput.close()
   for line in fileinput.input(fName):
     if fileinput.lineno() < headLineNo:
       continue
@@ -208,6 +214,7 @@ if __name__ == '__main__':
 
   for fName in args:
     print '\nRunning makeDb for file ',fName
+    #print opt.separator,opt.colname,opt.coltype,opt.collist
     makeDb(fName,separator=opt.separator,colname=opt.colname,coltype=opt.coltype,collist=opt.collist)
     dbFile = fName + '.db'
     print str(utilDb.db2List(dbFile,'select sql from sqlite_master where type="table"')[0][0])
