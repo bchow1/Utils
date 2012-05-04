@@ -88,6 +88,7 @@ def csv2Db(prjName):
     createStr = createStr[:-2] + ')'
     if tNo < 2: print '\n',createStr
     dbCur.execute(createStr)
+  dbConn.commit()
   # Insert data for tables
   nPVar = len(puffList)
   for line in fileinput.input(csvFile):
@@ -117,8 +118,10 @@ def csv2Db(prjName):
       insertStr = insertStr[:-2] + ')'
       #print '\n',insertStr
       dbCur.execute(insertStr)
+    dbConn.commit()
   fileinput.close()
 
+  dbConn.commit()
   dbCur.close()
   dbConn.close()
   
@@ -161,6 +164,7 @@ if __name__ == '__main__':
   #createCSV(env,prjName,readpuf)
   #
   csv2Db(prjName)
+  #select time,NO from pufftable p,masstable m where p.puffNo=m.puffNo order by time;
 
 '''
 fig = plt.figure()
