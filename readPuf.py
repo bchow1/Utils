@@ -1,70 +1,168 @@
 #
 import os
 import sys
+import ast
 import subprocess
 import fileinput
+import sqlite3
 import numpy as np
 import matplotlib.pyplot as plt
 #
 import run_cmd
+import tab2db
 import setSCIparams as SCI 
 
-env = os.environ.copy()
-if sys.platform == 'win32':
-  SCIPUFF_BASEDIR="D:\\hpac\\SCIPUFF\\bin"
-  compiler = 'intel'
-  version = 'debug'
-  OldPath = env["PATH"]
-  bindir = SCIPUFF_BASEDIR + "\\" + compiler + "\\" + version
-  urbdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\nonurban"  + "\\" + version
-  vendir = SCIPUFF_BASEDIR + "\\vendor" 
-  env["PATH"] = "%s;%s;%s;%s" % (bindir,urbdir,vendir,OldPath)
-  print env["PATH"]
-  scipp  = ["%s\\scipp.exe" % bindir,"-I:"]
-  #scipp = ["scipp.exe","-I:"]
-  tail = '\r\n'
-else:
-  SCIPUFF_BASEDIR = "/home/user/bnc/hpac/fromSCIPUFF/Repository/UNIX/FULL/bin/linux/lahey"
-  scipp = ["%s/postprocess" % SCIPUFF_BASEDIR,"-I:"]
-  env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran/x86_32:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
-  env["LD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH"] + ':' + SCIPUFF_BASEDIR
-  tail = '\n'
+def createCSV(env,prjName,readpuf):
 
-#myEnv = SCI.setEnv(SCIPUFF_BASEDIR=SCIPUFF_BASEDIR)
+  pufFile = prjName + '.puf'
+  if not os.path.exists(pufFile):
+    print 'Error: cannot file puf file ',pufFile
 
-print scipp
+  outFile = prjName + '.csv'
+  if os.path.exists(outFile):
+    os.remove(outFile)
+    
+  if env["SCICHEM"] == "True":
+    Inputs = ('%s%s %s%s %s%s%s %s%s %s%s %s'% ('go ',pufFile,tail, 'time -1',tail, 'file CSV:',outFile,tail, \
+                                                'go ',tail, 'exit', tail))
+    print Inputs  
+    run_cmd.Command(env,readpuf,Inputs,tail)
+  else: 
+    Inputs = (' %s%s %s%s %s%s%s %s%s'% ('RP',tail,'file TXT:'+ outFile,tail, 'go ',prjName,tail, 'exit', tail))
+    run_cmd.Command(env,scipp,Inputs,tail)
 
-rNo = 1
-prjName = 'r%02dm.puf'%rNo
+def csv2Db(prjName):
+  csvFile = prjName + '.csv'
+  dbFile  = prjName + '_puff.db'
+  if os.path.exists(dbFile):
+    os.remove(dbFile)
+  dbConn = sqlite3.connect(dbFile)
+  dbCur  = dbConn.cursor()
+  # Drop tables
+  dbCur.execute('DROP table if exists puffTable')
+  dbCur.execute('DROP table if exists massTable')
+  dbCur.execute('DROP table if exists concTable')
+  dbCur.execute('DROP table if exists ambTable')
+  # Get puff var names and species names
+  for line in fileinput.input(csvFile):
+    varNames = line.strip().replace('#','').split(',')
+    break
+  fileinput.close()
+  massPre = 'M_'
+  concPre = 'C_'
+  ambPre  = 'A_'
+  sclPre  = 'S_'
+  puffList = []
+  colNos   = {}
+  spNames  = []
+  for vNo,vName in enumerate(varNames):
+    vName = vName.strip().replace('-','_')
+    colNos.update({vName:vNo})
+    vPrefix = vName[:2]
+    if vPrefix == concPre or \
+       vPrefix == ambPre  or \
+       vPrefix == sclPre:
+      continue
+    elif vPrefix == massPre:
+      spNames.append(vName[2:])
+    else:
+      puffList.append(vName)
+  #print varNames
+  #keys = colNos.keys()
+  #keys.sort()
+  #for key in keys:
+  #  print colNos[key],key
+  print '\npuffList = ',puffList
+  print '\nspNames = ',spNames
+  massList = concList = ambList = spNames
+  
+  tableNames = ['puffTable','massTable','concTable','ambTable']
+  nameLists  = [puffList,massList,concList,ambList]
 
-outFile = 'readpuf_temp.out'
-if os.path.exists(outFile):
-  os.remove(outFile) 
-Inputs = (' %s%s %s%s %s%s%s %s%s'% ('RP',tail,'file TXT:'+ outFile,tail, 'go ',prjName,tail, 'exit', tail))
-run_cmd.Command(env,scipp,Inputs,tail)
-times = []
-for line in fileinput.input(outFile):
-  if fileinput.lineno() > 3:
-    times.append(line.split()[0])
+  # Create tables
+  for tNo,tName in enumerate(tableNames):
+    createStr = 'CREATE table %s ('%tName
+    createStr += 'puffNo int, '
+    for i in range(len(nameLists[tNo])):
+      createStr += nameLists[tNo][i] + ' real, '  
+    createStr = createStr[:-2] + ')'
+    if tNo < 2: print '\n',createStr
+    dbCur.execute(createStr)
+  # Insert data for tables
+  nPVar = len(puffList)
+  for line in fileinput.input(csvFile):
+    if fileinput.isfirstline():
+      continue
+    puffId = fileinput.lineno()-1
+    print puffId
+    colValues = line.strip().split(',')
+    for tNo,tName in enumerate(tableNames):
+      insertStr = 'INSERT into %s VALUES('%tName
+      insertStr += '%d ,'%puffId
+      for i in range(len(nameLists[tNo])):
+        colHead = nameLists[tNo][i]
+        if tName == 'massTable':
+          colHead = 'M_' + colHead
+        if tName == 'concTable':
+          colHead = 'C_' + colHead
+        if tName == 'ambTable':
+          colHead = 'A_' + colHead
+        try:
+          j   = colNos[colHead]
+          val = colValues[j]
+        except KeyError:
+          val = '-9999.'
+        #print colHead,j,val
+        insertStr += val + ', '  
+      insertStr = insertStr[:-2] + ')'
+      #print '\n',insertStr
+      dbCur.execute(insertStr)
+  fileinput.close()
 
+  dbCur.close()
+  dbConn.close()
+  
+if __name__ == '__main__':
 
-sigOutput = open('sigX.out',"w",0)
-sigDat = []
-for tval in times:
-  os.remove(outFile) 
-  Inputs = (' %s%s %s%s %s%8.3e%s %s%s %s%s%s %s%s'% ('RP',tail, 'file TXT:'+ outFile,tail, 'time ',float(tval),tail, 'var sxx si2',tail, \
-            'go ',prjName,tail, 'exit', tail))
-  run_cmd.Command(env,scipp,Inputs,tail)
-  for line in fileinput.input(outFile):
-    if fileinput.lineno() > 3:
-      puffno,sigx,si2 = map(float,line.split()[0:3])
-      puffno = int(puffno)
-      sigx = np.sqrt(sigx)
-      sigDat.append((float(tval),sigx,si2,puffno))
-      sigOutput.write('%g %g %g %02d\n'%(float(tval), sigx, si2, puffno))
-sigOutput.close()
-sigDat = np.array(sigDat)
+  env = os.environ.copy()
+  env["SCICHEM"] = "True"
+  if sys.platform == 'win32':
+    if env["SCICHEM"] == "True":
+      SCIPUFF_BASEDIR="D:\\EPRI\\git\\workspace\\Debug"
+      runDir = "D:\EPRI\\git\\runs\\tva"
+      readpuf = ["%s\\readpuf.exe" % SCIPUFF_BASEDIR]
+    else:
+      SCIPUFF_BASEDIR="D:\\hpac\\SCIPUFF\\bin"
+      compiler = 'intel'
+      version = 'debug'
+      OldPath = env["PATH"]
+      bindir = SCIPUFF_BASEDIR + "\\" + compiler + "\\" + version
+      urbdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\nonurban"  + "\\" + version
+      vendir = SCIPUFF_BASEDIR + "\\vendor" 
+      #env["PATH"] = "%s;%s;%s;%s" % (bindir,urbdir,vendir,OldPath)
+      env["PATH"] = "%s;%s;%s" % (bindir,urbdir,vendir)
+      print env["PATH"]
+      readpuf  = ["%s\\scipp.exe" % bindir,"-I:","-R:RP"]
+    tail = '\r\n'
+  else:
+    SCIPUFF_BASEDIR = "/home/user/bnc/hpac/fromSCIPUFF/Repository/UNIX/FULL/bin/linux/lahey"
+    scipp = ["%s/postprocess" % SCIPUFF_BASEDIR,"-I:"]
+    env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran/x86_32:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
+    env["LD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH"] + ':' + SCIPUFF_BASEDIR
+    tail = '\n'
 
+  #myEnv = SCI.setEnv(SCIPUFF_BASEDIR=SCIPUFF_BASEDIR)
+  print readpuf
+
+  # Set 
+  prjName = 'noambstp'
+  os.chdir(runDir)
+  #
+  #createCSV(env,prjName,readpuf)
+  #
+  csv2Db(prjName)
+
+'''
 fig = plt.figure()
 fig.hold()
 plt.scatter(sigDat[:,1],sigDat[:,2],c=sigDat[:,0])
@@ -86,4 +184,4 @@ plt.colorbar(fraction=0.08)
 plt.savefig('temp.png')
 os.remove(outFile) 
 #print sigDat
-    
+'''
