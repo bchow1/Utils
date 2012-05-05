@@ -22,14 +22,14 @@ def createCSV(env,prjName,readpuf):
   if os.path.exists(outFile):
     os.remove(outFile)
     
-  if env["SCICHEM"] == "True":
-    Inputs = ('%s%s %s%s %s%s%s %s%s %s%s %s'% ('go ',pufFile,tail, 'time -1',tail, 'file CSV:',outFile,tail, \
+  #
+  Inputs = ('%s%s %s%s %s%s%s %s%s %s%s %s'% ('go ',pufFile,tail, 'time -1',tail, 'file CSV:',outFile,tail, \
                                                 'go ',tail, 'exit', tail))
-    print Inputs  
-    run_cmd.Command(env,readpuf,Inputs,tail)
-  else: 
-    Inputs = (' %s%s %s%s %s%s%s %s%s'% ('RP',tail,'file TXT:'+ outFile,tail, 'go ',prjName,tail, 'exit', tail))
-    run_cmd.Command(env,scipp,Inputs,tail)
+  print Inputs  
+  run_cmd.Command(env,readpuf,Inputs,tail)
+  #else: 
+    #Inputs = (' %s%s %s%s %s%s%s %s%s'% ('RP',tail,'file TXT:'+ outFile,tail, 'go ',prjName,tail, 'exit', tail))
+    #run_cmd.Command(env,readpuf,Inputs,tail)
 
 def csv2Db(prjName):
   csvFile = prjName + '.csv'
@@ -45,10 +45,18 @@ def csv2Db(prjName):
   dbCur.execute('DROP table if exists ambTable')
   # Get puff var names and species names
   for line in fileinput.input(csvFile):
-    varNames = line.strip().replace('#','').split(',')
-    break
+    if env["SCICHEM"] == "True":
+      headNo = 1
+    else:
+      headNo = 3
+    if fileinput.lineno() == headNo:
+      varNames = line.strip().replace('#','').replace('"','').split(',')
+      if len(varNames[-1])< 1:
+        varNames = varNames[:-1]
+      break
   fileinput.close()
 
+  # Get colNos for varNames
   puffList = []
   colNos   = {}
   spNames  = []
@@ -93,7 +101,7 @@ def csv2Db(prjName):
   # Insert data for tables
   nPVar = len(puffList)
   for line in fileinput.input(csvFile):
-    if fileinput.isfirstline():
+    if fileinput.lineno() <= headNo:
       continue
     colValues = line.strip().split(',')
     puffId = fileinput.lineno()-1
@@ -127,19 +135,16 @@ def csv2Db(prjName):
             colHead = 'A_' + colHead        
           try:
             j   = colNos[colHead]
-            val = colValues[j]
+            val = colValues[j].strip()
           except KeyError:
             val = '-9999.'
-        #print colHead,j,val
         if tName == 'puffTable':
           insertStr += val + ', '
         else:
           insertStr += val + ')'
-          #print insertStr
           dbCur.execute(insertStr)
       if tName == 'puffTable':
         insertStr = insertStr[:-2] + ')'
-        #print insertStr
         dbCur.execute(insertStr)
     dbConn.commit()
   fileinput.close()
@@ -154,11 +159,15 @@ if __name__ == '__main__':
   env["SCICHEM"] = "True"
   if sys.platform == 'win32':
     if env["SCICHEM"] == "True":
-      SCIPUFF_BASEDIR="D:\\EPRI\\git\\workspace\\Debug"
       runDir = "D:\EPRI\\git\\runs\\tva"
+      prjName = 'noambstp'
+      SCIPUFF_BASEDIR="D:\\EPRI\\git\\workspace\\Debug"
       readpuf = ["%s\\readpuf.exe" % SCIPUFF_BASEDIR]
     else:
-      SCIPUFF_BASEDIR="D:\\hpac\\SCIPUFF\\bin"
+      runDir = "D:\hpac\\gitMain\\runs\\tva"
+      prjName = 'noAmbFile1'
+      SCIPUFF_BASEDIR="D:\\hpac\\gitEPRI\\bin"
+      iniFile = "D:\\hpac\\gitEPRI\\bin\\scipuff.ini"
       compiler = 'intel'
       version = 'debug'
       OldPath = env["PATH"]
@@ -168,7 +177,7 @@ if __name__ == '__main__':
       #env["PATH"] = "%s;%s;%s;%s" % (bindir,urbdir,vendir,OldPath)
       env["PATH"] = "%s;%s;%s" % (bindir,urbdir,vendir)
       print env["PATH"]
-      readpuf  = ["%s\\scipp.exe" % bindir,"-I:","-R:RP"]
+      readpuf  = ["%s\\scipp.exe"%bindir,"-I:%s"%iniFile,"-R:RP"]
     tail = '\r\n'
   else:
     SCIPUFF_BASEDIR = "/home/user/bnc/hpac/fromSCIPUFF/Repository/UNIX/FULL/bin/linux/lahey"
@@ -181,10 +190,10 @@ if __name__ == '__main__':
   print readpuf
 
   # Set 
-  prjName = 'noambstp'
+
   os.chdir(runDir)
   #
-  #createCSV(env,prjName,readpuf)
+  createCSV(env,prjName,readpuf)
   #
   csv2Db(prjName)
   #select time,ipuf,value from pufftable p, masstable m where p.puffno==m.puffno and m.species='NO2';
