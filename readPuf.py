@@ -48,10 +48,7 @@ def csv2Db(prjName):
     varNames = line.strip().replace('#','').split(',')
     break
   fileinput.close()
-  massPre = 'M_'
-  concPre = 'C_'
-  ambPre  = 'A_'
-  sclPre  = 'S_'
+
   puffList = []
   colNos   = {}
   spNames  = []
@@ -59,11 +56,11 @@ def csv2Db(prjName):
     vName = vName.strip().replace('-','_')
     colNos.update({vName:vNo})
     vPrefix = vName[:2]
-    if vPrefix == concPre or \
-       vPrefix == ambPre  or \
-       vPrefix == sclPre:
+    if vPrefix == 'C_' or \
+       vPrefix == 'A_' or \
+       vPrefix == 'S_':
       continue
-    elif vPrefix == massPre:
+    elif vPrefix == 'M_':
       spNames.append(vName[2:])
     else:
       puffList.append(vName)
@@ -72,21 +69,25 @@ def csv2Db(prjName):
   #keys.sort()
   #for key in keys:
   #  print colNos[key],key
-  print '\npuffList = ',puffList
-  print '\nspNames = ',spNames
-  massList = concList = ambList = spNames
+  #print '\npuffList = ',puffList
+  #print '\nspNames = ',spNames
+  massList = concList = ambList = ctotList = spNames 
   
-  tableNames = ['puffTable','massTable','concTable','ambTable']
-  nameLists  = [puffList,massList,concList,ambList]
+  tableNames = ['puffTable', 'massTable', 'concTable', 'ambTable', 'ctotTable']
+  nameLists  = [puffList, massList, concList, ambList, ctotList]
+
 
   # Create tables
   for tNo,tName in enumerate(tableNames):
     createStr = 'CREATE table %s ('%tName
     createStr += 'puffNo int, '
-    for i in range(len(nameLists[tNo])):
-      createStr += nameLists[tNo][i] + ' real, '  
-    createStr = createStr[:-2] + ')'
-    if tNo < 2: print '\n',createStr
+    if tName != 'puffTable':
+      createStr += 'species varchar(20), value real)'
+    else:      
+      for i in range(len(nameLists[tNo])):
+        createStr += nameLists[tNo][i] + ' real, '  
+      createStr = createStr[:-2] + ')'
+    print '\n',createStr
     dbCur.execute(createStr)
   dbConn.commit()
   # Insert data for tables
@@ -94,30 +95,52 @@ def csv2Db(prjName):
   for line in fileinput.input(csvFile):
     if fileinput.isfirstline():
       continue
-    puffId = fileinput.lineno()-1
-    print puffId
     colValues = line.strip().split(',')
+    puffId = fileinput.lineno()-1
+    print 'puffNo = ',puffId,' at time ',colValues[1]
     for tNo,tName in enumerate(tableNames):
-      insertStr = 'INSERT into %s VALUES('%tName
-      insertStr += '%d ,'%puffId
+      if tName == 'puffTable':
+        insertStr = 'INSERT into %s VALUES('%tName
+        insertStr += '%d ,'%puffId
       for i in range(len(nameLists[tNo])):
+        if tName != 'puffTable':
+          insertStr = 'INSERT into %s VALUES('%tName
+          insertStr += "%d , '%s' ,"%(puffId,nameLists[tNo][i])
         colHead = nameLists[tNo][i]
-        if tName == 'massTable':
-          colHead = 'M_' + colHead
-        if tName == 'concTable':
-          colHead = 'C_' + colHead
-        if tName == 'ambTable':
-          colHead = 'A_' + colHead
-        try:
-          j   = colNos[colHead]
-          val = colValues[j]
-        except KeyError:
-          val = '-9999.'
+        if tName == 'ctotTable':
+          val = 0.
+          for pre in ['C_','A_']:
+            preHead = pre + colHead
+            try:
+              j    = colNos[preHead]
+              val += float(colValues[j])
+            except KeyError:
+              val = -9999.
+              break
+          val = '%15.5e'%val
+        else:
+          if tName == 'massTable':
+            colHead = 'M_' + colHead
+          if tName == 'concTable':
+            colHead = 'C_' + colHead
+          if tName == 'ambTable':
+            colHead = 'A_' + colHead        
+          try:
+            j   = colNos[colHead]
+            val = colValues[j]
+          except KeyError:
+            val = '-9999.'
         #print colHead,j,val
-        insertStr += val + ', '  
-      insertStr = insertStr[:-2] + ')'
-      #print '\n',insertStr
-      dbCur.execute(insertStr)
+        if tName == 'puffTable':
+          insertStr += val + ', '
+        else:
+          insertStr += val + ')'
+          #print insertStr
+          dbCur.execute(insertStr)
+      if tName == 'puffTable':
+        insertStr = insertStr[:-2] + ')'
+        #print insertStr
+        dbCur.execute(insertStr)
     dbConn.commit()
   fileinput.close()
 
@@ -164,7 +187,7 @@ if __name__ == '__main__':
   #createCSV(env,prjName,readpuf)
   #
   csv2Db(prjName)
-  #select time,NO from pufftable p,masstable m where p.puffNo=m.puffNo order by time;
+  #select time,ipuf,value from pufftable p, masstable m where p.puffno==m.puffno and m.species='NO2';
 
 '''
 fig = plt.figure()
