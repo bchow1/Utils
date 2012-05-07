@@ -88,7 +88,7 @@ def csv2Db(prjName):
   # Create tables
   for tNo,tName in enumerate(tableNames):
     createStr = 'CREATE table %s ('%tName
-    createStr += 'puffNo int, '
+    createStr += 'puffId int, '
     if tName != 'puffTable':
       createStr += 'species varchar(20), value real)'
     else:      
@@ -104,8 +104,8 @@ def csv2Db(prjName):
     if fileinput.lineno() <= headNo:
       continue
     colValues = line.strip().split(',')
-    puffId = fileinput.lineno()-1
-    print 'puffNo = ',puffId,' at time ',colValues[1]
+    puffId = fileinput.lineno() - headNo
+    print 'puffId = ',puffId,' at time ',colValues[1]
     for tNo,tName in enumerate(tableNames):
       if tName == 'puffTable':
         insertStr = 'INSERT into %s VALUES('%tName
@@ -196,7 +196,7 @@ if __name__ == '__main__':
   createCSV(env,prjName,readpuf)
   #
   csv2Db(prjName)
-  #select time,ipuf,value from pufftable p, masstable m where p.puffno==m.puffno and m.species='NO2';
+  #select time,ipuf,value from pufftable p, masstable m where p.puffId==m.puffId and m.species='NO2';
 
 '''
 fig = plt.figure()
