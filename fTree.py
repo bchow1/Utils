@@ -21,6 +21,8 @@ endSubPatt  = re.compile(r'\s*end\s+subroutine\s+.*',re.I)
 fncPatt     = re.compile(r'.*\bfunction\s+(\w+)\b.*',re.I)
 endFncPatt  = re.compile(r'\s*end\s+function\s+.*',re.I)
 #
+usePatt     = re.compile(r'.*\buse\s+(\w+)\b.*',re.I)
+#
 extPatt  = re.compile(r'.*\bexternal\s*.*::\s*(.*)',re.I)
 callPatt = re.compile(r'.*\bcall\s+(\w+)\b.*',re.I)
 #
@@ -43,6 +45,7 @@ def getCalledNames(fName):
   # initialize lists
   subList    = []
   fncList    = []
+  useList    = []
   extList    = []
   calledList = []
 
@@ -70,7 +73,6 @@ def getCalledNames(fName):
 
     # skip interface lines
     if isInterFace: continue
-
    
     # Check for subroutines
     subMatch = subPatt.match(line)
@@ -86,6 +88,20 @@ def getCalledNames(fName):
       fncName = fName.split(os.sep)[-1] + '::' + fncMatch.group(1).lower()
       fncList.append(fncName)
       startFnc = True
+
+    # Check for use 
+    useMatch = usePatt.match(line)
+    if useMatch:
+      useNames = useMatch.group(1).lower().split(',')
+      if startSub:
+        prefix = subName + '::'
+      elif startFnc:
+        prefix = fncName + '::'
+      else:
+        prefix = mainName + '::'      
+      for useName in useNames:
+        if prefix + useName not in useList:
+          useList.append(prefix + useName)
 
     # Check for external functions
     extMatch = extPatt.match(line)
@@ -247,7 +263,7 @@ if __name__ == '__main__':
 
   #ver,subName = raw_input('Version [f|m], subroutine ? ').split(' ')
   ver = 'f'
-  subName = 'InitChemSubMPI'
+  subName = 'StepChem'
   if ver == 'f':
     dbFile = 'SciEpri.db'
   elif ver == 'm':
@@ -259,7 +275,7 @@ if __name__ == '__main__':
     skipDirs = ['CVS']
     #
     if dbFile == 'SciEpri.db':
-      baseDir = 'd:\\hpac\\gitEPRI\\UNIX\\EPRI\\src'
+      baseDir = 'd:\\hpac\\gitEPRI\\UNIX\\EPRI\\src\\lib\\SCIPUFFlib\\SCIPUFF'
     if dbFile == 'scichem_v1900.db':
       baseDir = 'd:\\EPRI\\SCICHEM_MADRID\\V1900\\src'
       skipDirs = ['pcscipuf','contri','ncar','noDll','ntinc','util','CVS']
