@@ -91,6 +91,9 @@ def cmpCol(file1,file2):
     f2 = open(file2,'r')
     if puffCSV:
       sys.stdout.write('\n\n')
+      # Add time and ipuf to diffCols
+      diffCols.insert(0,1)
+      diffCols.insert(0,0)
       for colNo in diffCols:
         sys.stdout.write('%13s'%colHead1[colNo])
       sys.stdout.write('\n')
@@ -122,18 +125,17 @@ def cmpCol(file1,file2):
   return
 
 if __name__ == '__main__':
-
-  file1 = 'x0.csv'
-  file2 = 'x1.csv'
     
   if sys.platform == 'win32':
     #runDir = "D:\hpac\\gitEPRI\\runs\\stepAmbwFlx"
     runDir = "J:\BNC\EPRI\\runs\\stepAmbwFlx"
 
   os.chdir(runDir)
-  cmpCol(file1,file2)
-    
 
+  f1 = 'x1.csv'
+  for f2 in ['x2.csv','x4.csv','x8.csv']:
+    print '\nComparing ',f1,' and ',f2
+    cmpCol(f1,f2)
 
   
   
