@@ -156,7 +156,7 @@ def csv2Db(prjName):
 if __name__ == '__main__':
 
   env = os.environ.copy()
-  env["SCICHEM"] = "True"
+  env["SCICHEM"] = "False"
   if sys.platform == 'win32':
     if env["SCICHEM"] == "True":
       runDir = "D:\EPRI\\git\\runs\\tva"
@@ -164,12 +164,12 @@ if __name__ == '__main__':
       SCIPUFF_BASEDIR="D:\\EPRI\\git\\workspace\\Debug"
       readpuf = ["%s\\readpuf.exe" % SCIPUFF_BASEDIR]
     else:
-      runDir = "D:\hpac\\gitMain\\runs\\tva"
-      prjName = 'noAmbFile1'
+      runDir = "J:\BNC\EPRI\\runs\\stepAmbwFlx"
+      prjName = 'x0'
       SCIPUFF_BASEDIR="D:\\hpac\\gitEPRI\\bin"
       iniFile = "D:\\hpac\\gitEPRI\\bin\\scipuff.ini"
       compiler = 'intel'
-      version = 'debug'
+      version = 'release'
       OldPath = env["PATH"]
       bindir = SCIPUFF_BASEDIR + "\\" + compiler + "\\" + version
       urbdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\nonurban"  + "\\" + version
@@ -180,8 +180,8 @@ if __name__ == '__main__':
       readpuf  = ["%s\\scipp.exe"%bindir,"-I:%s"%iniFile,"-R:RP"]
     tail = '\r\n'
   else:
-    SCIPUFF_BASEDIR = "/home/user/bnc/hpac/fromSCIPUFF/Repository/UNIX/FULL/bin/linux/lahey"
-    scipp = ["%s/postprocess" % SCIPUFF_BASEDIR,"-I:"]
+    SCIPUFF_BASEDIR = "/home/user/bnc/hpac/fromSCIPUFF/gitLocal/UNIX/EPRI/bin/linux/lahey"
+    readpuf = ["%s/scipp" % SCIPUFF_BASEDIR,"-I:","-R:RP"]
     env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran/x86_32:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
     env["LD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH"] + ':' + SCIPUFF_BASEDIR
     tail = '\n'
@@ -193,9 +193,10 @@ if __name__ == '__main__':
 
   os.chdir(runDir)
   #
-  createCSV(env,prjName,readpuf)
+  for prjName in ['x0','x1']:
+    createCSV(env,prjName,readpuf)
   #
-  csv2Db(prjName)
+  #csv2Db(prjName)
   #select time,ipuf,value from pufftable p, masstable m where p.puffId==m.puffId and m.species='NO2';
 
 '''
