@@ -155,6 +155,10 @@ def csv2Db(prjName):
   
 if __name__ == '__main__':
 
+  runDir = './'
+  if len(sys.argv) > 1:
+    prjName = sys.argv[1]
+
   env = os.environ.copy()
   env["SCICHEM"] = "False"
   if sys.platform == 'win32':
@@ -180,7 +184,8 @@ if __name__ == '__main__':
       readpuf  = ["%s\\scipp.exe"%bindir,"-I:%s"%iniFile,"-R:RP"]
     tail = '\r\n'
   else:
-    SCIPUFF_BASEDIR = "/home/user/bnc/hpac/fromSCIPUFF/gitLocal/UNIX/EPRI/bin/linux/lahey"
+    #SCIPUFF_BASEDIR = "/home/user/bnc/hpac/fromSCIPUFF/Repository/UNIX/FULL/bin/linux/lahey"
+    SCIPUFF_BASEDIR = "/usr/pc/biswanath/hpac/gitEPRI/UNIX/EPRI/bin/linux/lahey"
     readpuf = ["%s/scipp" % SCIPUFF_BASEDIR,"-I:","-R:RP"]
     env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran/x86_32:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
     env["LD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH"] + ':' + SCIPUFF_BASEDIR
