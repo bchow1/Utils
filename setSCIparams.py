@@ -108,7 +108,7 @@ class Pattern(object) :
     self.pattSmp1  = re.compile("(.+)001")                         # First sampler
 
     # ntv file keywords
-    self.pattRelTime = re.compile("^Time(.+)\((.+?)\s+(.+)\s+\)")
+    self.pattRelTime = re.compile("^Time(.+):\s*(.+)")
     self.pattRelLoc  = re.compile("^Field max(.+):\s*(.+?)\s+(.+?)\s+(.+)")
 
     # ini file keywords
@@ -116,7 +116,9 @@ class Pattern(object) :
     self.maxHits    = re.compile(".*MaxAdjointHits=(\d+)")
     
     # sum file keywords
-    self.pattMassEst = re.compile("^\s*Mass\s+Estimate(.+)")
+    self.pattLocFunc = re.compile("^\s*Location\s+Function(.*)")
+    self.pattMassEst = re.compile("^\s*Mass\s+Estimate(.*)")
+    self.pattDurEst  = re.compile("^\s*Duration\s+Estimate(.*)")
 
   def addNml(self,line,mLine):
     line = re.sub("\s*&\w+\s*","",line)
@@ -259,46 +261,64 @@ class Files(object):
     for line in fileinput.input(ntvFile):
       matchRelTime = mySCIpattern.pattRelTime.match(line)      
       if matchRelTime:
-        relTime = matchRelTime.group(3)
+        relTime = matchRelTime.group(2)
         print 'Release time = ',relTime        
+        continue
       matchRelLoc = mySCIpattern.pattRelLoc.match(line)
       if matchRelLoc:
         (relX, relY) = map(float,(matchRelLoc.group(2), matchRelLoc.group(3)))
-        print 'Release loc  : X = ',relX,' Y = ',relY
+        print 'Release loc: X = ',relX,', Y = ',relY
         break
     fileinput.close()
-    (HH, MM, SS) = relTime.replace("Z","").split(':')
-    relTime = float(HH) + float(MM)/60. + float(SS)/3600.
-    print 'hr = ',relTime
+    if 'Z' in relTime:
+      (HH, MM, SS) = relTime.replace("Z","").split(':')
+      relTime = float(HH) + float(MM)/60. + float(SS)/3600.
 
     return(relTime,relX,relY)
 
   def readSumFile(self,sumFile,mySCIpattern):
     print '\nPredicted source parameters from ',sumFile,' :'
-    massEst = False
-    relT    = -999
+    pName = [sLoc,sMas,sDur] = [0,1,2]
+    estList = [[] for i in pName]
+    maxList = [[-999,'None'] for i in pName]
+    pattDurUnt = re.compile("^\s*Duration\s*\((.*)\).*")
+    section = -1
     for line in fileinput.input(sumFile):
-      if massEst:
-        try:
-          float(line.split()[0])
-        except ValueError:
-          continue
-        (relT, relMass) = line.split()
-        # Look for 0. release time
-        if float(relT) < 1.e-6:
-          break
-      else:
-        matchMassEst = mySCIpattern.pattMassEst.match(line)      
+      matchLocFunc = mySCIpattern.pattLocFunc.match(line)      
+      matchMassEst = mySCIpattern.pattMassEst.match(line)      
+      matchDurEst  = mySCIpattern.pattDurEst.match(line)      
+      if matchLocFunc or matchMassEst or matchDurEst:
+        section += 1
         if matchMassEst:
-          massEst = True
+          maxList[sMas][1] = matchMassEst.group(1).strip().replace('(','').replace(')','')
+        continue
+      try:
+        float(line.split()[0])
+      except ValueError:
+        if line[:4] == ' t -':
+          tMax = line.split()[3] 
+        elif 'Duration' in line:
+          matchDurUnt = pattDurUnt.match(line)      
+          maxList[sDur][1] = matchDurUnt.group(1)
+        continue
+      relT, relPrm = map(float,line.split())
+      estList[section].append([relT,relPrm])
     fileinput.close()
+    for i in pName:
+      if i < sDur:
+        for relT,relP in estList[i]:
+          # Look for 0. release time
+          if relT < 1.e-6:
+            maxList[i][0] = relP
+            break
+      else:
+        for durT,relP in estList[i]:
+          # Look for min release time
+          if abs(relP-maxList[sLoc][0]) < 1.e-10:
+            maxList[sDur][0] = durT
+            break
 
-    if relT < -998:
-      print 'Error: cannot find Release time 0. in ',sumFile
-      relMass = None
-    print 'Mass  = ',relMass
-        
-    return relMass
+    return (tMax,maxList)
 
 # class for creating sam file
 class samList:
