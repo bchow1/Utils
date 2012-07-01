@@ -415,7 +415,7 @@ class Env:
   def  __init__(self):
     self.env = os.environ.copy()
     self.tail = None
-    self.hpacstub = 'hpacstub'
+    self.runsci = 'runsci'
     self.scipp    = 'scipp'
 
 def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,iniFile=None,compiler=None,version=None):
@@ -443,7 +443,7 @@ def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,iniFile=None,compiler=Non
     nurdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\nonurban"  + "\\" + version
     vendir = SCIPUFF_BASEDIR + "\\vendor" 
     myEnv.env["PATH"] = "%s;%s;%s;%s" % (bindir,nurdir,urbdir,vendir)
-    myEnv.hpacstub = [bindir+"\\hpacstub.exe",iniFile,"-M:10000"]
+    myEnv.runsci = [bindir+"\\hpacstub.exe",iniFile,"-M:10000"]
     myEnv.scipp = [bindir+"\\scipp.exe",iniFile]
     myEnv.tail = '\n'
   else:
@@ -455,12 +455,12 @@ def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,iniFile=None,compiler=Non
     myEnv.env["SCIPUFF_BASEDIR"] = SCIPUFF_BASEDIR
     myEnv.env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran/x86_32:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
     myEnv.env["LD_LIBRARY_PATH"] = myEnv.env["LD_LIBRARY_PATH"] + ':' + SCIPUFF_BASEDIR
-    myEnv.hpacstub  = ["%s/hpacstub" % SCIPUFF_BASEDIR,iniFile,"-M:10000"]
+    myEnv.runsci  = ["%s/runsci" % SCIPUFF_BASEDIR,iniFile,"-M:10000"]
     myEnv.scipp  = ["%s/scipp" % SCIPUFF_BASEDIR,iniFile]
     myEnv.tail = '\n'
     print myEnv.env["LD_LIBRARY_PATH"]
   print 'Path = ',myEnv.env["PATH"]
-  print myEnv.hpacstub
+  print myEnv.runsci
   return (myEnv)
 
 def readKeyNml(nmlFile):
@@ -562,10 +562,10 @@ def runSci(prjName,myEnv=None,binDir=None,templateName='',inpList=None,KeyNml=No
     # Setup Inputs for forward run
     Inputs = ('%s%s'% (prjName+tail,tail))
 
-  # Run hpacstub
+  # Run runsci
   print 'Inputs = ',Inputs
   
-  run_cmd.Command(myEnv.env,myEnv.hpacstub,Inputs,tail)
+  run_cmd.Command(myEnv.env,myEnv.runsci,Inputs,tail)
 
 # Main Program
 
