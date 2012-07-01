@@ -335,10 +335,43 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern,createTable):
     fileinput.close()
     return(sCur,createTable)
 
-def sen2db(startTimeString,senFile,samList=None):
+def sen2Db(startTimeString,senFile,samList=None):
 
-  (Yr,Mo,Day,Hr,Mn,Sec) = str2ymdhms(startTimeString)
-  startEpTime = getEpTime(Yr,Mo,Day,Hr,Mn,Sec)
+  def rdSenLine(line,rdNext):
+    #print fileinput.lineno(),':',line  
+    if rdNext:
+      try:
+        (matName, xSen, ySen, zSen, timeString, matType, cMin, cSen, sSig, sSat, tDur) = line.split(';')
+      except ValueError:
+        raise
+      (xSen,ySen,zSen,cMin,cSen,sSig,tDur)  = map(float,(xSen,ySen,zSen,cMin,cSen,sSig,tDur))
+      (Yr,Mo,Day,Hr,Mn,Sec) = str2ymdhms(timeString)
+      epTime = getEpTime(Yr,Mo,Day,Hr,Mn,Sec)
+      tHr    = (epTime - startEpTime)/3600. 
+    return (matName,matType,timeString,epTime,tHr,tDur,xSen,ySen,cSen,cMin)
+
+  if startTimeString is not None:
+    (Yr,Mo,Day,Hr,Mn,Sec) = str2ymdhms(startTimeString)
+    startEpTime = getEpTime(Yr,Mo,Day,Hr,Mn,Sec)
+  else:
+    rdNext = False
+    startEpTime = 1e+10
+    for line in fileinput.input( senFile ):
+      if len(line) <= 2: continue
+      if line.rstrip().endswith('Type2Sensor'):
+        rdNext = True
+        continue
+      if rdNext:
+        try:
+          (matName,matType,timeString,epTime,tHr,tDur,xSen,ySen,cSen,cMin) = rdSenLine(line,rdNext)
+          print matName,epTime
+        except ValueError:
+          print 'Error reading line from %s-\n%d:%s'%(senFile,fileinput.lineno(),line)
+          rdNext = False
+          continue
+        rdNext = False
+      startEpTime = min(epTime,startEpTime)
+    fileinput.close()
 
   dbFile = senFile + '.db'
   senConn = sqlite3.connect(dbFile)
@@ -346,35 +379,38 @@ def sen2db(startTimeString,senFile,samList=None):
   senCur = senConn.cursor()
 
   senCur.execute('DROP table if exists senTable')
-  senCur.execute('CREATE table senTable (matName string, matType string, timeString string,\
-                  epTime real,tHr real, tDur real, xSen real, ySen real, cSen real)')
+  createStr  = "CREATE table senTable (matName string, matType string, timeString string"
+  createStr += "epTime real,tHr real, tDur real, xSen real, ySen real, cSen real, cMin real)"
+  senCur.execute(createStr)
 
-  if samList:
+  if samList is not None:
     matList = []
 
   rdNext = False
   for line in fileinput.input( senFile ):
-    #print fileinput.lineno(),':',line  
+    if len(line) <= 2: continue
     if line.rstrip().endswith('Type2Sensor'):
       rdNext = True
-    else:
-      if rdNext:
+      continue
+    if rdNext:
+      print
+      try:
+        (matName,matType,timeString,epTime,tHr,tDur,xSen,ySen,cSen,cMin) = rdSenLine(line,rdNext)
+      except ValueError:
+        print 'Error reading line from %s-\n%d:%s'%(senFile,fileinput.lineno(),line)
+        rdNext = False
+        continue
+      if matType.strip() == 'N':
+        cSen = 0.
         insertStr = "INSERT into senTable VALUES"
-        senList = line.split(';')
-        (matName,matType,timeString) = (senList[0],senList[5],senList[4])
-        (Yr,Mo,Day,Hr,Mn,Sec) = str2ymdhms(timeString)
-        epTime = getEpTime(Yr,Mo,Day,Hr,Mn,Sec)
-        tHr = (epTime - startEpTime)/3600. 
-        (xSen,ySen,cSen,tDur) = map(float,(senList[1],senList[2],senList[7],senList[10]))
-        if matType.strip() == 'N':
-          cSen = 0.
-        insertStr += "('%s','%s','%s',%13.2f,%16.5f,%10.3f,%10.3f,%10.3f,%13.5e)"% \
-                      (matName,matType,timeString,epTime,tHr,tDur,xSen,ySen,cSen)
+        insertStr += "('%s','%s','%s',%13.2f,%16.5f,%10.3f,%10.3f,%10.3f,%13.5e,%13.5e)"% \
+                    (matName,matType,timeString,epTime,tHr,tDur,xSen,ySen,cSen,cMin)
         #print insertStr
         senCur.execute(insertStr)
         if samList:
           matList.append(matName)
       rdNext = False
+  fileinput.close()
   senConn.commit()
   senConn.close()
   if samList:
@@ -437,24 +473,30 @@ def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.):
 
 # Call main program
 if __name__ == '__main__':
+
   # Parse arguments
   arg = optparse.OptionParser()
   arg.add_option("-p",action="store",type="string",dest="prjNames")
+  arg.add_option("-e",action="store",type="string",dest="senName")
   arg.add_option("-a",action="store",type="string",dest="samFiles")
-  arg.set_defaults(prjNames=None,samFiles=None)
+  arg.set_defaults(prjNames=None,senName=None,samFiles=None)
   opt,args = arg.parse_args()
+  #prjNames = ['071599_vo3_sm']
+
   #
-  os.chdir('d:\\EPRI\\git\\runs\\cumberland')
-  prjNames = ['071599_vo3_sm']
   # Check arguments
-  if not opt.prjNames:
-    print 'Error: prjNames must be specified'
-    print 'Usage: smp2db.py -p prjName1[:prjName2...] [-a prj1.sam[:prj2.sam...]]'
-  else:
+  if opt.prjNames is None and opt.senName is None:
+    print 'Error: prjNames or senName must be specified'
+    print 'Usage: smp2db.py [-p prjName1[:prjName2...] [-a prj1.sam[:prj2.sam...]]] [ -e senName]'
+  elif opt.prjNames is not None:
+    #os.chdir('d:\\EPRI\\git\\runs\\cumberland')
     prjNames = opt.prjNames.split(':')
-  if opt.samFiles:
-    samFiles = opt.samFiles.split(':')
-    print 'samFiles from command line will be used'
+    if opt.samFiles:
+      samFiles = opt.samFiles.split(':')
+      print 'samFiles from command line will be used'
+    else:
+      samFiles = None
+    createSmpDb(prjNames,samFiles=samFiles)
   else:
-    samFiles = None
-  createSmpDb(prjNames,samFiles=samFiles)
+    senName = opt.senName
+    sen2Db(None,senName)
