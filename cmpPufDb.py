@@ -12,8 +12,10 @@ import run_cmd
 import tab2db
 import setSCIparams as SCI 
 
-def createCSV(env,prjName,readpuf):
+def createCSV(env,prjName,readpuf,tail):
 
+  print 'Running createCSV in ',os.getcwd(),'\n'
+  
   pufFile = prjName + '.puf'
   if not os.path.exists(pufFile):
     print 'Error: cannot file puf file ',pufFile
@@ -27,9 +29,8 @@ def createCSV(env,prjName,readpuf):
                                                 'go ',tail, 'exit', tail))
   print Inputs  
   run_cmd.Command(env,readpuf,Inputs,tail)
-  #else: 
-    #Inputs = (' %s%s %s%s %s%s%s %s%s'% ('RP',tail,'file TXT:'+ outFile,tail, 'go ',prjName,tail, 'exit', tail))
-    #run_cmd.Command(env,readpuf,Inputs,tail)
+
+  return
 
 def csv2Db(prjName):
   csvFile = prjName + '.csv'
@@ -152,12 +153,9 @@ def csv2Db(prjName):
   dbConn.commit()
   dbCur.close()
   dbConn.close()
+  return
   
 if __name__ == '__main__':
-
-  runDir = './'
-  if len(sys.argv) > 1:
-    prjName = sys.argv[1]
 
   env = os.environ.copy()
   env["SCICHEM"] = "False"
@@ -168,8 +166,11 @@ if __name__ == '__main__':
       SCIPUFF_BASEDIR="D:\\EPRI\\git\\workspace\\Debug"
       readpuf = ["%s\\readpuf.exe" % SCIPUFF_BASEDIR]
     else:
-      runDir = "J:\BNC\EPRI\\runs\\stepAmbwFlx"
-      prjName = 'x0'
+      runDir = "D:\hpac\\gitEPRI\\runs\\stepAmbwFlx"
+      if len(sys.argv) > 1:
+        prjName = sys.argv[1]
+      else:
+        prjName = 'x1'
       SCIPUFF_BASEDIR="D:\\hpac\\gitEPRI\\bin"
       iniFile = "D:\\hpac\\gitEPRI\\bin\\scipuff.ini"
       compiler = 'intel'
@@ -184,9 +185,8 @@ if __name__ == '__main__':
       readpuf  = ["%s\\scipp.exe"%bindir,"-I:%s"%iniFile,"-R:RP"]
     tail = '\r\n'
   else:
-    #SCIPUFF_BASEDIR = "/home/user/bnc/hpac/fromSCIPUFF/Repository/UNIX/FULL/bin/linux/lahey"
-    SCIPUFF_BASEDIR = "/usr/pc/biswanath/hpac/gitEPRI/UNIX/EPRI/bin/linux/lahey"
-    readpuf = ["%s/scipp" % SCIPUFF_BASEDIR,"-I:","-R:RP"]
+    SCIPUFF_BASEDIR = "/home/user/bnc/hpac/fromSCIPUFF/Repository/UNIX/FULL/bin/linux/lahey"
+    scipp = ["%s/postprocess" % SCIPUFF_BASEDIR,"-I:"]
     env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran/x86_32:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
     env["LD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH"] + ':' + SCIPUFF_BASEDIR
     tail = '\n'
@@ -198,8 +198,7 @@ if __name__ == '__main__':
 
   os.chdir(runDir)
   #
-  for prjName in ['x0','x1']:
-    createCSV(env,prjName,readpuf)
+  createCSV(env,prjName,readpuf,tail)
   #
   #csv2Db(prjName)
   #select time,ipuf,value from pufftable p, masstable m where p.puffId==m.puffId and m.species='NO2';
