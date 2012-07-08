@@ -2,7 +2,10 @@
 
 import os
 import sys
+import re
 import fileinput
+
+eqTyPatt = re.compile(';\s*(\d+).*')
 
 def readImc(fName):
   rdMode = 'Unknown'
@@ -66,16 +69,27 @@ def getEqns(spNam,eqList):
       nEqn += 1
       print nEqn,':',eqn
   return
+
+def getEqTypes(eqTyp,eqList):
+  for eqVal in eqList:
+    indx = eqVal.index(';')
+    typNo = eqVal[indx+1]
+    if typNo == eqTyp:
+      print eqVal
+  return
     
 if __name__ == "__main__":
-  os.chdir('d:\\EPRI\\git\\runs\\cumberland')
-  fName = '071599_vo3.imc'
+  if sys.platform == 'win32':
+    os.chdir('d:\\EPRI\\git\\runs\\cumberland')
+  #fName = '071599_vo3.imc'
+  fName = 'tva_990706_ae5.imc'
   #fName = raw_input('Enter imc file name :')
   #if len(fName) > 1:
   #  if not fName.endswith('.imc'):
   #    fName = fName + '.imc'
   spList,eqList = readImc(fName)
   #print spList
+  '''
   ambList = []
   for spVal in spList:
     spTyp = spVal[1]
@@ -100,3 +114,7 @@ if __name__ == "__main__":
   #spNam = raw_input('Enter species name :')
   #spNam = '['+spNam.strip()+']'
   #getEqns(spNam,eqList)
+  '''
+  eqTyp = raw_input('Enter equation type :')
+  eqTyp = eqTyp.strip()
+  getEqTypes(eqTyp,eqList)
