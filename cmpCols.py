@@ -38,9 +38,9 @@ def cmpCol(file1,file2):
         print 'Columns = ',colHead1[0],'...',colHead1[-1]
         continue
       elif lineNo == 4:
-        print lineNo,list1[:3]
+        print 'First line: ',lineNo,list1[:2],list1[-2:-1]
     elif lineNo == 1:
-      print lineNo,list1[:3]
+      print 'First line: ',lineNo,list1[:2],list1[-2:-1]
     
     nlist1 = map(float,list1[:-1])
     nlist2 = map(float,list2[:-1])
@@ -132,8 +132,8 @@ if __name__ == '__main__':
 
   os.chdir(runDir)
 
-  f1 = 'x1.csv'
-  for f2 in ['x2.csv','x4.csv','x8.csv']:
+  f1 = 'x0.csv'
+  for f2 in ['x1.csv','x4.csv','x8.csv']:
     print '\nComparing ',f1,' and ',f2
     cmpCol(f1,f2)
 
