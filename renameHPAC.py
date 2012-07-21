@@ -18,9 +18,7 @@ def getFnames(baseDir='./'):
 
 def replaceH(string):
   newString = None
-  print string
   if hpacPatt.match(string):
-    print 'Found match'
     newString = string
     if 'HPAC' in newString:
       newString = newString.replace('HPAC','SCIP')
@@ -32,17 +30,16 @@ def replaceH(string):
 
 if __name__ == '__main__':
 
-  os.chdir('D:\\hpac\\gitEPRI\\src\\lib\\SCIPUFFlib\\SCIPUFF')
-  fList = ['runHPAC.f90'] #getFnames()
+  #os.chdir('D:\\hpac\\gitEPRI\\src\\lib\\SCIPUFFlib\\SCIPUFF')
+  fList = getFnames()
   for fName in fList:
-    print 'Working on file ',fName
+    print 'File ',fName
     newHName = fName+'.new'
     fNew = open(newHName,'w')
     for line in fileinput.input(fName):
       newLine = replaceH(line)
       if newLine is not None:
         fNew.write('%s'%newLine)
-        print 'newLine:',newLine
       else:
         fNew.write('%s'%line)
     fileinput.close()
@@ -50,8 +47,15 @@ if __name__ == '__main__':
     os.remove(fName)
     newSName = replaceH(fName)
     if newSName is not None:
-      os.rename(newHName,newSName)
-      print 'newSNname:',newSName
+      try:
+        os.rename(newHName,newSName)
+      except OSError:
+        print 'Error: renaming ',newHName,' to ',newSName
+        sys.exit()
     else:
-      os.rename(newHName,fName)
+      try:
+        os.rename(newHName,fName)
+      except OSError:
+        print 'Error: renaming ',newHName,' to ',fName
+        sys.exit()
   
