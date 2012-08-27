@@ -8,12 +8,14 @@ import utilDb
 
 # patterns
 hpacPatt  = re.compile('(.*)hpac(.*)',re.I)
+exts = ('.f','.f90','.F','.F90','.mak','.sh','.vfproj','.vcproj','.sln')
 
 def getFnames(baseDir='./'):
   fList = []
   for root,dirs,files in os.walk(baseDir):
     for fName in files:
-      fList.append(os.path.join(root,fName))
+      if fName.endswith(exts):
+        fList.append(os.path.join(root,fName))
   return fList
 
 def replaceH(string):
@@ -33,7 +35,7 @@ if __name__ == '__main__':
   #os.chdir('D:\\hpac\\gitEPRI\\src\\lib\\SCIPUFFlib\\SCIPUFF')
   fList = getFnames()
   for fName in fList:
-    print 'File ',fName
+    print 'rename File:',fName
     newHName = fName+'.new'
     fNew = open(newHName,'w')
     for line in fileinput.input(fName):
@@ -51,11 +53,11 @@ if __name__ == '__main__':
         os.rename(newHName,newSName)
       except OSError:
         print 'Error: renaming ',newHName,' to ',newSName
-        sys.exit()
+        continue
     else:
       try:
         os.rename(newHName,fName)
       except OSError:
         print 'Error: renaming ',newHName,' to ',fName
-        sys.exit()
+        continue
   
