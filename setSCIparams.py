@@ -203,7 +203,22 @@ class Pattern(object) :
         nmlFile.close()
         break
     return(nmlNames,nmlValues)
+  
+# class for reading releases
+class RelList(object):
 
+  def  __init__(self):
+    self.rlsList = []
+
+  def getRelList(self,mySCIpattern,scnFile):
+    (nmlNames,nmlValues) = mySCIpattern.readNml(scnFile)
+    for i in range(len(nmlNames)):
+      relDat = {}
+      for key in ['relmat','trel','xrel','yrel','zrel','tdur']:
+        #print key,nmlValues[i][key]
+        relDat.update({key:nmlValues[i][key]})
+      self.rlsList.append(relDat)
+        
 class Files(object):
 
   def __init__(self,prjName,mySCIpattern):
@@ -216,6 +231,9 @@ class Files(object):
     self.mscFile = self.prjName + '.msc'
     self.scnFile = self.prjName + '.scn'
     self.inpList = dict([('inp',self.inpFile),('msc',self.mscFile),('scn',self.scnFile)])
+
+    # release list
+    self.relList = RelList()
       
     # output file
     self.prjFile = self.prjName + '.prj'
@@ -257,17 +275,17 @@ class Files(object):
     return nTerm
  
   def readNtvFile(self,ntvFile,mySCIpattern):
-    print '\nPredicted source parameters from ',ntvFile,' :'
+    #print '\nPredicted source parameters from ',ntvFile,' :'
     for line in fileinput.input(ntvFile):
       matchRelTime = mySCIpattern.pattRelTime.match(line)      
       if matchRelTime:
         relTime = matchRelTime.group(2)
-        print 'Release time = ',relTime        
+        #print 'Release time = ',relTime        
         continue
       matchRelLoc = mySCIpattern.pattRelLoc.match(line)
       if matchRelLoc:
         (relX, relY) = map(float,(matchRelLoc.group(2), matchRelLoc.group(3)))
-        print 'Release loc: X = ',relX,', Y = ',relY
+        #print 'Release loc: X = ',relX,', Y = ',relY
         break
     fileinput.close()
     if 'Z' in relTime:
@@ -277,7 +295,7 @@ class Files(object):
     return(relTime,relX,relY)
 
   def readSumFile(self,sumFile,mySCIpattern):
-    print '\nPredicted source parameters from ',sumFile,' :'
+    #print '\nPredicted source parameters from ',sumFile,' :'
     pName = [sLoc,sMas,sDur] = [0,1,2]
     estList = [[] for i in pName]
     maxList = [[-999,'None'] for i in pName]
@@ -571,17 +589,23 @@ def runSci(prjName,myEnv=None,binDir=None,templateName='',inpList=None,KeyNml=No
 
 if __name__ == '__main__':
 
+  os.chdir("d:\\SrcEst\\P2\\runs\\120627\\ETEX")
   #inFile = raw_input('\nFilename? ')
-  inFile   = 'temp.inp'
-  #nmlName = raw_input('\nNamelist? ')
-  nmlName = 'ctrl'
+  inFile   = 'rev_etex_f010.scn'
   mySCIpattern = Pattern()
+  mySCIfiles = Files('rev_etex_f010',mySCIpattern)
+  
+  mySCIfiles.relList.getRelList(mySCIpattern,mySCIfiles.scnFile)
+  print mySCIfiles.relList.rlsList
+  #nmlName = raw_input('\nNamelist? ')
+  #nmlName = 'scn'
   #print mySCIpattern.Nml[nmlName]
   #print mySCIpattern.pattNml[nmlName]
-  (nmlNames,nmlValues) = mySCIpattern.readNml(inFile)
-  for i in range(len(nmlNames)):
-    print '\nNamelist = ',nmlNames[i]
-    print nmlValues[i]
+  #(nmlNames,nmlValues) = mySCIpattern.readNml(inFile)
+  #for i in range(len(nmlNames)):
+    #print '\nNamelist = ',nmlNames[i]
+    #print nmlValues[i]
     #for key,value in nmlValues[i].items():
-    #  print key,'=',value
+    #  if key == 'relmat':
+    #    print key,'=',value
  
