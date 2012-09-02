@@ -443,9 +443,9 @@ def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,iniFile=None,compiler=Non
     nurdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\nonurban"  + "\\" + version
     vendir = SCIPUFF_BASEDIR + "\\vendor" 
     myEnv.env["PATH"] = "%s;%s;%s;%s" % (bindir,nurdir,urbdir,vendir)
-    myEnv.runsci = [bindir+"\\hpacstub.exe",iniFile,"-M:10000"]
+    myEnv.runsci = [bindir+"\\runsci.exe",iniFile,"-M:10000"]
     myEnv.scipp = [bindir+"\\scipp.exe",iniFile]
-    myEnv.tail = '\n'
+    myEnv.tail = '\r\n'
   else:
     if binDir is not None:
       SCIPUFF_BASEDIR = binDir
