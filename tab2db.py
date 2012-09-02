@@ -16,6 +16,8 @@ def getColValues(line,separator,collist=None):
     if separator is None:
       colValues = line.split()
     else:
+      if line.strip().endswith(separator):
+        line = line.strip()[:-len(separator)]      
       colValues = line.split(separator)
     if collist is not None:
       cValues = []
@@ -29,6 +31,8 @@ def setColNames(line,separator,collist=None):
   if separator is None:
     colNames = line.replace('#','').strip().split()
   else:
+    if line.strip().endswith(separator):
+      line = line.strip()[:-len(separator)]
     colNames = line.replace('#','').strip().replace('"','').split(separator)
   for i,colName in enumerate(colNames):
     colNames[i] = colName.strip().replace(' ','')
@@ -40,7 +44,7 @@ def setColNames(line,separator,collist=None):
       if i+1 in collist:
         cNames.append(colName)
     colNames = cNames
-
+ 
   # Rename duplicates
   for colNo in range(len(colNames)-1):
     if colNames[colNo] == colNames[colNo-1]:
@@ -65,6 +69,7 @@ def setColTypes(colValues):
   return colTypes
 
 def initDb(fName,colNames,colTypes):
+  #print len(colNames),colNames
   dbFile = fName + '.db'
   dbConn = sqlite3.connect(dbFile)
   dbCur = dbConn.cursor() 
@@ -120,7 +125,8 @@ def makeDb(fName,separator=None,headLineNo=1,colname=None,coltype=None,collist=N
       colNames = colname.strip().split(',')
     else:
       colNames = colname.strip().split(separator)
-  
+  #print 'Using Column names = ',colNames
+
   # Get column types 
   if coltype is None:
     colTypes = None
@@ -171,7 +177,8 @@ def makeDb(fName,separator=None,headLineNo=1,colname=None,coltype=None,collist=N
     if len(line) > 0:
       colValues = getColValues(line,separator,collist=colList)
       if len(colValues) != nCol and lWarn:
-        print 'Warning: \n Number of values in \n %s\n   does not match number of column names in \n %s'%(colValues,colNames)
+        print 'Warning: \n Number of values %d in \n %s\n does not match %d number of column names in \n %s'\
+               %(len(colValues),colValues,len(colNames),colNames)
         colValues = colValues[:nCol]
         print ' Using only %d columns '%(nCol)
         lWarn = False
@@ -197,6 +204,9 @@ if __name__ == '__main__':
   # local modules
   import utilDb
 
+  #os.chdir("D:\\SCICHEM99\\SCICHEM-99\\Sept2012\\071599")
+  #sys.argv = ["","-s,","cumb3_nash_16km.csv"]
+
   if sys.argv.__len__() < 2:
     print 'Usage: tab2db.py [-s separator] [-n colname] [-t coltype] [-c collist] table1.txt [table2.txt ... ]'
     print 'Example: python ~/python/tab2db.py -s "," -n "hrs,mrate,lat,lon" -t rrrr -c "1,2,5" RT970925.DAT'
@@ -211,6 +221,7 @@ if __name__ == '__main__':
   arg.set_defaults(coltype=None)
   arg.set_defaults(collist=None)
   opt,args = arg.parse_args()
+  print args
 
   for fName in args:
     print '\nRunning makeDb for file ',fName
