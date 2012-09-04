@@ -54,7 +54,10 @@ def setColNames(line,separator,collist=None):
 
 def setColTypes(colValues):
   colTypes = []
-  for colValue in colValues: 
+  for colValue in colValues:
+    if len(colValue.strip()) == 0:
+      colTypes.append('string')
+      continue       
     try:
       colValue = ast.literal_eval(colValue.strip())
       if isinstance(colValue,int):
@@ -204,8 +207,8 @@ if __name__ == '__main__':
   # local modules
   import utilDb
 
-  #os.chdir("D:\\SCICHEM99\\SCICHEM-99\\Sept2012\\071599")
-  #sys.argv = ["","-s,","cumb3_nash_16km.csv"]
+  #os.chdir("D:\\SCICHEM-2012\\Sept2012\\071599")
+  #sys.argv = ["","-s,","tva_071599_16km_obs4.csv"]
 
   if sys.argv.__len__() < 2:
     print 'Usage: tab2db.py [-s separator] [-n colname] [-t coltype] [-c collist] table1.txt [table2.txt ... ]'
