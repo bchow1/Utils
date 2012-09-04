@@ -32,7 +32,10 @@ def replaceH(string):
 
 if __name__ == '__main__':
 
-  #os.chdir('D:\\hpac\\gitEPRI\\src\\lib\\SCIPUFFlib\\SCIPUFF')
+
+  #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\workspace\\EPRI')
+  #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\src\\sys\\windows')
+  os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719')
   fList = getFnames()
   for fName in fList:
     print 'rename File:',fName
@@ -59,5 +62,9 @@ if __name__ == '__main__':
         os.rename(newHName,fName)
       except OSError:
         print 'Error: renaming ',newHName,' to ',fName
+<<<<<<< HEAD
         continue
   
+=======
+        sys.exit()
+>>>>>>> master
