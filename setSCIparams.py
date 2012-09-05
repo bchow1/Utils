@@ -89,6 +89,7 @@ class Pattern(object) :
             rPattern = re.compile("(.*@)(\d{3}.+)(\s*.*)")
           if vname == 'smpfile':
             rPattern = re.compile("(.*%s\s*=\s*')(.*)('\s*,.*)"%vname,re.I)
+            print rPattern
           pattlist.update({vname:rPattern})
         self.pattNml.update({nml:pattlist})
       else:
@@ -241,6 +242,7 @@ class Files(object):
     self.pufFile = self.prjName + '.puf'
  
     # Read sam file from inpfile
+    print 'call getSamFile'
     self.getSamFile(mySCIpattern)
 
   def getSamFile(self,mySCIpattern):
@@ -251,8 +253,13 @@ class Files(object):
       return
     for line in fileinput.input(self.inpFile):
       matchSam = mySCIpattern.pattNml['options']['smpfile'].match(line)
+      if 'SMPFILE' in line:
+        print mySCIpattern.pattNml['options']['smpfile']
+        print line
+        print matchSam
       if matchSam:
         self.samFile = matchSam.group(2).replace("'","").strip()
+        print self.samFile
         if len(self.samFile) > 1:
           if not os.path.exists(self.samFile):
             print 'Error: cannot find sam file ',self.samFile
