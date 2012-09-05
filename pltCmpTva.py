@@ -83,7 +83,7 @@ def mainProg():
         preArray2[:,0]= dArray2
 
       #
-      pltCmpConc(zSmp, varName, obsArray, preArray1, preArray2, varName, fName)
+      pltCmpConc(zSmp, varName, obsArray, preArray1, preArray2, varName, figName)
 
     obsConn.close()
     
