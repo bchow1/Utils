@@ -15,6 +15,7 @@ import utilDb
 
 def mainProg():
 
+  prjName = 'tva_990715'
   preDbName1 = 'tva_990715.smp.db'
   preDbName2 = 'SCICHEM-01\\071599_vo3_lin_intel.smp.db'
 
@@ -29,34 +30,19 @@ def mainProg():
   preCur2 = preConn2.cursor()
   
   varNames = ["SO2", "O3", "NO",  "NO2"]
-  
-  distance = [62] #16, 62, 106]
-  times    = [11.25] #, 11.5, 11.5]
-  zSmp     = [582] #415, 582, 584]
-  
-  for idt,dist in enumerate(distance):
 
-    # Observed data
-    obsDbName = 'OBS\\tva_071599_' + str(dist) + 'km_obs6.csv.db'
-    obsConn = sqlite3.connect(obsDbName)
-    obsConn.row_factory = sqlite3.Row
-    obsCur = obsConn.cursor()
+  if prjName == "tva_990715":
+    distance = [16, 62, 106]
+    times    = [11.5, 12.5, 17.0]
+    zSmp     = [415, 584, 582]
+  
+  for idt,dist in enumerate(distance):    
 
     lArc = 2.*dist*np.pi/180.
    
     for varName in varNames:
 
-      #print dist,' km, ',varName
-      figName  = str(dist) +'km_' +varName +'_'+ str(times[idt]) + 'hr.png'
-      figTitle = '%s (@ %d km)'%(varName,dist)
-      print figName
-
-      # Observations
-      obsQry = 'select plumeKM, ' + varName + ' from dataTable'
-      obsArray = utilDb.db2Array(obsCur,obsQry)
-      if varName == 'SO2':
-        oMax = np.where(obsArray[:,1] == obsArray[:,1].max())[0][0]
-        print oMax,obsArray[oMax,0],obsArray[oMax,1]
+      print '\n',dist,' km, ',varName
 
       # Prediction query
       preQry1  = "select xSmp,Value from samTable a,smpTable p where a.colNo=p.colNo and "
@@ -65,28 +51,59 @@ def mainProg():
 
       # Predictions #1 (2012)
       preArray1 = utilDb.db2Array(preCur1,preQry1)
-      if idt == 0 and varName == 'SO2':
+      if varName == 'SO2':
         iMax1 = np.where(preArray1[:,1] == preArray1[:,1].max())[0][0]
-        for i in range(len(preArray1)):
-          preArray1[i,0] = float(i-iMax1)*lArc + obsArray[oMax,0] 
-        dArray1 = preArray1[:,0]
-      else:
-        preArray1[:,0] = dArray1
-
+          
       # Predictions #2 (v2100)
       preArray2 = utilDb.db2Array(preCur2,preQry1)
-      if idt == 0 and varName == 'SO2':
+      if varName == 'SO2':
         iMax2 = np.where(preArray2[:,1] == preArray2[:,1].max())[0][0]
+          
+      # Observed data
+      if prjName == "tva_990715":
+        if dist == 16:
+          pls = [1,2,3,4]
+        if dist == 62:
+          pls = [6,7,8]
+        if dist == 106:
+          pls = [9,10,11]
+
+      oMax  = [0 for i in range(12)]
+      
+      for ipl in pls:
+        
+        obsDbName = 'OBS\\tva_071599_' + str(dist) + 'km_obs' + str(ipl) + '.csv.db'
+        print '\n',obsDbName
+      
+        obsConn = sqlite3.connect(obsDbName)
+        obsConn.row_factory = sqlite3.Row
+        obsCur = obsConn.cursor()
+
+        # Observations
+        obsQry = 'select plumeKM, ' + varName + ' from dataTable'
+        obsArray = utilDb.db2Array(obsCur,obsQry)
+        if varName == 'SO2':
+          oMax[ipl] = np.where(obsArray[:,1] == obsArray[:,1].max())[0][0]
+          print oMax[ipl],obsArray[oMax[ipl],0],obsArray[oMax[ipl],1]
+
+        # Align the prediction1 and observed centerlines
+
+        for i in range(len(preArray1)):
+          preArray1[i,0] = float(i-iMax1)*lArc + obsArray[oMax[ipl],0] 
+
+        # Align the prediction2 and observed centerlines
+
         for i in range(len(preArray2)):
-          preArray2[i,0] = float(i-iMax2)*lArc + obsArray[oMax,0] 
-        dArray2 = preArray2[:,0]
-      else:
-        preArray2[:,0]= dArray2
+          preArray2[i,0] = float(i-iMax2)*lArc + obsArray[oMax[ipl],0] 
+           
+        # Plot
+        figName  = str(dist) +'km_' +varName +'_'+ str(times[idt]) + 'hr_obs' + str(ipl) + '.png'
+        figTitle = '%s (@ %d km for plume %d)'%(varName,dist,ipl)
+        print figName
 
-      #
-      pltCmpConc(zSmp, varName, obsArray, preArray1, preArray2, figTitle, figName)
+        pltCmpConc(zSmp, varName, obsArray, preArray1, preArray2, figTitle, figName)
 
-    obsConn.close()
+        obsConn.close()
     
   preConn1.close()
   preConn2.close()
