@@ -148,13 +148,22 @@ def str2ymdhms(timeString):
   (Hr, Mn, Sec) = map(int,(timeString[8:10],timeString[10:12],timeString[12:14]))
   return(Yr,Mo,Day,Hr,Mn,Sec)
 
-def hpacSenHead(line,sCur):  
+def hpacSenHead(line,sCur,mcNames=None):  
   tmpHead = line.split()[1:]
   vnames=[]
   for vname in tmpHead:
     if vname[-3:] != '001':
       break
     vnames.append(vname[:-3])
+  if mcNames is not None:
+    mcStart = 0
+    print 'Using mcNames from sam file :'
+    for iv,vname in enumerate(vnames):
+      if vname.endswith('_'):
+        if mcStart == 0:
+          mcStart = iv
+        print vname,' -> ',mcNames[iv-mcStart]
+        vnames[iv] = mcNames[iv-mcStart]
   nvar = len(vnames)
   print ('No. of variables = %d, Names = %s\n' % (nvar,vnames))
   return(len(tmpHead),vnames) 
@@ -280,6 +289,14 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern,createTable):
           if len(line) < 3: break
           if matchSen:
             matName = line.split()[4].split(':')[0]
+            mcNames = None
+            if 'MC' in line:              
+              mcNames = line.split()[4].split(':')
+              if len(mcNames) > 1:
+                mcNames = mcNames[1].replace('(','').replace(')','').split(',')
+                #print matName,mcNames
+              else:
+                mcNames = None
           tmpList = line.split()[0:3]
           tmpList.extend([matName])
           smpLoc.append(tmpList)
@@ -298,7 +315,7 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern,createTable):
       # HPAC or SCIPUFF sensor type
       if matchSen:
         if fileinput.isfirstline():
-          (nDat,vnames) = hpacSenHead(line,sCur)
+          (nDat,vnames) = hpacSenHead(line,sCur,mcNames)
           createSam(nDat,vnames,sCur,smpLoc)
         else:
           nt = addData(line,nDat,sCur,nt,isReverse=isReverse)          
@@ -329,9 +346,8 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern,createTable):
     smpConn.commit()
     sCur.execute('select max(value) from smpTable d,samTable c where d.colNo = c.colNo and varName=?',(vnames[0],))
     sCur.execute('CREATE index colID on samTable(colNo)')
-    sCur.execute('CREATE index colID on smpTable(colNo)')
     #c.execute('SELECT DISTINCT itime,timeString FROM indr WHERE itime_local = ?',(it,))
-    print 'Max %s = %15.5e'%(vnames[0],float(sCur.fetchone()[0]))
+    #print 'Max %s = %15.5e'%(vnames[0],float(sCur.fetchone()[0]))
     fileinput.close()
     return(sCur,createTable)
 
@@ -481,7 +497,9 @@ if __name__ == '__main__':
   arg.add_option("-a",action="store",type="string",dest="samFiles")
   arg.set_defaults(prjNames=None,senName=None,samFiles=None)
   opt,args = arg.parse_args()
-  #prjNames = ['071599_vo3_sm']
+  #opt.prjNames = '071599_vo3_lin_intel'
+  opt.prjNames = 'tva_990715'
+  opt.samFiles = 'tva_990715.sam'
 
   #
   # Check arguments
@@ -489,7 +507,8 @@ if __name__ == '__main__':
     print 'Error: prjNames or senName must be specified'
     print 'Usage: smp2db.py [-p prjName1[:prjName2...] [-a prj1.sam[:prj2.sam...]]] [ -e senName]'
   elif opt.prjNames is not None:
-    #os.chdir('d:\\EPRI\\git\\runs\\cumberland')
+    os.chdir('d:\\SCIPUFF\\runs\\EPRI\\Nash99')
+    #os.chdir("d:\\EPRI\\git\\runs\\cumberland")
     prjNames = opt.prjNames.split(':')
     if opt.samFiles:
       samFiles = opt.samFiles.split(':')
