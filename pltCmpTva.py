@@ -31,7 +31,7 @@ def mainProg():
   varNames = ["SO2", "O3", "NO",  "NO2"]
   
   distance = [62] #16, 62, 106]
-  times    = [7.25] #, 11.5, 11.5]
+  times    = [11.25] #, 11.5, 11.5]
   zSmp     = [582] #415, 582, 584]
   
   for idt,dist in enumerate(distance):
@@ -46,23 +46,24 @@ def mainProg():
    
     for varName in varNames:
 
-      print dist,' km, ',varName
+      #print dist,' km, ',varName
+      figName = str(dist) +'km_' +varName +'_'+ str(times[idt]) + 'hr.png'
+      print figName
 
       # Observations
-
       obsQry = 'select plumeKM, ' + varName + ' from dataTable'
       obsArray = utilDb.db2Array(obsCur,obsQry)
       if varName == 'SO2':
         oMax = np.where(obsArray[:,1] == obsArray[:,1].max())[0][0]
         print oMax,obsArray[oMax,0],obsArray[oMax,1]
 
-      # Predictions #1 (2012)
-
+      # Prediction query
       preQry1  = "select xSmp,Value from samTable a,smpTable p where a.colNo=p.colNo and "
       preQry1 += "varName = '%s' and zSmp = %f and time = %3f"%(varName,zSmp[idt],times[idt])
       #print preQry1
+
+      # Predictions #1 (2012)
       preArray1 = utilDb.db2Array(preCur1,preQry1)
- 
       if idt == 0 and varName == 'SO2':
         iMax1 = np.where(preArray1[:,1] == preArray1[:,1].max())[0][0]
         for i in range(len(preArray1)):
@@ -70,8 +71,8 @@ def mainProg():
         dArray1 = preArray1[:,0]
       else:
         preArray1[:,0] = dArray1
-      #print dArray1
-      
+
+      # Predictions #2 (v2100)
       preArray2 = utilDb.db2Array(preCur2,preQry1)
       if idt == 0 and varName == 'SO2':
         iMax2 = np.where(preArray2[:,1] == preArray2[:,1].max())[0][0]
@@ -82,27 +83,29 @@ def mainProg():
         preArray2[:,0]= dArray2
 
       #
-      plotCompConc(zSmp, varName, obsArray, preArray1, preArray2, varName)
+      pltCmpConc(zSmp, varName, obsArray, preArray1, preArray2, varName, fName)
 
     obsConn.close()
     
   preConn1.close()
   preConn2.close()
       
-def plotCompConc(zSmp, varName, obsData, preData1, preData2, title):
+def pltCmpConc(zSmp, varName, obsData, preData1, preData2, title, figName):
   #import pdb; pdb.set_trace()
   fig = plt.figure()
   plt.clf()
   fig.hold(True)
-  print obsData[:,1]
-  plt.plot(obsData[:,0],obsData[:,1],'go')
-  plt.plot(preData1[:,0],preData1[:,1],'r+')
-  plt.plot(preData2[:,0],preData2[:,1],'b-')
+  #print obsData[:,1]
+  plt.plot(obsData[:,0],obsData[:,1],'ro')
+  plt.plot(preData1[:,0],preData1[:,1],'gs-')
+  plt.plot(preData2[:,0],preData2[:,1],'b^-')
   plt.ylabel(zSmp)
   plt.xlabel(varName)
   plt.title(title)
   fig.hold(False)
-  plt.show()
+  plt.savefig(figName)
+  #plt.show()
+  return
             
 # Main program
 if __name__ == '__main__':
