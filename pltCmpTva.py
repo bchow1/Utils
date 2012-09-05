@@ -47,7 +47,8 @@ def mainProg():
     for varName in varNames:
 
       #print dist,' km, ',varName
-      figName = str(dist) +'km_' +varName +'_'+ str(times[idt]) + 'hr.png'
+      figName  = str(dist) +'km_' +varName +'_'+ str(times[idt]) + 'hr.png'
+      figTitle = '%s (@ %d km)'%(varName,dist)
       print figName
 
       # Observations
@@ -83,25 +84,32 @@ def mainProg():
         preArray2[:,0]= dArray2
 
       #
-      pltCmpConc(zSmp, varName, obsArray, preArray1, preArray2, varName, figName)
+      pltCmpConc(zSmp, varName, obsArray, preArray1, preArray2, figTitle, figName)
 
     obsConn.close()
     
   preConn1.close()
   preConn2.close()
       
-def pltCmpConc(zSmp, varName, obsData, preData1, preData2, title, figName):
+def pltCmpConc(zSmp, varName, obsData, preData1, preData2, figTitle, figName):
   #import pdb; pdb.set_trace()
   fig = plt.figure()
   plt.clf()
   fig.hold(True)
   #print obsData[:,1]
-  plt.plot(obsData[:,0],obsData[:,1],'ro')
-  plt.plot(preData1[:,0],preData1[:,1],'gs-')
-  plt.plot(preData2[:,0],preData2[:,1],'b^-')
-  plt.ylabel(zSmp)
-  plt.xlabel(varName)
-  plt.title(title)
+  LhO  = plt.plot(obsData[:,0],obsData[:,1],'ro')
+  LkO  = 'OBS'
+  LhP1 = plt.plot(preData1[:,0],preData1[:,1],'gs-')
+  LkP1 = 'SCICHEM-2012'
+  LhP2 = plt.plot(preData2[:,0],preData2[:,1],'b^-')
+  LkP2 = 'SCICHEM-v2100'
+  plt.ylabel('Concentration (ppm)')
+  plt.xlabel('Cross plume distance (km)')
+  plt.title(figTitle)
+  plt.legend([LkO,LkP1,LkP2],bbox_to_anchor=(0.72,0.98),loc=2,borderaxespad=0.)
+  lgnd  = plt.gca().get_legend()
+  ltext = lgnd.get_texts()
+  plt.setp(ltext,fontsize=9)
   fig.hold(False)
   plt.savefig(figName)
   #plt.show()
