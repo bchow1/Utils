@@ -6,6 +6,7 @@ import numpy as np
 import numpy.ma as ma
 import matplotlib.pyplot as plt
 import sqlite3
+import time
 
 # Local modules
 sys.path.append('C:\\cygwin\\home\\sid\\python')
@@ -18,10 +19,20 @@ def mainProg():
   #os.chdir('D:\\SCIPUFF\\runs\\EPRI\\aermod\\kinso2\\SCICHEM')
   #os.chdir('v:\\scipuff\\runs\\EPRI\\wainwright')
   #dataFile = '2009-10.SFC'
+
+  
   dataFile = 'kinso2.sfc'
-  colNames = ('year','month','day','j_day','hour',\
-              'H','u','w','VPTG','Zic','Zim','L','Zo','Bo','r',\
-              'Ws','Wd','zref','temp','ztemp','col1','col2')
+  #dataFile = 'kinso2.pfl'
+  colNames = ''
+  colFormats = ''
+
+  if dataFile.endswith('.sfc'):
+    colNames = ('year','month','day','j_day','hour',\
+                'H','u','w','VPTG','Zic','Zim','L','Zo','Bo','r',\
+                'Ws','Wd','zref','temp','ztemp','col1','col2')
+    colFormats = ('int','int','int','int','int','float','float','float','float','float',\
+                  'float','float','float','float','float','float','float','float','float','float',\
+                  'float','float')
   #   9,   9,      1,    244    1,\
   # -40.9,  0.755,  -9.000, -9.000, -999., 1510., 927.9, 0.1500, 6.00, 1.00,\
   #  7.57    173.0    7.9     287.1    2.0     0     0.80    66.     987.    10      ADJ-A1
@@ -31,25 +42,44 @@ def mainProg():
   #                         'formats':('int','int','int','int','int','float','float','float','float','float',\
   #                         'float','float','float','float','float','float','float','float','float','float',\
   #                         'float','float','float','float','float','S20')})
-  sfcDat = np.loadtxt(dataFile,skiprows=1,dtype={'names':colNames,\
-                           'formats':('int','int','int','int','int','float','float','float','float','float',\
-                           'float','float','float','float','float','float','float','float','float','float',\
-                           'float','float')})
+
+  if dataFile.endswith('.pfl'):
+    colNames = ('year','month','day','hour', 'height',\
+                 'top', 'WDnn', 'WSnn', 'TTnn', 'SAnn', 'SWnn')
+    #80  4  3  1   10.0 0 -999.    4.90     9.9 -999.0 -999.00
+    colFormats = ('int','int','int','int','float', \
+                    'int','float','float','float','float','float') 
     
+
+  #  year, month, day , hour, height, top, WDnn, WSnn, TTnn, SAnn, SWnn
+  # FORMAT (4(I2,1X), F6.1,1X, I1,1X, F5.0,1X, F7.2,1X, F7.1, 1X,F6.1, 1X,F7.2)
+  # 80  8 30  3  100.0 1  159.    8.99    20.2    4.3    0.12
+
+  sfcDat = getDataFromFile(dataFile, colNames, colFormats)
+
   #for colNo,colName in enumerate(colNames):
   #  print colNo,colName
-
-  hr0 = sfcDat['j_day'][0] *24 + sfcDat['hour'][0]
-  hr = sfcDat['j_day']*24 + sfcDat['hour'] - hr0
-  print np.shape(sfcDat),hr0, hr,'\n'
+  timeTuple = time.strptime('%02d%02d%02d'%(sfcDat['year'][0],sfcDat['month'][0],sfcDat['day'][0]),"%y%m%d")
+  epTime0 = time.mktime(timeTuple)
+  epTime = np.zeros(len(sfcDat))
+  for rowNo in range(len(sfcDat)):
+    timeTuple = time.strptime('%02d%02d%02d'%(sfcDat['year'][rowNo],sfcDat['month'][rowNo],sfcDat['day'][rowNo]),"%y%m%d")
+    epTime[rowNo] = time.mktime(timeTuple)
+  hr =   (epTime - epTime0)/3600.
+  print np.shape(sfcDat), '\n' #,hr0, hr,'\n'
   
   for colNo,colName in enumerate(colNames):
     if colNo in [0,1,2,3,4,20,21]:
       continue
     sfcMasked = ma.masked_where(sfcDat[colName] == -9.,sfcDat[colName])
     sfcMasked = ma.masked_where(sfcMasked == -999.,sfcMasked)
+    sfcMasked = ma.masked_where(sfcMasked == -999.9,sfcMasked)
     sfcMasked = ma.masked_where(sfcMasked == -99999.0,sfcMasked)
+    if colName == "TTnn":
+      sfcMasked = ma.masked_where(sfcMasked > 99.0,sfcMasked)
+      sfcMasked = ma.masked_where(sfcMasked < -10.,sfcMasked)
     print colName,sfcMasked.min(),sfcMasked.max()
+
     figName = colName + '.png'
     plt.clf()
     plt.plot(hr, sfcMasked, 'o')
@@ -60,15 +90,43 @@ def mainProg():
     sfcDat[colName] = ma.filled(sfcMasked,-999.0)
 
   sfcFile = open('new_' + dataFile,'w')
+  if dataFile.endswith('.sfc'):
+      # (3(I2,1X), I3,1X, I2,1X, F6.1,1X, 2(F6.3,1X), F5.0,1X, F8.1,1X, F5.2,1X,
+      # 2(F6.2,1X), F7.2,1X, F5.0, 3(1X,F6.1))
+      s  = '{0[0]:2d} {0[1]:2d} {0[2]:2d} {0[3]:3d} {0[4]:2d} {0[5]:6.1f} '
+      s += '{0[6]:6.3f} {0[7]:6.3f} {0[8]:5.0f} {0[9]:8.1f} {0[10]:5.2f} {0[11]:6.2f} {0[12]:6.2f} '
+      s += '{0[13]:7.2f} {0[14]:6.1f} {0[15]:6.1f} {0[16]:6.1f} {0[17]:6.1f}\n'
+  if dataFile.endswith('.pfl'):
+      # 4(I2,1X), F6.1,1X, I1,1X, F5.0,1X, F7.2,1X, F7.1, 1X,F6.1, 1X,F7.2
+      s  = '{0[0]:2d} {0[1]:2d} {0[2]:2d} {0[3]:2d} {0[4]:6.1f} {0[5]:1d} {0[6]:5.0f} '
+      s += '{0[7]:7.2f} {0[8]:7.1f} {0[9]:6.1f} {0[10]:7.2f}\n'         
   for row in range(len(sfcDat)):
-    for colNo,colName in enumerate(colNames):
-      if colName in ['year','month','day','j_day','hour']:
-        sfcFile.write('%03d '%sfcDat[colName][row])
-      elif colNo < 25:
-        sfcFile.write('%10.4f '%sfcDat[colName][row])
-    sfcFile.write('\n')
+        sfcFile.write(s.format(sfcDat[row]))       
   sfcFile.close()
+
+
+def getDataFromFile(dataFile, colNames, colFormats):
+  print colNames , '\n'
+  print colFormats, '\n'
+  sfcDat = np.loadtxt(dataFile,skiprows=1,dtype={'names':colNames,'formats':colFormats})
+  return sfcDat
    
 # Main program
 if __name__ == '__main__':
+  s = '{0[0]:2d} {0[1]:2d} {0[2]:2d} {0[3]:2d} {0[4]:6.1f} {0[5]:1d} {0[6]:5.0f} {0[7]:7.2f} {0[8]:7.1f} {0[9]:6.1f} {0[10]:7.2f}'
+  sfcDat = [80, 4,  3,  1,   10.0, 0, -999.,    4.90,     9.9, -999.0, -999.00]
+  print s.format(sfcDat)
+  #s = '{:04d} {:03d}'
+  # sfcDat = [10,80]
+  #print  '{0[0]:+6.3f}; {0[1]:+6.2f}'.format(sfcDat)#(10, 80)
+  
+  print sfcDat
+  
+  coord = (3, 5)
+  print 'X: {0[0]};  Y: {0[1]}'.format(coord)
+
+  print '{0[0]:6.3f};  Y: {0[1]:5.0f}'.format(sfcDat)
+  #print '{0[0]}; {:+f}'.format(sfcDat)  # show it always
+  
+ 
   mainProg()
