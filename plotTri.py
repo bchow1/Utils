@@ -12,8 +12,9 @@ import sys
 import optparse
 
 def printUsage():
-  print 'Usage: plotTri -i inFile[.ntv] [-l skiplines ]'
+  print 'Usage: plotTri -i inFile[.ntv] [-n t ] [-l skiplines ]'
 
+os.chdir('d:\\SCIPUFF\\runs\\EPRI\\wwright')
 arg = optparse.OptionParser()
 arg.add_option("-i",action="store",type="string",dest="inFile")
 arg.add_option("-n",action="store",type="string",dest="isLatLon")
@@ -62,6 +63,9 @@ triangles = np.array([triData['nIda']-1,triData['nIdb']-1,triData['nIdc']-1])
 if isLatLon:
   y = nodeData['x']
   x = nodeData['y']
+else:
+  x = nodeData['x']
+  y = nodeData['y']
 c = nodeData['cmean']
 
 npts = len(x)
@@ -98,7 +102,7 @@ else:
   plt.xlabel('X')
   plt.ylabel('Y')
 plt.hold(False)
-plt.title('Concentrations for '+ inFile + ' scaled with %5.3f'%maxc)
+plt.title('Concentrations for '+ inFile + ' scaled with %8.3e'%maxc)
 fig.savefig(inFile+'.png')
 #plt.show()
 
