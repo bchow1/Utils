@@ -342,13 +342,13 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern,createTable):
              nNames += 1
           elif nNames > nDat:
              nt = addData(line,nDat,sCur,nt,isReverse=isReverse)
-    print 'No. of time breaks = ',nt  
     smpConn.commit()
     sCur.execute('select max(value) from smpTable d,samTable c where d.colNo = c.colNo and varName=?',(vnames[0],))
     sCur.execute('CREATE index colID on samTable(colNo)')
     #c.execute('SELECT DISTINCT itime,timeString FROM indr WHERE itime_local = ?',(it,))
     #print 'Max %s = %15.5e'%(vnames[0],float(sCur.fetchone()[0]))
     fileinput.close()
+    print 'No. of time breaks = ',nt  
     return(sCur,createTable)
 
 def sen2Db(startTimeString,senFile,samList=None):
@@ -498,17 +498,18 @@ if __name__ == '__main__':
   arg.set_defaults(prjNames=None,senName=None,samFiles=None)
   opt,args = arg.parse_args()
   #opt.prjNames = '071599_vo3_lin_intel'
-  opt.prjNames = 'tva_990715'
-  opt.samFiles = 'tva_990715.sam'
-
+  #opt.prjNames = 'tva_980825_wamb_noLSV'
+  #opt.samFiles = 'tva_980825.sam'
+  opt.prjNames = 'bowline_ss'
+  opt.samFiles = 'bowline_ss.sam'
   #
   # Check arguments
   if opt.prjNames is None and opt.senName is None:
     print 'Error: prjNames or senName must be specified'
     print 'Usage: smp2db.py [-p prjName1[:prjName2...] [-a prj1.sam[:prj2.sam...]]] [ -e senName]'
   elif opt.prjNames is not None:
-    os.chdir('d:\\SCIPUFF\\runs\\EPRI\\Nash99')
-    #os.chdir("d:\\EPRI\\git\\runs\\cumberland")
+    os.chdir('d:\\SCIPUFF\\runs\\EPRI\\aermod\\Bowline\\SCICHEM')
+    print os.getcwd()
     prjNames = opt.prjNames.split(':')
     if opt.samFiles:
       samFiles = opt.samFiles.split(':')
@@ -519,3 +520,4 @@ if __name__ == '__main__':
   else:
     senName = opt.senName
     sen2Db(None,senName)
+  print '**DONE**'
