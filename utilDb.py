@@ -204,7 +204,7 @@ def addData(line,nDat,sCur,nt,isReverse=1.):
 def Smp2Db(dbName,mySciFiles,mySCIpattern=None,createTable=False):
   global allPrj
   
-  #print '\n In utilDb.Smp2Db: prjName = ',mySciFiles.prjName
+  print '\n In utilDb.Smp2Db: prjName = ',mySciFiles.prjName
   
   if mySCIpattern is None:
     mySCIpattern = mySciFiles.SCIpattern
@@ -265,6 +265,7 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern=None,createTable=False):
     
   # Create database for calculated data 
   if not createTable:
+    print 'dbName = ',dbName
     if not os.path.exists(dbName):
       createTable =  True
   print 'Create smp data table = ',createTable,' in database file ',dbName
@@ -345,13 +346,9 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern=None,createTable=False):
           elif nNames > nDat:
              nt = addData(line,nDat,sCur,nt,isReverse=isReverse)
     smpConn.commit()
-    sCur.execute('select max(value) from smpTable d,samTable c where d.colNo = c.colNo and varName=?',(vnames[0],))
     sCur.execute('CREATE index colID on samTable(colNo)')
-    #c.execute('SELECT DISTINCT itime,timeString FROM indr WHERE itime_local = ?',(it,))
-    #print 'Max %s = %15.5e'%(vnames[0],float(sCur.fetchone()[0]))
     fileinput.close()
     print 'No. of time breaks = ',nt  
-  print smpConn,sCur,createTable
   return(smpConn,sCur,createTable)
 
 def sen2Db(startTimeString,senFile,samList=None):
