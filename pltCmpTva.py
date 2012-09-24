@@ -20,7 +20,7 @@ import setSCIparams as SCI
 # Code for SCICHEM 2012 plots
 
 #def mainProg(prjName=None,obsDbName=None,preDb1=None,preDb2=None):
-def mainProg(prjName=None,preCur1=None,preCur2=None):
+def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None):
 
   if prjName is None:
     print "Must provide project name"
@@ -84,9 +84,8 @@ def mainProg(prjName=None,preCur1=None,preCur2=None):
       
       for ipl in pls:
         
-        #obsDbName = 'OBS\\tva_071599_' + str(dist) + 'km_obs' + str(ipl) + '.csv.db'
-        obsDbName = 'OBS\\cumb1_'+ str(dist) + 'km_obs' + str(ipl) + '.csv.db'
-        print '\n',obsDbName
+        obsDbName = obsPfx + str(dist) + 'km_obs' + str(ipl) + '.csv.db'
+        print '\n obsDbName = ',obsDbName
       
         obsConn = sqlite3.connect(obsDbName)
         obsConn.row_factory = sqlite3.Row
@@ -119,6 +118,7 @@ def mainProg(prjName=None,preCur1=None,preCur2=None):
         pltCmpConc(zSmp, varName, obsArray, preArray1, preArray2, figTitle, figName)
 
         obsConn.close()
+  return
     
       
 def pltCmpConc(zSmp, varName, obsData, preData1, preData2, figTitle, figName):
@@ -168,24 +168,24 @@ if __name__ == '__main__':
     runDir = '/home/user/bnc/scipuff/runs/EPRI/tva/tva_980825'
   os.chdir(runDir)
 
-  prjName1 = os.path.join('SCICHEM-2012','tva_980825')
-  print prjName1
-  #prjName2 = 'SCICHEM-01\\071599_vo3_lin_intel'
-  prjName2 = os.path.join('SCICHEM-01','tva_082598')
+
+  # Observed data 
+  #obsPfx = os.path.join('OBS','tva_071599_')
+  obsPfx = os.path.join('OBS','cumb1_')
+  print obsPfx
 
   # Predicted data
-  #preConn1 = sqlite3.connect(preDbName1)
-  #preConn1.row_factory = sqlite3.Row
-  #preCur1 = preConn1.cursor()
+  prjName1 = os.path.join('SCICHEM-2012','tva_980825')
+  print prjName1
   preConn1,preCur1 = getSmpDb(prjName1)
 
   # Predicted data
-  #preConn2 = sqlite3.connect(preDbName2)
-  #preConn2.row_factory = sqlite3.Row
-  #preCur2 = preConn2.cursor()
+  #prjName2 = 'SCICHEM-01\\071599_vo3_lin_intel'
+  prjName2 = os.path.join('SCICHEM-01','tva_082598')
+  print prjName2
   preConn2,preCur2 = getSmpDb(prjName2)
 
-  mainProg(prjName=prjName1,preCur1=preCur1,preCur2=preCur2)
+  mainProg(prjName=prjName1,obsPfx=obsPfx,preCur1=preCur1,preCur2=preCur2)
 
   preConn1.close()
   preConn2.close()
