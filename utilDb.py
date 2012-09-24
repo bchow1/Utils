@@ -38,13 +38,14 @@ class prj():
 
   def setDb(self,prjName,samFile=None):
     self.prjName  = prjName
-    self.sciFiles = SCI.Files(self.prjName,mySCIpattern)
+    self.sciFiles = SCI.Files(self.prjName)
     if samFile:
       self.sciFiles.samFile = samFile
     self.calDb = '%s.db'%(self.sciFiles.smpFile)
     # Create database for calculated data 
     print 'Create smpDb ',self.calDb
-    (self.sCur,self.createCaldb) = Smp2Db(self.calDb,self.sciFiles,mySCIpattern,self.createCaldb)
+    (smpConn,self.sCur,self.createCaldb) = \
+      Smp2Db(self.calDb,self.sciFiles,createTable=self.createCaldb)
     return
 
 global allPrj
@@ -53,10 +54,6 @@ allPrj = prj()
 
 def createSmpDb(prjNames,samFiles=None):
 
-  global mySCIpattern
- 
-  mySCIpattern = SCI.Pattern()
-  
   print 'In dbUtil.createSmpDb, prjNames(must be a list) = ',prjNames
  
   # Set calculated data file and create database
@@ -88,6 +85,8 @@ def createSmpDb(prjNames,samFiles=None):
   allPrj.EpEndTime   = epTimeMax
   print '\nSampler start %s(%d)'%(time.ctime(allPrj.EpStartTime),allPrj.EpStartTime)
   print 'Sampler end %s(%d)'%(time.ctime(allPrj.EpEndTime),allPrj.EpEndTime)
+
+  return
 
 def db2Array(cur,selectStr,dim=None):
   if dim is not None: 
@@ -202,10 +201,13 @@ def addData(line,nDat,sCur,nt,isReverse=1.):
   return(nt)
     
 # function to create calculated db
-def Smp2Db(dbName,mySciFiles,mySCIpattern,createTable):
+def Smp2Db(dbName,mySciFiles,mySCIpattern=None,createTable=False):
   global allPrj
   
   #print '\n In utilDb.Smp2Db: prjName = ',mySciFiles.prjName
+  
+  if mySCIpattern is None:
+    mySCIpattern = mySciFiles.SCIpattern
   (nmlNames,nmlValues) = mySCIpattern.readNml(mySciFiles.inpFile)
   i = nmlNames.index('time1')
   startYr  = int(nmlValues[i]['year_start'])
@@ -349,7 +351,8 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern,createTable):
     #print 'Max %s = %15.5e'%(vnames[0],float(sCur.fetchone()[0]))
     fileinput.close()
     print 'No. of time breaks = ',nt  
-    return(sCur,createTable)
+  print smpConn,sCur,createTable
+  return(smpConn,sCur,createTable)
 
 def sen2Db(startTimeString,senFile,samList=None):
 
