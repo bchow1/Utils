@@ -7,37 +7,35 @@ import numpy.ma as ma
 import matplotlib.pyplot as plt
 import sqlite3
 
+compName = os.uname()[1]
+
 # Local modules
-sys.path.append('C:\\cygwin\\home\\sid\\python')
+if compName == 'sm-bnc':
+  sys.path.append('C:\\cygwin\\home\\sid\\python')
+if  compName == 'pj-linux4':
+  sys.path.append('C:\\cygwin\\home\\sid\\python')
 import utilDb
+import setSCIparams as SCI
 
 # Code for SCICHEM 2012 plots
 
-def mainProg():
+#def mainProg(prjName=None,obsDbName=None,preDb1=None,preDb2=None):
+def mainProg(prjName=None,preCur1=None,preCur2=None):
 
-  prjName = 'tva_980825'
-  preDbName1 = 'tva_980825.smp.db'
-  #preDbName2 = 'SCICHEM-01\\071599_vo3_lin_intel.smp.db'
-  preDbName2 = 'SCICHEM-01\\tva_082598.smp.db'
-
-  # Predicted data
-  preConn1 = sqlite3.connect(preDbName1)
-  preConn1.row_factory = sqlite3.Row
-  preCur1 = preConn1.cursor()
-
-  # Predicted data
-  preConn2 = sqlite3.connect(preDbName2)
-  preConn2.row_factory = sqlite3.Row
-  preCur2 = preConn2.cursor()
+  if prjName is None:
+    print "Must provide project name"
+    return
+  else:
+   print 'prjName = ',prjName
   
   varNames = ["SO2", "O3", "NO",  "NO2"]
 
-  if prjName == "tva_990715":
+  if prjName.endswith("tva_990715"):
     distance = [16, 62, 106]
     times    = [11.5, 12.5, 17.0]
     zSmp     = [415, 584, 582]
 
-  if prjName == "tva_980825":
+  if prjName.endswith("tva_980825"):
     distance = [20, 55, 110]
     times    = [12, 12.75, 14.5]
     zSmp     = [520, 600, 620]
@@ -66,7 +64,7 @@ def mainProg():
         iMax2 = np.where(preArray2[:,1] == preArray2[:,1].max())[0][0]
           
       # Observed data
-      if prjName == "tva_990715":
+      if prjName.endswith("tva_990715"):
         if dist == 16:
           pls = [1,2,3,4]
         if dist == 62:
@@ -74,7 +72,7 @@ def mainProg():
         if dist == 106:
           pls = [9,10,11]
 
-      if prjName == "tva_980825":
+      if prjName.endswith("tva_980825"):
         if dist == 20:
           pls = [3,4,5]
         if dist == 55:
@@ -122,8 +120,6 @@ def mainProg():
 
         obsConn.close()
     
-  preConn1.close()
-  preConn2.close()
       
 def pltCmpConc(zSmp, varName, obsData, preData1, preData2, figTitle, figName):
   #import pdb; pdb.set_trace()
@@ -151,10 +147,45 @@ def pltCmpConc(zSmp, varName, obsData, preData1, preData2, figTitle, figName):
   plt.savefig(figName)
   #plt.show()
   return
+
+def getSmpDb(prjName):
+    mySciFiles = SCI.Files(prjName)
+    smpDb = '%s.smp.db'%(prjName)
+    # Create database for calculated data 
+    print 'Create smpDb ',smpDb,' in ',os.getcwd()
+    (smpDbConn,smpDbCur,smpCreateDb) = utilDb.Smp2Db(smpDb,mySciFiles)
+    return (smpDbConn,smpDbCur)
+
             
 # Main program
 if __name__ == '__main__':
-  #os.chdir('d:\\SCIPUFF\\runs\\EPRI\\Nash99')
-  #os.chdir('d:\\SCICHEM-2012\\TVA_990715')
-  os.chdir('d:\\SCICHEM-2012\\TVA_980825')
-  mainProg()
+
+  if compName == 'sm-bnc':
+    #runDir='d:\\SCIPUFF\\runs\\EPRI\\Nash99'
+    #runDir='d:\\SCICHEM-2012\\TVA_990715'
+    runDir = 'd:\\SCICHEM-2012\\TVA_980825'
+  if compName == 'pj-linux4':
+    runDir = '/home/user/bnc/scipuff/runs/EPRI/tva/tva_980825'
+  os.chdir(runDir)
+
+  prjName1 = os.path.join('SCICHEM-2012','tva_980825')
+  print prjName1
+  #prjName2 = 'SCICHEM-01\\071599_vo3_lin_intel'
+  prjName2 = os.path.join('SCICHEM-01','tva_082598')
+
+  # Predicted data
+  #preConn1 = sqlite3.connect(preDbName1)
+  #preConn1.row_factory = sqlite3.Row
+  #preCur1 = preConn1.cursor()
+  preConn1,preCur1 = getSmpDb(prjName1)
+
+  # Predicted data
+  #preConn2 = sqlite3.connect(preDbName2)
+  #preConn2.row_factory = sqlite3.Row
+  #preCur2 = preConn2.cursor()
+  preConn2,preCur2 = getSmpDb(prjName2)
+
+  mainProg(prjName=prjName1,preCur1=preCur1,preCur2=preCur2)
+
+  preConn1.close()
+  preConn2.close()
