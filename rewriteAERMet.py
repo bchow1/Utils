@@ -14,15 +14,8 @@ import utilDb
 
 # Code for SCICHEM 2012 plots
 
-def mainProg():
-  #os.chdir('D:\\SCICHEM-2012\\kinso2\\SCICHEM')
-  #os.chdir('D:\\SCIPUFF\\runs\\EPRI\\aermod\\kinso2\\SCICHEM')
-  #os.chdir('/home/user/bnc/scipuff/runs/EPRI/wwright')
-  os.chdir('d:\\SCIPUFF\\runs\\EPRI\\wwright')
-    
-  dataFile = '2009-10.SFC'
-  #dataFile = 'kinso2.sfc'
-  #dataFile = 'kinso2.pfl'
+def mainProg(dataFile):
+
   colNames = ''
   colFormats = ''
 
@@ -118,4 +111,17 @@ def mainProg():
 
 # Main program
 if __name__ == '__main__': 
-  mainProg()
+
+  runDir = os.getcwd() 
+  #runDir = None
+  #runDir = 'D:\\SCICHEM-2012\\kinso2\\SCICHEM'
+  #runDir = 'D:\\SCIPUFF\\runs\\EPRI\\aermod\\kinso2\\SCICHEM'
+  #runDir = '/home/user/bnc/scipuff/runs/EPRI/wwright'
+  #runDir = 'd:\\SCIPUFF\\runs\\EPRI\\wwright'
+    
+  dataFile = '2009-10.SFC'
+  #dataFile = 'kinso2.sfc'
+  #dataFile = 'kinso2.pfl'
+
+  os.chdir(runDir)
+  mainProg(dataFile)
