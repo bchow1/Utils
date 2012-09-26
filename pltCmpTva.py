@@ -7,20 +7,23 @@ import numpy.ma as ma
 import matplotlib.pyplot as plt
 import sqlite3
 
-compName = os.uname()[1]
+#try:
+#  compName = os.uname()[1]
+compName = 'sage-d600'
 
 # Local modules
-if compName == 'sm-bnc':
+if compName == 'sm-bnc' or compName == 'sage-d600':
   sys.path.append('C:\\cygwin\\home\\sid\\python')
 if  compName == 'pj-linux4':
   sys.path.append('C:\\cygwin\\home\\sid\\python')
+  
 import utilDb
 import setSCIparams as SCI
 
 # Code for SCICHEM 2012 plots
 
 #def mainProg(prjName=None,obsDbName=None,preDb1=None,preDb2=None):
-def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None):
+def mainProg(prjName=None,prjNamePred2=None,obsPfx=None,preCur1=None,preCur2=None):
 
   if prjName is None:
     print "Must provide project name"
@@ -40,8 +43,21 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None):
     times    = [12, 12.75, 14.5]
     zSmp     = [520, 600, 620]
   
-  for idt,dist in enumerate(distance):    
+  for idt,dist in enumerate(distance): 
+    pre2DbName =  prjNamePred2 + '_' + str(dist) + 'km' + '.csv.db'       
+    print 'Predicted DB SCICHEM99', pre2DbName
+      
+    preConn2 = sqlite3.connect(pre2DbName)
+    preConn2.row_factory = sqlite3.Row
+    preCur2 = preConn2.cursor()
 
+    # Observations
+    preQry2 = 'select * from dataTable'
+    print preQry2
+        
+    preArray2 = utilDb.db2Array(preCur2,preQry2)
+    #print preArray2   
+    
     lArc = 2.*dist*np.pi/180.
    
     for varName in varNames:
@@ -56,11 +72,13 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None):
       # Predictions #1 (2012)
       preArray1 = utilDb.db2Array(preCur1,preQry1)
       if varName == 'SO2':
+        # Set x index where SO2 is max. Same for all obs plumes
         iMax1 = np.where(preArray1[:,1] == preArray1[:,1].max())[0][0]
           
       # Predictions #2 (v2100)
-      preArray2 = utilDb.db2Array(preCur2,preQry1)
+      ####preArray2 = utilDb.db2Array(preCur2,preQry1)
       if varName == 'SO2':
+        # Set x index where SO2 is max. Same for all obs plumes
         iMax2 = np.where(preArray2[:,1] == preArray2[:,1].max())[0][0]
           
       # Observed data
@@ -80,7 +98,9 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None):
         if dist == 110:
           pls = [9,10,11]
 
-      oMax  = [0 for i in range(12)]
+      # Set Omax to zero for max plume no.
+      if varName == 'SO2':
+        oMax  = [0 for i in range(12)]
       
       for ipl in pls:
         
@@ -98,17 +118,24 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None):
         obsArray = utilDb.db2Array(obsCur,obsQry)
         if varName == 'SO2':
           oMax[ipl] = np.where(obsArray[:,1] == obsArray[:,1].max())[0][0]
-          print oMax[ipl],obsArray[oMax[ipl],0],obsArray[oMax[ipl],1]
+          print 'Max Obs SO2 at x index = ', oMax[ipl],' with x, value = ',obsArray[oMax[ipl],0],obsArray[oMax[ipl],1]
 
         # Align the prediction1 and observed centerlines
-
+        print 'For varName ',varName,'plume no.,x index,x,conc for max SO2 = ',ipl,oMax[ipl],obsArray[oMax[ipl],0],obsArray[oMax[ipl],1] 
         for i in range(len(preArray1)):
-          preArray1[i,0] = float(i-iMax1)*lArc + obsArray[oMax[ipl],0] 
+          # Set x values where SO2 max to obs x value for plume ip1
+          preArray1[i,0] = float(i-iMax1)*lArc + obsArray[oMax[ipl],0]
+          if i == iMax1:
+            print 'Adjusted preArray1 x,c = ',preArray1[i,:] 
+          
 
         # Align the prediction2 and observed centerlines
 
         for i in range(len(preArray2)):
+          # Set x values where SO2 max to obs x value for plume ip1
           preArray2[i,0] = float(i-iMax2)*lArc + obsArray[oMax[ipl],0] 
+          if i == iMax2:
+            print 'Adjusted preArray2 x,c = ',preArray2[i,:]
            
         # Plot
         figName  = str(dist) +'km_' +varName +'_'+ str(times[idt]) + 'hr_obs' + str(ipl) + '.png'
@@ -152,7 +179,7 @@ def getSmpDb(prjName):
     mySciFiles = SCI.Files(prjName)
     smpDb = '%s.smp.db'%(prjName)
     # Create database for calculated data 
-    print 'Create smpDb ',smpDb,' in ',os.getcwd()
+    ## print 'Create smpDb ',smpDb,' in ',os.getcwd()
     (smpDbConn,smpDbCur,smpCreateDb) = utilDb.Smp2Db(smpDb,mySciFiles)
     return (smpDbConn,smpDbCur)
 
@@ -166,6 +193,8 @@ if __name__ == '__main__':
     runDir = 'd:\\SCICHEM-2012\\TVA_980825'
   if compName == 'pj-linux4':
     runDir = '/home/user/bnc/scipuff/runs/EPRI/tva/tva_980825'
+  if compName == 'sage-d600':
+    runDir = 'D:\\SCICHEM-2012\\TVA_980825_120924' 
   os.chdir(runDir)
 
 
@@ -181,11 +210,14 @@ if __name__ == '__main__':
 
   # Predicted data
   #prjName2 = 'SCICHEM-01\\071599_vo3_lin_intel'
-  prjName2 = os.path.join('SCICHEM-01','tva_082598')
+  prjName2 = os.path.join('SCICHEM-01','TVA_082598')
   print prjName2
+  
+  #TVA_082598_55km.csv.db
   preConn2,preCur2 = getSmpDb(prjName2)
+  
 
-  mainProg(prjName=prjName1,obsPfx=obsPfx,preCur1=preCur1,preCur2=preCur2)
+  mainProg(prjName=prjName1,prjNamePred2=prjName2,obsPfx=obsPfx,preCur1=preCur1,preCur2=preCur2)
 
   preConn1.close()
   preConn2.close()
