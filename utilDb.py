@@ -38,13 +38,14 @@ class prj():
 
   def setDb(self,prjName,samFile=None):
     self.prjName  = prjName
-    self.sciFiles = SCI.Files(self.prjName,mySCIpattern)
+    self.sciFiles = SCI.Files(self.prjName)
     if samFile:
       self.sciFiles.samFile = samFile
     self.calDb = '%s.db'%(self.sciFiles.smpFile)
     # Create database for calculated data 
     print 'Create smpDb ',self.calDb
-    (self.sCur,self.createCaldb) = Smp2Db(self.calDb,self.sciFiles,mySCIpattern,self.createCaldb)
+    (smpConn,self.sCur,self.createCaldb) = \
+      Smp2Db(self.calDb,self.sciFiles,createTable=self.createCaldb)
     return
 
 global allPrj
@@ -53,10 +54,6 @@ allPrj = prj()
 
 def createSmpDb(prjNames,samFiles=None):
 
-  global mySCIpattern
- 
-  mySCIpattern = SCI.Pattern()
-  
   print 'In dbUtil.createSmpDb, prjNames(must be a list) = ',prjNames
  
   # Set calculated data file and create database
@@ -88,6 +85,8 @@ def createSmpDb(prjNames,samFiles=None):
   allPrj.EpEndTime   = epTimeMax
   print '\nSampler start %s(%d)'%(time.ctime(allPrj.EpStartTime),allPrj.EpStartTime)
   print 'Sampler end %s(%d)'%(time.ctime(allPrj.EpEndTime),allPrj.EpEndTime)
+
+  return
 
 def db2Array(cur,selectStr,dim=None):
   if dim is not None: 
@@ -202,67 +201,14 @@ def addData(line,nDat,sCur,nt,isReverse=1.):
   return(nt)
     
 # function to create calculated db
-def Smp2Db(dbName,mySciFiles,mySCIpattern,createTable):
+def Smp2Db(dbName,mySciFiles,mySCIpattern=None,createTable=False):
   global allPrj
   
-  #print '\n In utilDb.Smp2Db: prjName = ',mySciFiles.prjName
-  (nmlNames,nmlValues) = mySCIpattern.readNml(mySciFiles.inpFile)
-  i = nmlNames.index('time1')
-  startYr  = int(nmlValues[i]['year_start'])
-  if startYr < 0: startYr = 1970
-  startMon = int(nmlValues[i]['month_start'])
-  if startMon < 0: startMon = 1
-  startDay = int(nmlValues[i]['day_start'])
-  if startDay < 0: startDay = 1
-  startHr  = float(nmlValues[i]['tstart'])
-
-  i = nmlNames.index('time2')
-  endYr  = int(nmlValues[i]['year_end'])
-  if endYr < 0: endYr = 1970
-  endMon = int(nmlValues[i]['month_end'])
-  if endMon < 0: endMon = 1
-  endDay = int(nmlValues[i]['day_end'])
-  if endDay < 0: endDay= 1
-  endHr  = float(nmlValues[i]['tend'])
-  runHr  = float(nmlValues[i]['tend_hr'])
-
-  # Get run mode from inp file
-  i = nmlNames.index('flags')
-  runMode = int(nmlValues[i]['run_mode'])
-  if runMode == 128:
-    isReverse = -1
-  else:
-    isReverse = 1
-  print '\n run mode = ',isReverse
+  print '\n In utilDb.Smp2Db: prjName = ',mySciFiles.prjName
   
-  allPrj.EpStartTime = getEpTime(startYr,startMon,startDay,startHr)
-  print 'Sampler start %02d/%02d/%02d %13.3f hr(%s)'%(startYr,startMon,startDay,startHr,allPrj.EpStartTime)
-  
-  if int(endHr) > 0. :
-    allPrj.EpEndTime = getEpTime(endYr,endMon,endDay,endHr)
-    print 'Sampler end from inp file %02d/%02d/%02d %13.3f hr(%s)'%(endYr,endMon,endDay,endHr,allPrj.EpEndTime)
-    if abs((allPrj.EpEndTime - allPrj.EpStartTime)/3600. - runHr) > 1.e-6:
-      print 'Warning: Runtime ',(allPrj.EpEndTime - allPrj.EpStartTime)/3600.,' does not match tend_hr = ',runHr
-      allPrj.EpEndTime = allPrj.EpStartTime + isReverse*runHr*3600.
-    elif isReverse < 0:
-      allPrj.EpEndTime = 2.*allPrj.EpStartTime - allPrj.EpEndTime
-  else:
-    allPrj.EpEndTime = allPrj.EpStartTime + isReverse*runHr*3600.
-  (endYr,endMon,endDay,endHr,endMn,endSec)  = getYMD(allPrj.EpEndTime)
-  print 'Sampler end %s/%s/%s %s:%s:%s(%15.2f)'%(endYr,endMon,endDay,endHr,endMn,endSec,allPrj.EpEndTime)
-
-  #
-  (nmlNames,nmlValues) = mySCIpattern.readNml(mySciFiles.scnFile)
-  i = nmlNames.index('scn')
-  xrel  = float(nmlValues[i]['xrel'])
-  yrel  = float(nmlValues[i]['yrel'])
-  sourceLoc = np.array([xrel,yrel],dtype=float)
-  if allPrj.sourceLoc[0] == -999. :
-    allPrj.sourceLoc = sourceLoc
-  print 'Source location = ',allPrj.sourceLoc
-    
   # Create database for calculated data 
   if not createTable:
+    print 'dbName = ',dbName
     if not os.path.exists(dbName):
       createTable =  True
   print 'Create smp data table = ',createTable,' in database file ',dbName
@@ -270,8 +216,66 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern,createTable):
   smpConn = sqlite3.connect(dbName)
   smpConn.row_factory = sqlite3.Row
   sCur = smpConn.cursor()
-
+  
   if createTable:
+  
+    if mySCIpattern is None:
+      mySCIpattern = mySciFiles.SCIpattern
+    (nmlNames,nmlValues) = mySCIpattern.readNml(mySciFiles.inpFile)
+    i = nmlNames.index('time1')
+    startYr  = int(nmlValues[i]['year_start'])
+    if startYr < 0: startYr = 1970
+    startMon = int(nmlValues[i]['month_start'])
+    if startMon < 0: startMon = 1
+    startDay = int(nmlValues[i]['day_start'])
+    if startDay < 0: startDay = 1
+    startHr  = float(nmlValues[i]['tstart'])
+  
+    i = nmlNames.index('time2')
+    endYr  = int(nmlValues[i]['year_end'])
+    if endYr < 0: endYr = 1970
+    endMon = int(nmlValues[i]['month_end'])
+    if endMon < 0: endMon = 1
+    endDay = int(nmlValues[i]['day_end'])
+    if endDay < 0: endDay= 1
+    endHr  = float(nmlValues[i]['tend'])
+    runHr  = float(nmlValues[i]['tend_hr'])
+  
+    # Get run mode from inp file
+    i = nmlNames.index('flags')
+    runMode = int(nmlValues[i]['run_mode'])
+    if runMode == 128:
+      isReverse = -1
+    else:
+      isReverse = 1
+    print '\n run mode = ',isReverse
+    
+    allPrj.EpStartTime = getEpTime(startYr,startMon,startDay,startHr)
+    print 'Sampler start %02d/%02d/%02d %13.3f hr(%s)'%(startYr,startMon,startDay,startHr,allPrj.EpStartTime)
+    
+    if int(endHr) > 0. :
+      allPrj.EpEndTime = getEpTime(endYr,endMon,endDay,endHr)
+      print 'Sampler end from inp file %02d/%02d/%02d %13.3f hr(%s)'%(endYr,endMon,endDay,endHr,allPrj.EpEndTime)
+      if abs((allPrj.EpEndTime - allPrj.EpStartTime)/3600. - runHr) > 1.e-6:
+        print 'Warning: Runtime ',(allPrj.EpEndTime - allPrj.EpStartTime)/3600.,' does not match tend_hr = ',runHr
+        allPrj.EpEndTime = allPrj.EpStartTime + isReverse*runHr*3600.
+      elif isReverse < 0:
+        allPrj.EpEndTime = 2.*allPrj.EpStartTime - allPrj.EpEndTime
+    else:
+      allPrj.EpEndTime = allPrj.EpStartTime + isReverse*runHr*3600.
+    (endYr,endMon,endDay,endHr,endMn,endSec)  = getYMD(allPrj.EpEndTime)
+    print 'Sampler end %s/%s/%s %s:%s:%s(%15.2f)'%(endYr,endMon,endDay,endHr,endMn,endSec,allPrj.EpEndTime)
+  
+    #
+    (nmlNames,nmlValues) = mySCIpattern.readNml(mySciFiles.scnFile)
+    i = nmlNames.index('scn')
+    xrel  = float(nmlValues[i]['xrel'])
+    yrel  = float(nmlValues[i]['yrel'])
+    sourceLoc = np.array([xrel,yrel],dtype=float)
+    if allPrj.sourceLoc[0] == -999. :
+      allPrj.sourceLoc = sourceLoc
+    print 'Source location = ',allPrj.sourceLoc
+    
  
     # Read and save sampler locations
     smpLoc = []
@@ -343,13 +347,10 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern,createTable):
           elif nNames > nDat:
              nt = addData(line,nDat,sCur,nt,isReverse=isReverse)
     smpConn.commit()
-    sCur.execute('select max(value) from smpTable d,samTable c where d.colNo = c.colNo and varName=?',(vnames[0],))
     sCur.execute('CREATE index colID on samTable(colNo)')
-    #c.execute('SELECT DISTINCT itime,timeString FROM indr WHERE itime_local = ?',(it,))
-    #print 'Max %s = %15.5e'%(vnames[0],float(sCur.fetchone()[0]))
     fileinput.close()
     print 'No. of time breaks = ',nt  
-    return(sCur,createTable)
+  return(smpConn,sCur,createTable)
 
 def sen2Db(startTimeString,senFile,samList=None):
 

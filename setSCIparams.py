@@ -88,8 +88,8 @@ class Pattern(object) :
           if vname == 'metfile':
             rPattern = re.compile("(.*@)(\d{3}.+)(\s*.*)")
           if vname == 'smpfile':
-            rPattern = re.compile("(.*%s\s*=\s*')(.*)('\s*,.*)"%vname,re.I)
-            print rPattern
+            rPattern = re.compile("(.*%s\s*=\s*)(\S+)(\s*)(.*)"%vname,re.I)
+            #print rPattern
           pattlist.update({vname:rPattern})
         self.pattNml.update({nml:pattlist})
       else:
@@ -222,9 +222,12 @@ class RelList(object):
         
 class Files(object):
 
-  def __init__(self,prjName,mySCIpattern):
+  def __init__(self,prjName,mySCIpattern=None):
 
     self.prjName = prjName
+    if mySCIpattern is None:
+      mySCIpattern = Pattern()
+    self.SCIpattern = mySCIpattern
     #print prjName
 
     # input files
@@ -242,54 +245,57 @@ class Files(object):
     self.pufFile = self.prjName + '.puf'
  
     # Read sam file from inpfile
-    print 'call getSamFile'
-    self.getSamFile(mySCIpattern)
+    #print 'call getSamFile'
+    self.getSamFile()
 
-  def getSamFile(self,mySCIpattern):
+  def getSamFile(self):
     self.samFile = None
     self.smpFile = self.prjName + '.smp'
     if not os.path.exists(self.inpFile):
       print 'Error: cannot open inp file ',self.inpFile
       return
     for line in fileinput.input(self.inpFile):
-      matchSam = mySCIpattern.pattNml['options']['smpfile'].match(line)
-      if 'SMPFILE' in line:
-        print mySCIpattern.pattNml['options']['smpfile']
-        print line
-        print matchSam
+      matchSam = self.SCIpattern.pattNml['options']['smpfile'].match(line)
+      #if 'SMPFILE' in line:
+        #print self.SCIpattern.pattNml['options']['smpfile']
+        #print line
+        #print matchSam
+        #print matchSam.span(),matchSam.group(2)
       if matchSam:
-        self.samFile = matchSam.group(2).replace("'","").strip()
-        print self.samFile
+        self.samFile = matchSam.group(2).replace("'","").replace(",","").strip()
+        #print 'SAMFILE = "',self.samFile,'"'
         if len(self.samFile) > 1:
           if not os.path.exists(self.samFile):
             print 'Error: cannot find sam file ',self.samFile
-            self.samFile = os.path.dirname(self.inpFile) + '/' + self.samFile
+            self.samFile = os.path.join(os.path.dirname(self.inpFile),self.samFile)
             print 'Checking for file ',self.samFile
             if not os.path.exists(self.samFile):
               print 'Error: cannot find sam file ',self.samFile
               return
+        else:
+           self.samFile = None
         break
     fileinput.close()
 
-  def readLogFile(self,mySCIpattern):
+  def readLogFile(self):
     nTerm = 0
     if os.path.exists(self.logFile):
       for line in fileinput.input(self.logFile):
-        matchNterm = mySCIpattern.pattNterm.match(line)
+        matchNterm = self.SCIpattern.pattNterm.match(line)
         if matchNterm:
           nTerm = nTerm + 1
       fileinput.close()
     return nTerm
  
-  def readNtvFile(self,ntvFile,mySCIpattern):
+  def readNtvFile(self,ntvFile):
     #print '\nPredicted source parameters from ',ntvFile,' :'
     for line in fileinput.input(ntvFile):
-      matchRelTime = mySCIpattern.pattRelTime.match(line)      
+      matchRelTime = self.SCIpattern.pattRelTime.match(line)      
       if matchRelTime:
         relTime = matchRelTime.group(2)
         #print 'Release time = ',relTime        
         continue
-      matchRelLoc = mySCIpattern.pattRelLoc.match(line)
+      matchRelLoc = self.SCIpattern.pattRelLoc.match(line)
       if matchRelLoc:
         (relX, relY) = map(float,(matchRelLoc.group(2), matchRelLoc.group(3)))
         #print 'Release loc: X = ',relX,', Y = ',relY
@@ -301,7 +307,7 @@ class Files(object):
 
     return(relTime,relX,relY)
 
-  def readSumFile(self,sumFile,mySCIpattern):
+  def readSumFile(self,sumFile):
     #print '\nPredicted source parameters from ',sumFile,' :'
     pName = [sLoc,sMas,sDur] = [0,1,2]
     estList = [[] for i in pName]
@@ -309,9 +315,9 @@ class Files(object):
     pattDurUnt = re.compile("^\s*Duration\s*\((.*)\).*")
     section = -1
     for line in fileinput.input(sumFile):
-      matchLocFunc = mySCIpattern.pattLocFunc.match(line)      
-      matchMassEst = mySCIpattern.pattMassEst.match(line)      
-      matchDurEst  = mySCIpattern.pattDurEst.match(line)      
+      matchLocFunc = self.SCIpattern.pattLocFunc.match(line)      
+      matchMassEst = self.SCIpattern.pattMassEst.match(line)      
+      matchDurEst  = self.SCIpattern.pattDurEst.match(line)      
       if matchLocFunc or matchMassEst or matchDurEst:
         section += 1
         if matchMassEst:
@@ -596,18 +602,22 @@ def runSci(prjName,myEnv=None,binDir=None,templateName='',inpList=None,KeyNml=No
 
 if __name__ == '__main__':
 
-  os.chdir("d:\\SrcEst\\P2\\runs\\120627\\ETEX")
-  #inFile = raw_input('\nFilename? ')
-  inFile   = 'rev_etex_f010.scn'
-  mySCIpattern = Pattern()
-  mySCIfiles = Files('rev_etex_f010',mySCIpattern)
-  
-  mySCIfiles.relList.getRelList(mySCIpattern,mySCIfiles.scnFile)
-  print mySCIfiles.relList.rlsList
+  #os.chdir("d:\\SrcEst\\P2\\runs\\120627\\ETEX")
+  #prjName = 'rev_etex_f010'
+  os.chdir('d:\\SCIPUFF\\runs\\EPRI\\aermod\\Bowline\\SCICHEM')
+  prjName = 'bowline_ss'
+  #os.chdir("/home/user/bnc/scipuff/runs/EPRI/tva/tva_980825/SCICHEM-2012")
+  #prjName = 'tva_980825'
+  mySCIfiles = Files(prjName)
+  print '\n samFile = "',mySCIfiles.samFile,'"\n'
+  #mySCIfiles.relList.getRelList(mySCIfiles.SCIpattern,mySCIfiles.scnFile)
+  #print mySCIfiles.relList.rlsList
   #nmlName = raw_input('\nNamelist? ')
   #nmlName = 'scn'
   #print mySCIpattern.Nml[nmlName]
   #print mySCIpattern.pattNml[nmlName]
+  #inFile = raw_input('\nFilename? ')
+  #inFile   = 'rev_etex_f010.scn'
   #(nmlNames,nmlValues) = mySCIpattern.readNml(inFile)
   #for i in range(len(nmlNames)):
     #print '\nNamelist = ',nmlNames[i]
