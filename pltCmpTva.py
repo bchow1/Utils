@@ -2,6 +2,7 @@
 #!/bin/env python
 import os
 import sys
+import socket
 import numpy as np
 import numpy.ma as ma
 import matplotlib.pyplot as plt
@@ -9,21 +10,20 @@ import sqlite3
 
 #try:
 #  compName = os.uname()[1]
-compName = 'sage-d600'
+compName = socket.gethostname()
 
 # Local modules
 if compName == 'sm-bnc' or compName == 'sage-d600':
   sys.path.append('C:\\cygwin\\home\\sid\\python')
 if  compName == 'pj-linux4':
-  sys.path.append('C:\\cygwin\\home\\sid\\python')
+  sys.path.append('/home/user/bnc/python')
   
 import utilDb
 import setSCIparams as SCI
 
 # Code for SCICHEM 2012 plots
 
-#def mainProg(prjName=None,obsDbName=None,preDb1=None,preDb2=None):
-def mainProg(prjName=None,prjNamePred2=None,obsPfx=None,preCur1=None,preCur2=None):
+def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
 
   if prjName is None:
     print "Must provide project name"
@@ -44,19 +44,21 @@ def mainProg(prjName=None,prjNamePred2=None,obsPfx=None,preCur1=None,preCur2=Non
     zSmp     = [520, 600, 620]
   
   for idt,dist in enumerate(distance): 
-    pre2DbName =  prjNamePred2 + '_' + str(dist) + 'km' + '.csv.db'       
-    print 'Predicted DB SCICHEM99', pre2DbName
-      
-    preConn2 = sqlite3.connect(pre2DbName)
-    preConn2.row_factory = sqlite3.Row
-    preCur2 = preConn2.cursor()
 
-    # Observations
-    preQry2 = 'select * from dataTable'
-    print preQry2
-        
-    preArray2 = utilDb.db2Array(preCur2,preQry2)
-    #print preArray2   
+    if preCur2 is None:
+      if prePfx2 is None:
+        print "Must provide prefix for SCICHEM-01 prediction"
+        return
+      # Predictions SCICHEM-01
+      pre2DbName =  prePfx2 + '_' + str(dist) + 'km' + '.csv.db'       
+      print 'Predicted DB SCICHEM99', pre2DbName
+      preConn2 = sqlite3.connect(pre2DbName)
+      preConn2.row_factory = sqlite3.Row
+      preCur2 = preConn2.cursor()
+      preQry2 = 'select * from dataTable'
+      print preQry2
+      preArray2 = utilDb.db2Array(preCur2,preQry2)
+      print preArray2   
     
     lArc = 2.*dist*np.pi/180.
    
@@ -76,7 +78,8 @@ def mainProg(prjName=None,prjNamePred2=None,obsPfx=None,preCur1=None,preCur2=Non
         iMax1 = np.where(preArray1[:,1] == preArray1[:,1].max())[0][0]
           
       # Predictions #2 (v2100)
-      ####preArray2 = utilDb.db2Array(preCur2,preQry1)
+      if prePfx2 is None:
+        preArray2 = utilDb.db2Array(preCur2,preQry1)
       if varName == 'SO2':
         # Set x index where SO2 is max. Same for all obs plumes
         iMax2 = np.where(preArray2[:,1] == preArray2[:,1].max())[0][0]
@@ -142,13 +145,13 @@ def mainProg(prjName=None,prjNamePred2=None,obsPfx=None,preCur1=None,preCur2=Non
         figTitle = '%s (@ %d km for plume %d)'%(varName,dist,ipl)
         print figName
 
-        pltCmpConc(zSmp, varName, obsArray, preArray1, preArray2, figTitle, figName)
+        pltCmpConc(varName, obsArray, preArray1, preArray2, figTitle, figName)
 
         obsConn.close()
   return
     
       
-def pltCmpConc(zSmp, varName, obsData, preData1, preData2, figTitle, figName):
+def pltCmpConc(varName, obsData, preData1, preData2, figTitle, figName):
   #import pdb; pdb.set_trace()
   fig = plt.figure()
   plt.clf()
