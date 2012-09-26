@@ -502,7 +502,7 @@ if __name__ == '__main__':
   #opt.prjNames = 'tva_980825_wamb_noLSV'
   #opt.samFiles = 'tva_980825.sam'
   opt.prjNames = 'bowline_ss'
-  opt.samFiles = 'bowline_ss.sam'
+  #opt.samFiles = 'bowline_ss.sam'
   #
   # Check arguments
   if opt.prjNames is None and opt.senName is None:
