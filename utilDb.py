@@ -208,16 +208,21 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern=None,createTable=False):
   
   # Create database for calculated data 
   if not createTable:
-    print 'dbName = ',dbName
     if not os.path.exists(dbName):
       createTable =  True
-  print 'Create smp data table = ',createTable,' in database file ',dbName
+    else:
+      if os.path.getsize(dbName) == 0 or \
+         os.path.getmtime(dbName) < \
+         os.path.getmtime(mySciFiles.prjName + '.smp'):
+        createTable = True
     
   smpConn = sqlite3.connect(dbName)
   smpConn.row_factory = sqlite3.Row
   sCur = smpConn.cursor()
   
   if createTable:
+
+    print 'Create smp data table = ',createTable,' in database file ',dbName
   
     if mySCIpattern is None:
       mySCIpattern = mySciFiles.SCIpattern
@@ -501,7 +506,7 @@ if __name__ == '__main__':
   #opt.prjNames = '071599_vo3_lin_intel'
   #opt.prjNames = 'tva_980825_wamb_noLSV'
   #opt.samFiles = 'tva_980825.sam'
-  opt.prjNames = 'bowline_ss'
+  #opt.prjNames = 'bowline_ss'
   #opt.samFiles = 'bowline_ss.sam'
   #
   # Check arguments
@@ -509,7 +514,7 @@ if __name__ == '__main__':
     print 'Error: prjNames or senName must be specified'
     print 'Usage: smp2db.py [-p prjName1[:prjName2...] [-a prj1.sam[:prj2.sam...]]] [ -e senName]'
   elif opt.prjNames is not None:
-    os.chdir('d:\\SCIPUFF\\runs\\EPRI\\aermod\\Bowline\\SCICHEM')
+    #os.chdir('d:\\SCIPUFF\\runs\\EPRI\\aermod\\Bowline\\SCICHEM')
     print os.getcwd()
     prjNames = opt.prjNames.split(':')
     if opt.samFiles:
