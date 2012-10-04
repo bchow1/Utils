@@ -1,29 +1,42 @@
-
 #!/bin/env python
 import os
 import sys
+import socket
 import numpy as np
-import numpy.ma as ma
 import matplotlib.pyplot as plt
 import sqlite3
 
+compName = socket.gethostname()
+
 # Local modules
-sys.path.append('C:\\cygwin\\home\\sid\\python')
+if compName == 'sm-bnc' or compName == 'sage-d600':
+  sys.path.append('C:\\cygwin\\home\\sid\\python')
+if  compName == 'pj-linux4':
+  sys.path.append('/home/user/bnc/python')
 import utilDb
+import setSCIparams as SCI
+
+
+def getSmpDb(prjName):
+    mySciFiles = SCI.Files(prjName)
+    smpDb = '%s.smp.db'%(prjName)
+    (smpDbConn,smpDbCur,smpCreateDb) = utilDb.Smp2Db(smpDb,mySciFiles)
+    return (smpDbConn,smpDbCur)
 
 # Code for SCICHEM 2012 plots
-
 def mainProg():
 
-  #os.chdir('d:\\SCICHEM-2012\\Baldwin')
+  if compName == 'sm-bnc':
+    os.chdir('d:\\SCICHEM-2012\\Baldwin')
+  if compName == 'sage-d600':
+    os.chdir('d:\\SCICHEM-2012\\Baldwin')
 
   prjName = 'bowline'
   pre2Fac = 1.e+9
   
   if prjName == 'bowline':
-    os.chdir('D:\\SCIPUFF\\runs\\EPRI\\aermod\\Bowline\\SCICHEM')
-    preDbName1 = '..\\fromSS\\scipuff_prj.smp.db'
-    preDbName2 = 'bowline.smp.db'
+    prePrj1 = os.path.join('..','fromSS','scipuff_prj')
+    prePrj2 = 'bowline'
     obs1HrFile  = 'bow01.obs'
     obs3HrFile  = 'bow03.obs'
     obs24HrFile = 'bow24.obs'
@@ -31,14 +44,10 @@ def mainProg():
   obsDir = os.path.join('..','Obs_Conc')
 
   # Predicted data set 1
-  preConn1 = sqlite3.connect(preDbName1)
-  preConn1.row_factory = sqlite3.Row
-  preCur1 = preConn1.cursor()
+  preConn1,preCur1 = getSmpDb(prePrj1)
 
-  # Predicted data
-  preConn2 = sqlite3.connect(preDbName2)
-  preConn2.row_factory = sqlite3.Row
-  preCur2 = preConn2.cursor()
+  # Predicted data set 2
+  preConn2,preCur2 = getSmpDb(prePrj2)
     
   smpIds = map(int,utilDb.db2Array(preCur2,'select distinct(smpid) from samTable'))
   nSmp   = len(smpIds)
@@ -52,7 +61,7 @@ def mainProg():
   for Id in range(nSmp):
     obsMax1Hr.append(obs1Hr[:,Id].max())
     obsMax3Hr.append(obs3Hr[:,Id].max())
-  print obsMax1Hr
+  print 'obsMax1Hr = ',obsMax1Hr
 
   preQry  = "select max(value) from samTable a, smptable p where a.colno=p.colno "
   preQry += "and varname='C' and smpId ="
@@ -61,20 +70,21 @@ def mainProg():
   for smpId in smpIds:
     preQry1 = preQry + str(smpId)
     pre1Max1Hr.append(utilDb.db2Array(preCur1,preQry1)[0][0]*pre2Fac)
-  print pre1Max1Hr
+  print 'pre1Max1Hr = ',pre1Max1Hr
 
   pre2Max1Hr = []
   for smpId in smpIds:
     preQry2 = preQry + str(smpId)
     pre2Max1Hr.append(utilDb.db2Array(preCur2,preQry2)[0][0]*pre2Fac)
-  print pre2Max1Hr
+    print preQry2," = ",utilDb.db2Array(preCur2,preQry2)[0][0]*pre2Fac
+  print 'pre2Max1Hr = ',pre2Max1Hr
 
   title = '%s: 1 Hr Max for Receptors'%prjName.upper()
   pltName = prjName + '_1hrMax.png'
   plotBarGraph(obsMax1Hr,pre1Max1Hr,pre2Max1Hr,title,pltName)
 
   ######## 3 Hour Max ###############
-  print obsMax3Hr  
+  print 'obsMax3Hr = ',obsMax3Hr
 
   preQry  = "select value from samTable a, smptable p where a.colno=p.colno "
   preQry += "and varname='C' and smpId ="
@@ -88,7 +98,7 @@ def mainProg():
       if (curVal > pre1Max3Hr[j]):
         pre1Max3Hr[j] = curVal
   pre1Max3Hr = pre1Max3Hr*pre2Fac
-  print pre1Max3Hr
+  print 'pre1Max3Hr = ',pre1Max3Hr
   
   pre2Max3Hr = np.zeros(nSmp)
   for j,smpId in enumerate(smpIds):
@@ -99,7 +109,7 @@ def mainProg():
       if (curVal > pre2Max3Hr[j]):
         pre2Max3Hr[j] = curVal
   pre2Max3Hr = pre2Max3Hr*pre2Fac
-  print pre2Max3Hr
+  print 'pre2Max3Hr = ',pre2Max3Hr
 
   title = '%s: 3 Hr Max for Receptors'%prjName.upper()
   pltName = prjName + '_3hrMax.png'
