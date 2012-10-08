@@ -37,9 +37,14 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
     zSmp     = [415, 584, 582]
 
   if prjName.endswith("tva_980825"):
-    distance = [55]   #[20, 55, 110]
-    times    = [12.5]   #[12, 12.75, 14.5]
-    zSmp     = [600]  #[520, 600, 620]
+    distance = [20, 55, 110]
+    times    = [12, 12.75, 14.5]
+    zSmp     = [520, 600, 620]
+    
+  if prjName.endswith("tva_980826"):
+    distance = [18, 27, 86, 59, 93, 126]
+    times    = [10.25, 10.5, 12, 12.5, 12.75, 13]
+    zSmp     = [465, 500, 659, 910, 819, 662]   
   
   for idt,dist in enumerate(distance): 
 
@@ -73,7 +78,7 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
       else:  
         preQry1  = "select xSmp,Value from samTable a,smpTable p where a.colNo=p.colNo and "
         preQry1 += "varName = '%s' and zSmp = %f and time = %3f order by smpId"%(varName,zSmp[idt],times[idt])      
-      print preQry1
+      print preCur1, preQry1
       
       # Predictions #1 (2012)
       preArray1 = utilDb.db2Array(preCur1,preQry1)
@@ -87,6 +92,7 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
       else:
         preQry2 = 'select dist, ' + varName + ' from dataTable'
         preArray2 = utilDb.db2Array(preCur2,preQry2)
+        
       if varName == 'SO2':
         # Set x index where SO2 is max. Same for all obs plumes
         iMax2 = np.where(preArray2[:,1] == preArray2[:,1].max())[0][0]
@@ -107,6 +113,20 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
           pls = [6] #[6,7,8]
         if dist == 110:
           pls = [9,10,11]
+          
+      if prjName.endswith("tva_980826"):
+        if dist == 18:
+          pls = [1,2]
+        if dist == 27:
+          pls = [4,5,6]
+        if dist == 86:
+          pls = [8]
+        if dist == 59:
+          pls = [9] 
+        if dist ==93:
+          pls = [10]
+        if dist == 126:
+          pls = [11]    
 
       # Set Omax to zero for max plume no.
       if varName == 'SO2':
@@ -160,7 +180,8 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
 
         obsConn.close()
     if prePfx2 is not None:
-      preConn2.close()
+      print 'preConn2 is still open'
+      #preConn2.close()
           
   return
           
@@ -199,6 +220,7 @@ def pltCmpConc(dist, varName, obsData, preData1, preData2, figTitle, figName):
 def getSmpDb(prjName):
     mySciFiles = SCI.Files(prjName)
     smpDb = '%s.smp.db'%(prjName)
+    print '%%%%%%%%%%%%', smpDb
     # Create database for calculated data 
     ## print 'Create smpDb ',smpDb,' in ',os.getcwd()
     (smpDbConn,smpDbCur,smpCreateDb) = utilDb.Smp2Db(smpDb,mySciFiles)
@@ -215,7 +237,7 @@ if __name__ == '__main__':
   if compName == 'pj-linux4':
     runDir = '/home/user/bnc/scipuff/runs/EPRI/tva/tva_980825'
   if compName == 'sage-d600':
-    runDir = 'D:\\SCICHEM-2012\\TVA_980825_120924' 
+    runDir = 'D:\\SCICHEM-2012\\TVA_980826' 
   os.chdir(runDir)
 
   print 'runDir = ',runDir
@@ -226,8 +248,9 @@ if __name__ == '__main__':
   print obsPfx
 
   # Predicted SCICHEM-2012 data
-  prjName1 = os.path.join('SCICHEM-2012','tva_980825')
-  print prjName1
+  prjName1 = os.path.join('SCICHEM-2012','tva_980826')
+  print '**********' , 
+  prjName1
   preConn1,preCur1 = getSmpDb(prjName1)
 
   # Predicted SCICHEM-01 data
@@ -237,9 +260,9 @@ if __name__ == '__main__':
   #preConn2,preCur2 = getSmpDb(prjName2)
   
   # Use prePfx2 + '_' + str(dist) + 'km' + '.csv.db'
-  prePfx2 = os.path.join('SCICHEM-01','TVA_082598')
+  prePfx2 = os.path.join('SCICHEM-01','TVA_082698')
   
   mainProg(prjName=prjName1,obsPfx=obsPfx,preCur1=preCur1,preCur2=None,prePfx2=prePfx2)
 
-  preConn1.close()
+  #preConn1.close()
   #preConn2.close()
