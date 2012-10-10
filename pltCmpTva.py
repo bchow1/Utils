@@ -31,17 +31,17 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
   
   varNames = ["SO2", "O3", "NOx",  "NOy"] #["SO2", "O3", "NOx",  "NOy"]
 
-  if prjName.endswith("tva_990715"):
+  if "tva_990715" in prjName:
     distance = [16, 62, 106]
     times    = [11.5, 12.5, 17.0]
     zSmp     = [415, 584, 582]
 
-  if prjName.endswith("tva_980825"):
+  if "tva_980825" in prjName:
     distance = [20, 55, 110]
     times    = [12, 12.75, 14.5]
     zSmp     = [520, 600, 620]
     
-  if prjName.endswith("tva_980826"):
+  if "tva_980826" in prjName:
     distance = [18, 27, 86, 59, 93, 126]
     times    = [10.25, 10.5, 12, 12.5, 12.75, 13]
     zSmp     = [465, 500, 659, 910, 819, 662]   
@@ -98,7 +98,7 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
         iMax2 = np.where(preArray2[:,1] == preArray2[:,1].max())[0][0]
           
       # Observed data
-      if prjName.endswith("tva_990715"):
+      if "tva_990715" in prjName:
         if dist == 16:
           pls = [1,2,3,4]
         if dist == 62:
@@ -106,7 +106,7 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
         if dist == 106:
           pls = [9,10,11]
 
-      if prjName.endswith("tva_980825"):
+      if "tva_980825" in prjName:
         if dist == 20:
           pls = [3,4,5]
         if dist == 55:
@@ -114,7 +114,7 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
         if dist == 110:
           pls = [9,10,11]
           
-      if prjName.endswith("tva_980826"):
+      if "tva_980826" in prjName:
         if dist == 18:
           pls = [1,2]
         if dist == 27:
@@ -142,7 +142,7 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
         obsCur = obsConn.cursor()
 
         # Observations
-        obsQry = 'select plumeKM, ' + varName + ' from dataTable'
+        obsQry = 'select CAST(plumeKM as real), ' + varName + ' from dataTable'
         print obsQry
         
         obsArray = utilDb.db2Array(obsCur,obsQry)
@@ -235,7 +235,8 @@ if __name__ == '__main__':
     #runDir='d:\\SCICHEM-2012\\TVA_990715'
     runDir = 'd:\\scipuff\\runs\EPRI\\tva_980825'
   if compName == 'pj-linux4':
-    runDir = '/home/user/bnc/scipuff/runs/EPRI/tva/tva_980825'
+    #runDir = '/home/user/bnc/scipuff/runs/EPRI/tva/tva_980825'
+    runDir = '/home/user/bnc/scipuff/EPRI_121001/runs/tva/tva_980826'
   if compName == 'sage-d600':
     runDir = 'D:\\SCICHEM-2012\\TVA_980826' 
   os.chdir(runDir)
@@ -244,11 +245,11 @@ if __name__ == '__main__':
 
   # Observed data 
   #obsPfx = os.path.join('OBS','tva_071599_')
-  obsPfx = os.path.join('OBS','cumb1_')
+  obsPfx = os.path.join('OBS','cumb2_')
   print obsPfx
 
   # Predicted SCICHEM-2012 data
-  prjName1 = os.path.join('SCICHEM-2012','tva_980826')
+  prjName1 = os.path.join('SCICHEM-2012','tva_980826_10km')
   print '**********' , 
   prjName1
   preConn1,preCur1 = getSmpDb(prjName1)
@@ -260,7 +261,7 @@ if __name__ == '__main__':
   #preConn2,preCur2 = getSmpDb(prjName2)
   
   # Use prePfx2 + '_' + str(dist) + 'km' + '.csv.db'
-  prePfx2 = os.path.join('SCICHEM-01','TVA_082698')
+  prePfx2 = os.path.join('SCICHEM-01','cumb2')
   
   mainProg(prjName=prjName1,obsPfx=obsPfx,preCur1=preCur1,preCur2=None,prePfx2=prePfx2)
 
