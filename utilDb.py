@@ -211,10 +211,12 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern=None,createTable=False):
     if not os.path.exists(dbName):
       createTable =  True
     else:
-      if os.path.getsize(dbName) == 0 or \
-         os.path.getmtime(dbName) < \
-         os.path.getmtime(mySciFiles.prjName + '.smp'):
-        createTable = True
+      if os.path.getsize(dbName) == 0:
+        createTable =  True
+      elif os.path.exists(mySciFiles.prjName + '.smp'): 
+        if os.path.getmtime(dbName) < \
+          os.path.getmtime(mySciFiles.prjName + '.smp'):
+          createTable = True
     
   smpConn = sqlite3.connect(dbName)
   smpConn.row_factory = sqlite3.Row
