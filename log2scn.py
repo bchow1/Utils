@@ -24,9 +24,10 @@ def rdLog(fName):
     elif 'Update Release' in line:
         relTime = line.split("'")[2].strip()
         print 'Rel Time = ',relTime
-        wrtScn(scnFile,scnLines,relTime)
+        if float(relTime) > 2408.:
+          wrtScn(scnFile,scnLines,relTime)
         scnLines = []
-        if float(relTime) > 23.75:
+        if float(relTime) > 2490.:
           sys.exit()
   fileinput.close()
   scnFile.close()
@@ -37,12 +38,12 @@ def wrtScn(scnFile,scnLines,relTime):
     tRelMatch = trelPatt.match(line)
     relSMatch = relSPatt.match(line)
     if tRelMatch is not None:
-      line = ' TREL    =  ' + relTime + ',\n'
+      line = ' TREL    =  ' + str(float(relTime) - 2408.)  + ',\n'
     if relSMatch is not None:
       line = ' RELSTATUS       =           1,\n'
     scnFile.write('%s'%line) 
   return
 
 if __name__ == "__main__":
-  logFile = 'kinso2.log'
+  logFile = 'ww_1yr.log'
   rdLog(logFile)
