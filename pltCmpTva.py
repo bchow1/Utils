@@ -187,18 +187,31 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
           
 def pltCmpConc(dist, varName, obsData, preData1, preData2, figTitle, figName):
   #import pdb; pdb.set_trace()
+    # Set up plot parameters
+  params1 = {'axes.labelsize': 10, 'text.fontsize': 10, 'xtick.labelsize': 10,
+                'ytick.labelsize': 10, 'legend.pad': 0.1,  
+                'legend.fontsize': 8, 'lines.markersize': 6, 'lines.width': 2.0,
+                'font.size': 10, 'text.usetex': False}
+  plt.rcParams.update(params1)
+  
   fig = plt.figure()
   plt.clf()
   fig.hold(True)
+  ax = fig.add_subplot(111)
   #print obsData[:,1]
-  LhO  = plt.plot(obsData[:,0],obsData[:,1],'ro')
+  if varName == 'O3':
+    fac = 1
+  else:
+    fac = 1
+  C = obsData[:,1] - fac*obsData[-1,1]
+  LhO  = plt.plot(obsData[:,0],C,linestyle='-',marker='o',markersize=6,markerfacecolor='blue') 
   LkO  = 'OBS'
-  C = ma.masked_where(preData1[:,1]<0.,preData1[:,1])
-  LhP1 = plt.plot(preData1[:,0],C,'gs-')
+  C = ma.masked_where(preData1[:,1]<0.,preData1[:,1]) - fac*preData1[-1,1]
+  LhP1 = plt.plot(preData1[:,0],C,linestyle='-',marker='s',markersize=6,markerfacecolor='green')
   LkP1 = 'SCICHEM-2012'
-  C = ma.masked_where(preData2[:,1]<0.,preData2[:,1])
-  LhP2 = plt.plot(preData2[:,0],C,'b^-')
-  LkP2 = 'SCICHEM-v2100'
+  C = ma.masked_where(preData2[:,1]<0.,preData2[:,1]) - fac*preData2[-1,1]
+  LhP2 = plt.plot(preData2[:,0],C,linestyle='-',marker='d',markersize=6,markerfacecolor='red')
+  LkP2 = 'SCICHEM-99'
   plt.ylabel('Concentration (ppm)')
   plt.xlabel('Cross plume distance (km)')
   plt.title(figTitle)
@@ -206,14 +219,15 @@ def pltCmpConc(dist, varName, obsData, preData1, preData2, figTitle, figName):
     plt.xlim([-20,20])
   else:
     plt.xlim([-50,50])
-  if varName == 'O3':
-    plt.ylim([0,0.1])
+  #if varName == 'O3':
+  #  plt.ylim([0,0.1])
   plt.legend([LkO,LkP1,LkP2],bbox_to_anchor=(0.02,0.98),loc=2,borderaxespad=0.)
   lgnd  = plt.gca().get_legend()
   ltext = lgnd.get_texts()
   plt.setp(ltext,fontsize=9)
   fig.hold(False)
   plt.savefig(figName)
+  #sys.exit()
   #plt.show()
   return
 
@@ -238,7 +252,7 @@ if __name__ == '__main__':
     #runDir = '/home/user/bnc/scipuff/runs/EPRI/tva/tva_980825'
     runDir = '/home/user/bnc/scipuff/EPRI_121001/runs/tva/tva_990715'
   if compName == 'sage-d600':
-    runDir = 'D:\\SCICHEM-2012\\TVA_980826' 
+    runDir = 'D:\\SCICHEM-2012\\TVA_980825' 
   os.chdir(runDir)
 
   print 'runDir = ',runDir
@@ -262,8 +276,9 @@ if __name__ == '__main__':
   
   # Use prePfx2 + '_' + str(dist) + 'km' + '.csv.db'
   #prePfx2 = os.path.join('SCICHEM-01','cumb2')
+  #prePfx2 = os.path.join('SCICHEM-01','TVA_082598')
   prePfx2 = None
-  
+
   mainProg(prjName=prjName1,obsPfx=obsPfx,preCur1=preCur1,preCur2=preCur2,prePfx2=prePfx2)
 
   #preConn1.close()
