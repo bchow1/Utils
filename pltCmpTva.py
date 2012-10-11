@@ -236,7 +236,7 @@ if __name__ == '__main__':
     runDir = 'd:\\scipuff\\runs\EPRI\\tva_980825'
   if compName == 'pj-linux4':
     #runDir = '/home/user/bnc/scipuff/runs/EPRI/tva/tva_980825'
-    runDir = '/home/user/bnc/scipuff/EPRI_121001/runs/tva/tva_980826'
+    runDir = '/home/user/bnc/scipuff/EPRI_121001/runs/tva/tva_990715'
   if compName == 'sage-d600':
     runDir = 'D:\\SCICHEM-2012\\TVA_980826' 
   os.chdir(runDir)
@@ -249,21 +249,22 @@ if __name__ == '__main__':
   print obsPfx
 
   # Predicted SCICHEM-2012 data
-  prjName1 = os.path.join('SCICHEM-2012','tva_980826_10km')
+  prjName1 = os.path.join('SCICHEM-2012','tva_990715')
   print '**********' , 
   prjName1
   preConn1,preCur1 = getSmpDb(prjName1)
 
   # Predicted SCICHEM-01 data
-  #prjName2 = 'SCICHEM-01\\071599_vo3_lin_intel'
+  prjName2 = os.path.join('SCICHEM-01','071599_vo3_lin_intel')
   #prjName2 = os.path.join('SCICHEM-01','TVA_082598')
-  #print prjName2
-  #preConn2,preCur2 = getSmpDb(prjName2)
+  preConn2,preCur2 = getSmpDb(prjName2)
+  print prjName2
   
   # Use prePfx2 + '_' + str(dist) + 'km' + '.csv.db'
-  prePfx2 = os.path.join('SCICHEM-01','cumb2')
+  #prePfx2 = os.path.join('SCICHEM-01','cumb2')
+  prePfx2 = None
   
-  mainProg(prjName=prjName1,obsPfx=obsPfx,preCur1=preCur1,preCur2=None,prePfx2=prePfx2)
+  mainProg(prjName=prjName1,obsPfx=obsPfx,preCur1=preCur1,preCur2=preCur2,prePfx2=prePfx2)
 
   #preConn1.close()
   #preConn2.close()
