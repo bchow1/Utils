@@ -113,13 +113,12 @@ def mainProg(dataFile):
 if __name__ == '__main__': 
 
   runDir = os.getcwd() 
-  #runDir = None
   #runDir = 'D:\\SCICHEM-2012\\kinso2\\SCICHEM'
-  #runDir = 'D:\\SCIPUFF\\runs\\EPRI\\aermod\\kinso2\\SCICHEM'
   #runDir = '/home/user/bnc/scipuff/runs/EPRI/wwright'
-  #runDir = 'd:\\SCIPUFF\\runs\\EPRI\\wwright'
     
-  dataFile = '2009-10.SFC'
+  dataFile = raw_input('AERMOD datafile name? ')
+  #dataFile = '2009-10.SFC'
+  #dataFile = 'kosovo11-ww-scipuff.sfc'
   #dataFile = 'kinso2.sfc'
   #dataFile = 'kinso2.pfl'
 
