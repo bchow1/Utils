@@ -201,18 +201,24 @@ def pltCmpConc(dist, varName, obsData, preData1, preData2, figTitle, figName):
   #print obsData[:,1]
   if varName == 'O3':
     fac = 1
+    cO = max(obsData[-1,1],obsData[0,1])
+    c1 = max(preData1[-1,1],preData1[0,1])
+    c2 = max(preData2[-1,1],preData2[0,1])
   else:
     fac = 1
-  C = obsData[:,1] - fac*obsData[-1,1]
-  LhO  = plt.plot(obsData[:,0],C,linestyle='-',marker='o',markersize=6,markerfacecolor='blue') 
+    cO = min(obsData[-1,1],obsData[0,1])
+    c1 = min(preData1[-1,1],preData1[0,1])
+    c2 = min(preData2[-1,1],preData2[0,1])
+  C = obsData[:,1] - fac*cO
+  LhO  = plt.plot(obsData[:,0],C,linestyle='None',marker='o',markersize=6,markerfacecolor='green') 
   LkO  = 'OBS'
-  C = ma.masked_where(preData1[:,1]<0.,preData1[:,1]) - fac*preData1[-1,1]
-  LhP1 = plt.plot(preData1[:,0],C,linestyle='-',marker='s',markersize=6,markerfacecolor='green')
+  C = ma.masked_where(preData1[:,1]<0.,preData1[:,1]) - fac*c1
+  LhP1 = plt.plot(preData1[:,0],C,linestyle='-',color='red',marker='s',markersize=6,markerfacecolor='red')
   LkP1 = 'SCICHEM-2012'
-  C = ma.masked_where(preData2[:,1]<0.,preData2[:,1]) - fac*preData2[-1,1]
-  LhP2 = plt.plot(preData2[:,0],C,linestyle='-',marker='d',markersize=6,markerfacecolor='red')
+  C = ma.masked_where(preData2[:,1]<0.,preData2[:,1]) - fac*c2
+  LhP2 = plt.plot(preData2[:,0],C,linestyle='-',color='cyan',marker='^',markersize=6,markerfacecolor='blue')
   LkP2 = 'SCICHEM-99'
-  plt.ylabel('Concentration (ppm)')
+  plt.ylabel('Perturbation Concentration (ppm)')
   plt.xlabel('Cross plume distance (km)')
   plt.title(figTitle)
   if dist < 21:
