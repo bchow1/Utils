@@ -71,14 +71,15 @@ for suite in suiteList:
   print suite.name
   print suite.inpDir
   print suite.outDir
+  print len(suite.prjList)
   prjDir = suite.outDir[0].replace('$OUTPUTS',outDir)
   print prjDir
   if os.path.exists(prjDir):
     for prjNo,prjName in enumerate(suite.prjList):
-      prjLog = os.path.join(prjDir,prjName+'.log')
+      prjLog  = os.path.join(prjDir,prjName+'.log')
+      npyFile = os.path.join(prjDir,prjName+'.npy')
+      puffNos = []
       if os.path.exists(prjLog):
-        print 'Found :',prjLog
-        puffNos = []
         for line in fileinput.input(prjLog):
           if line.startswith("Output completed at"):
             matchNpuff = pattNpuff.match(line.strip())
@@ -88,16 +89,27 @@ for suite in suiteList:
             matchCmplt = pattCmplt.match(line.strip())              
             print 'Normal',float(matchCmplt.group(1))
       else:
-        print 'Missing :',prjLog
-      if len(puffNos) > 0:
-        puffNos = np.array(puffNos)
+        print 'Missing :',prjLog 
+      #if len(puffNos) > 0:
+      puffNos = np.array(puffNos)       
+      np.save(npyFile,puffNos)
+      break
+ 
+puffNos = None
+for suite in suiteList: 
+  prjDir = suite.outDir[0].replace('$OUTPUTS',outDir)
+  print prjDir
+  if os.path.exists(prjDir):
+    for prjNo,prjName in enumerate(suite.prjList):
+      npyFile = os.path.join(prjDir,prjName+'.npy')
+      puffNos = np.load(npyFile)
+      if len(puffNos) > 0:       
+        print puffNos[-1]
         plt.clf()
-        plt.plot(puffNos[:,0],puffNos[:,1])
-        figName = suite.name+'%02d'%prjNo+'.png'
-        print os.getcwd(),figName
+        plt.plot(puffNos[:,0],puffNos[:,1],color='green',marker='o',markersize=6,markerfacecolor='green')
+        figName = suite.name+'_'+prjName+'.png'
         plt.savefig(figName)
-      print puffNos
-      sys.exit()
+    break
       
   
       
