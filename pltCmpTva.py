@@ -164,7 +164,11 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
         obsCur = obsConn.cursor()
 
         # Observations
-        obsQry = 'select CAST(plumeKM as real), ' + varName + ' from dataTable'
+        if "tva_990706" in prjName:
+          obsQry = 'select CAST(plumeKM as real), ' + varName + '/1000. from dataTable'
+        else:
+          obsQry = 'select CAST(plumeKM as real), ' + varName + ' from dataTable'
+
         print obsQry
         
         obsArray = utilDb.db2Array(obsCur,obsQry)
