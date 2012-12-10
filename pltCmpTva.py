@@ -8,6 +8,8 @@ import numpy.ma as ma
 import matplotlib.pyplot as plt
 import sqlite3
 
+import measure
+
 compName = socket.gethostname()
 
 # Local modules
@@ -27,7 +29,7 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
     print "Must provide project name"
     return
   else:
-   print 'prjName = ',prjName
+    print 'prjName = ',prjName
   
   varNames = ["SO2", "O3", "NOx",  "NOy"] #["SO2", "O3", "NOx",  "NOy"]
 
@@ -45,6 +47,15 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
     distance = [18, 27, 86, 59, 93, 126]
     times    = [10.25, 10.5, 12, 12.5, 12.75, 13]
     zSmp     = [465, 500, 659, 910, 819, 662]   
+
+  if "tva_990706" in prjName:
+    distance = [11, 31, 65, 89]
+    times    = [12.0, 13.5,14.5, 16.75]#12.25, 13.0, 14.0, 16.75]
+    zSmp     = [501, 505, 500, 533]
+  
+  statFile = open(prjName+"_stat.csv","w")
+  statFile.write("Case, Distance, PlumeNo, Species, Mean Obs, Mean Pre, NMSE, FB, r\n")
+
   
   for idt,dist in enumerate(distance): 
 
@@ -128,6 +139,17 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
         if dist == 126:
           pls = [11]    
 
+      if "tva_990706" in prjName:
+        if dist == 11:
+          pls = [1,2,3,4,5]
+        if dist == 31:
+          pls = [6,7,8]
+        if dist == 65:
+          pls = [9,10,11]
+        if dist == 89:
+          pls = [12] 
+
+
       # Set Omax to zero for max plume no.
       if varName == 'SO2':
         oMax  = [0 for i in range(12)]
@@ -150,23 +172,25 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
           oMax[ipl] = np.where(obsArray[:,1] == obsArray[:,1].max())[0][0]
           print 'Max Obs SO2 at x index = ', oMax[ipl],' with x, value = ',obsArray[oMax[ipl],0],obsArray[oMax[ipl],1]
 
+        # Set x value to 0. where SO2 conc is maximum for plume ipl
+        obsArray[:,0] = obsArray[:,0] - obsArray[oMax[ipl],0]
+        statFile.write("%s, %02d, %d, %s,"%(prjName,dist,ipl,varName))
 
         print '\nFor varName %s, plume no. %d,x index = %d, x = %f ,conc = %f\n'%\
               (varName,ipl,oMax[ipl],obsArray[oMax[ipl],0],obsArray[oMax[ipl],1])
         
         # Align the prediction1 and observed centerlines
         for i in range(len(preArray1)):
-          # Set x values where SO2 max to obs x value for plume ip1
-          preArray1[i,0] = float(i-iMax1)*lArc + obsArray[oMax[ipl],0]
+          # Set x values at iMax1(index where SO2 is max) to 0 for plume ipl. 
+          preArray1[i,0] = float(i-iMax1)*lArc 
           if i == iMax1:
             print 'Adjusted preArray1 x,c = ',preArray1[i,:] 
           
 
         # Align the prediction2 and observed centerlines
-
         for i in range(len(preArray2)):
           # Set x values where SO2 max to obs x value for plume ip1
-          preArray2[i,0] = float(i-iMax2)*lArc + obsArray[oMax[ipl],0] 
+          preArray2[i,0] = float(i-iMax2)*lArc 
           if i == iMax2:
             print 'Adjusted preArray2 x,c = ',preArray2[i,:]
            
@@ -175,10 +199,25 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
         #figTitle = '%s (@ %d km for plume %d)'%(varName,dist,ipl)
         figTitle = '%s (@ %d km)'%(varName,dist)
         print figName
-
         pltCmpConc(dist, varName, obsArray, preArray1, preArray2, figTitle, figName)
+           
+        # Get statistics
+        pre1 = np.copy(obsArray)
+        pre1[:,1] = np.interp(obsArray[:,0],preArray1[:,0],preArray1[:,1])
+        print obsArray[:,1].max(),pre1[:,1].max()
+        #print pre1
+        #plt.clf()
+        #plt.hold(True)
+        #plt.plot(preArray1[:,0],preArray1[:,1])
+        #plt.plot(pre1[:,0],pre1[:,1])
+        #plt.hold(False)
+        #plt.savefig('x.png')
+        calcStats(obsArray,pre1,statFile=statFile)
+        if varName == varNames[-1] and ipl == pls[-1]:
+          statFile.write("\n")
 
         obsConn.close()
+
     if prePfx2 is not None:
       print 'preConn2 is still open'
       #preConn2.close()
@@ -237,6 +276,17 @@ def pltCmpConc(dist, varName, obsData, preData1, preData2, figTitle, figName):
   #plt.show()
   return
 
+def calcStats(obsArray, preArray,statFile=None):
+  obsMean =  np.mean(obsArray[:,1])
+  predMean = np.mean(preArray[:,1])
+  NMSE = measure.nmse_1(obsArray[:,1], preArray[:,1])
+  #pearCoeff = pearsonr(obsArray[:,1],preArray[:,1])
+  biasFac = measure.bf(obsArray[:,1],preArray[:,1], cutoff=0.0)
+  correlation = measure.correlation(obsArray[:,1], preArray[:,1])
+  print 'stats: ',obsMean, predMean, NMSE, biasFac, correlation
+  if statFile is not None:
+    statFile.write("%8.3f, %8.3f, %8.3f, %8.3f,%8.3f\n"%(obsMean,predMean,NMSE,biasFac,correlation))
+
 def getSmpDb(prjName):
     mySciFiles = SCI.Files(prjName)
     smpDb = '%s.smp.db'%(prjName)
@@ -251,39 +301,52 @@ def getSmpDb(prjName):
 if __name__ == '__main__':
 
   if compName == 'sm-bnc':
-    #runDir='d:\\SCIPUFF\\runs\\EPRI\\Nash99'
-    #runDir='d:\\SCICHEM-2012\\TVA_990715'
-    runDir = 'd:\\scipuff\\runs\EPRI\\tva_980825'
+    runDir = 'd:\\scipuff\\runs\EPRI'
   if compName == 'pj-linux4':
-    #runDir = '/home/user/bnc/scipuff/runs/EPRI/tva/tva_980825'
-    runDir = '/home/user/bnc/scipuff/EPRI_121001/runs/tva/tva_990715'
+    runDir = '/home/user/bnc/scipuff/EPRI_121001/runs/tva'
   if compName == 'sage-d600':
-    runDir = 'D:\\SCICHEM-2012\\TVA_980825' 
-  os.chdir(runDir)
+    runDir = 'D:\\SCICHEM-2012' 
 
+  prjName = 'tva_990706'
+
+  runDir = os.path.join(runDir,prjName)
+  os.chdir(runDir)
   print 'runDir = ',runDir
 
-  # Observed data 
-  #obsPfx = os.path.join('OBS','tva_071599_')
-  obsPfx = os.path.join('OBS','cumb2_')
-  print obsPfx
-
   # Predicted SCICHEM-2012 data
-  prjName1 = os.path.join('SCICHEM-2012','tva_990715')
+  prjName1 = os.path.join('SCICHEM-2012',prjName)
   print '**********' , 
   prjName1
   preConn1,preCur1 = getSmpDb(prjName1)
 
+  # Observed data 
+  if '980825' in prjName1:
+    obsPfx = os.path.join('OBS','cumb1_')
+  if '980826' in prjName1:
+    obsPfx = os.path.join('OBS','cumb2_')
+  if '990715' in prjName1:
+    obsPfx = os.path.join('OBS','cumb2_')
+  if '990706' in prjName1:
+    obsPfx = os.path.join('OBS','tva_070699_')
+  print obsPfx
+
   # Predicted SCICHEM-01 data
-  prjName2 = os.path.join('SCICHEM-01','071599_vo3_lin_intel')
-  #prjName2 = os.path.join('SCICHEM-01','TVA_082598')
-  preConn2,preCur2 = getSmpDb(prjName2)
-  print prjName2
+  prePfx2 = None
+  preCur2 = None
   
   # Use prePfx2 + '_' + str(dist) + 'km' + '.csv.db'
-  #prePfx2 = os.path.join('SCICHEM-01','cumb2')
-  #prePfx2 = os.path.join('SCICHEM-01','TVA_082598')
-  prePfx2 = None
+  if '980825' in prjName1:
+    prePfx2 = os.path.join('SCICHEM-01','TVA_082598')
+  if '980826' in prjName1:
+    prePfx2 = os.path.join('SCICHEM-01','cumb2')
+  if '990715' in prjName1:
+    prjName2 = os.path.join('SCICHEM-01','071599_vo3_lin_intel')
+    print prjName2
+    preConn2,preCur2 = getSmpDb(prjName2)
+  if '990706' in prjName1:
+    prjName2 = os.path.join('SCICHEM-01','071599_vo3_lin_intel')
+    print '***WARNING: using 990715 SCICHEM-01 file*** ',prjName2
+    preConn2,preCur2 = getSmpDb(prjName2)
 
   mainProg(prjName=prjName1,obsPfx=obsPfx,preCur1=preCur1,preCur2=preCur2,prePfx2=prePfx2)
 
