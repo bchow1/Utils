@@ -7,6 +7,9 @@ import numpy as np
 import numpy.ma as ma
 import matplotlib.pyplot as plt
 import sqlite3
+from scipy.stats.stats import pearsonr
+import measure
+
 
 compName = socket.gethostname()
 
@@ -29,7 +32,7 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
   else:
    print 'prjName = ',prjName
   
-  varNames = ["SO2", "O3", "NOx",  "NOy"]
+  varNames = ["SO2", "O3", "NOx", "NOy"]
 
   if "tva_990715" in prjName:
     distance = [16, 62, 106]
@@ -47,11 +50,15 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
     zSmp     = [465, 500, 659, 910, 819, 662]
     
   if "tva_990706" in prjName:
-    distance = [11, 31, 65]#, 91]
+    distance = [11, 31, 65, 89]
     times    = [12.0, 13.5,14.5, 16.75]#12.25, 13.0, 14.0, 16.75]
     zSmp     = [501, 505, 500, 533]
   
+  statFile = open(prjName+"_stat.csv","w")
+  statFile.write("Case, Distance, PlumeNo, Species, Mean Obs, Mean Pre, NMSE, FB, r\n")
+  
   avgObsDb = prjName + "avgObs.db" 
+  
   avgObsConn = sqlite3.connect(avgObsDb)
   avgObsConn.row_factory = sqlite3.Row
   avgObsCur = avgObsConn.cursor()
@@ -73,10 +80,11 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
     lArc = 2.*dist*np.pi/180.
     
     tblName = "dist" + str(dist)
-    
-    if not os.path.exists(avgObsDb):   
+    createDBFlag = True
+    if createDBFlag:
+      #if not os.path.exists(avgObsDb):   
       avgObsCur.execute('DROP table if exists %s'%tblName)
-      createStr = "CREATE table %s( TRID integer,\
+      createStr = "CREATE table %s( ID string,\
                   TRdist integer, PlumeKM real, species varchar(8), conc real)"%tblName
       avgObsCur.execute(createStr)
     
@@ -112,9 +120,18 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
         if dist == 89:
           pls = [12] 
         
-        if not os.path.exists(avgObsDb):   
-          for ipl in pls:
-            
+        if createDBFlag:
+          if varName == 'SO2':
+            preQry1  = "select count(xSmp) from samTable a,smpTable p where a.colNo=p.colNo and "
+            preQry1 += "varName = '%s' and zSmp = %f and time = %3f order by smpId"%(varName,zSmp[idt],times[idt])
+            xCount = utilDb.db2Array(preCur1,preQry1)[0]
+          xArray = np.zeros(xCount)
+          aveArray= np.zeros(xCount)-9999.
+          for i in range(xCount):
+            xArray[i] = float(i-xCount/2)*lArc
+          
+          trIds = []
+          for ipl in pls:          
             obsDbName = obsPfx + str(dist) + 'km_obs' + str(ipl) + '.csv.db'
             print '\n obsDbName = ',obsDbName
             obsConn = sqlite3.connect(obsDbName)
@@ -125,12 +142,9 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
               obsQry = 'select TRID, CAST(plumeKM as real), ' + varName + '/1000 from dataTable where plumeKM > -9998.'
             else:
               obsQry = 'select TRID, CAST(plumeKM as real), ' + varName + ' from dataTable where plumeKM > -9998.'
-            print obsQry
             obsArray = utilDb.db2Array(obsCur, obsQry)
-            if ipl == min(pls):
-              plt.clf()
-              plt.hold(True)
-            plt.scatter(obsArray[:,1],obsArray[:,2],color=ccolor[ipl],marker='o')
+            print obsQry,obsArray[0][0]
+            trIds.append(int(obsArray[0][0]))
             if varName == 'SO2':
                oMax[ipl] = np.where(obsArray[:,2] == obsArray[:,2].max())[0][0]
                print 'Max Obs SO2 at x index = ', oMax[ipl],' with x, value = ',obsArray[oMax[ipl],1],obsArray[oMax[ipl],2]
@@ -138,17 +152,29 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
             maxDist = obsArray[oMax[ipl],1]
             for i in range(len(obsArray)):
               # Set x values where SO2 max to obs x value for plume ip1
-              obsArray[i,1] = obsArray[i,1] - maxDist 
-            plt.scatter(obsArray[:,1],obsArray[:,2],color=ccolor[ipl],marker='d')
+              obsArray[i,1] = obsArray[i,1] - maxDist
+            aveArray = np.interp(xArray, obsArray[:,1], obsArray[:,2])
+            
             inStr = "INSERT into %s values("%tblName
-            for myrow in obsArray:
-              insertStr = inStr + '%d, %5.2f, %5.3f, "%s", %g)'%(myrow[0],dist,myrow[1],varName,myrow[2])
-              #print insertStr
+            for i,x in enumerate(xArray):
+              insertStr = inStr + '%s, %5.2f, %5.3f, "%s", %g)'%(str(obsArray[0][0]),dist,x,varName,aveArray[i])
+              print insertStr
               avgObsCur.execute(insertStr) 
-            #obsArray = obsCur.execute(obsQry)
-              
             avgObsConn.commit()
-                
+        else:
+          trIds = []
+          for ipl in pls:          
+            obsDbName = obsPfx + str(dist) + 'km_obs' + str(ipl) + '.csv.db'
+            print '\n obsDbName = ',obsDbName
+            obsConn = sqlite3.connect(obsDbName)
+            obsConn.row_factory = sqlite3.Row
+            obsCur = obsConn.cursor()
+            # Observations
+            obsQry = 'select distinct(TRID) from dataTable'
+            obsArray = utilDb.db2Array(obsCur, obsQry)
+            print obsQry,obsArray[0][0]
+            trIds.append(int(obsArray[0][0]))
+      trIds.append(-1)
       # Prediction query
       if varName == "NOx":
         preQry1 = 'select xSmp,Sum(Value) from samTable a,smpTable p where a.colNo=p.colNo'
@@ -179,25 +205,32 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
       if varName == 'SO2':
         # Set x index where SO2 is max. Same for all obs plumes
         iMax2 = np.where(preArray2[:,1] == preArray2[:,1].max())[0][0]
-                   
-   
-      avgQry = 'select round(plumeKM), avg(conc) from %s where species="%s" and conc >= 0 and plumeKM >-999 group by round(plumeKM)'%(tblName,varName)
-      #print avgQry
-      obsArray = utilDb.db2Array(avgObsCur,avgQry)
-      #plt.plot(AveArray2[:,0], AveArray2[:,1],marker='*')
-     
-      # Align the prediction1 and observed centerlines
-      for i in range(len(preArray1)):
-        preArray1[i,0] = float(i-iMax1)*lArc      
-      # Set x values where SO2 max to obs x value
-      for i in range(len(preArray2)):
-        preArray2[i,0] = float(i-iMax2)*lArc      
-      
-      # Plot
-      figName  = str(dist) +'km_' +varName +'_'+ str(times[idt]) + 'hr.png'
-      figTitle = '%s (@ %d km)'%(varName,dist)
-      
-      pltCmpConc(dist, varName, obsArray, preArray1, preArray2, figTitle, figName)
+    
+      for trId in trIds:
+        if trId == -1:
+          obsQry = 'select plumeKM, avg(conc) from %s where species="%s" and conc >= 0 group by plumeKM'%(tblName,varName)
+        else:
+          obsQry = 'select plumeKM, conc from %s where species="%s" and conc >= 0 and ID = %d group by plumeKM'%(tblName,varName,trId)
+        print obsQry
+        obsArray = utilDb.db2Array(avgObsCur,obsQry)
+        statFile.write("%s, %02d, %d, %s,"%(prjName,dist,trId,varName))
+        
+          
+       
+        # Align the prediction1 and observed centerlines
+        for i in range(len(preArray1)):
+          preArray1[i,0] = float(i-iMax1)*lArc      
+        # Set x values where SO2 max to obs x value
+        for i in range(len(preArray2)):
+          preArray2[i,0] = float(i-iMax2)*lArc      
+        
+        # Plot
+        figName  = str(dist) +'km_' + str(trId) + '_' + varName +'_'+ str(times[idt]) + 'hr.png'
+        figTitle = '%s (@ %d km for %d)'%(varName,dist,trId)
+        calcStats(obsArray, preArray1,statFile=statFile)
+        if trID == -1:
+          statFile.write("\n")
+        pltCmpConc(dist, varName, obsArray, preArray1, preArray2, figTitle, figName)
     
     if prePfx2 is not None:
       print 'preConn2 is still open'
@@ -206,12 +239,17 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
        
   return
 
-def initDb():
-  #print len(colNames),colNames
-  dbFile =  'tva_master.db'
-  dbConn = sqlite3.connect(dbFile)
-  dbCur = dbConn.cursor() 
-  return (dbCur,dbConn)
+def calcStats(obsArray, preArray,statFile=None):
+  obsMean =  np.mean(obsArray[:,1])
+  predMean = np.mean(preArray[:,1])
+  NMSE = measure.nmse_1(obsArray[:,1], preArray[:,1])
+  #pearCoeff = pearsonr(obsArray[:,1],preArray[:,1])
+  biasFac = measure.bf(obsArray[:,1],preArray[:,1], cutoff=0.0)
+  correlation = measure.correlation(obsArray[:,1], preArray[:,1])
+  print "<--obsMean %%%%%%%%%% NMSE--> %%%%%%%%%%%% Pearson Coeff"
+  print obsMean, predMean, NMSE, biasFac, correlation
+  if statFile is not None:
+    statFile.write("%8.3f, %8.3f, %8.3f, %8.3f,%8.3f\n"%(obsMean,predMean,NMSE,biasFac,correlation))
 
 def insertDb(dbCur,nCol,colTypes,colValues):
   insertStr = 'INSERT into dataTable VALUES('
