@@ -157,7 +157,10 @@ if __name__ == '__main__':
 
   runDir = './'
   if len(sys.argv) > 1:
-    prjName = sys.argv[1]
+    prjNames = sys.argv[1]
+  else:
+    print 'Usage: readPuf.py prjName1[:prjName2 ...]'
+    sys.exit()
 
   env = os.environ.copy()
   env["SCICHEM"] = "False"
@@ -169,7 +172,6 @@ if __name__ == '__main__':
       readpuf = ["%s\\readpuf.exe" % SCIPUFF_BASEDIR]
     else:
       runDir = "J:\BNC\EPRI\\runs\\stepAmbwFlx"
-      prjName = 'x0'
       SCIPUFF_BASEDIR="D:\\hpac\\gitEPRI\\bin"
       iniFile = "D:\\hpac\\gitEPRI\\bin\\scipuff.ini"
       compiler = 'intel'
@@ -184,8 +186,8 @@ if __name__ == '__main__':
       readpuf  = ["%s\\scipp.exe"%bindir,"-I:%s"%iniFile,"-R:RP"]
     tail = '\r\n'
   else:
-    #SCIPUFF_BASEDIR = "/home/user/bnc/hpac/fromSCIPUFF/Repository/UNIX/FULL/bin/linux/lahey"
-    SCIPUFF_BASEDIR = "/usr/pc/biswanath/hpac/gitEPRI/UNIX/EPRI/bin/linux/lahey"
+    SCIPUFF_BASEDIR = "/home/user/bnc/scipuff/EPRI_121001/UNIX/EPRI/bin/linux/ifort_debug"
+    #SCIPUFF_BASEDIR = "/usr/pc/biswanath/hpac/gitEPRI/UNIX/EPRI/bin/linux/lahey"
     readpuf = ["%s/scipp" % SCIPUFF_BASEDIR,"-I:","-R:RP"]
     env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran/x86_32:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
     env["LD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH"] + ':' + SCIPUFF_BASEDIR
@@ -198,10 +200,10 @@ if __name__ == '__main__':
 
   os.chdir(runDir)
   #
-  for prjName in ['x0','x1']:
+  for prjName in prjNames.split(':'):
     createCSV(env,prjName,readpuf)
+    csv2Db(prjName)
   #
-  #csv2Db(prjName)
   #select time,ipuf,value from pufftable p, masstable m where p.puffId==m.puffId and m.species='NO2';
 
 '''
