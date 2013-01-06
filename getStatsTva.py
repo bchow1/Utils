@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 import sqlite3
 from scipy.stats.stats import pearsonr
 import measure
+import matplotlib.cm as cm
+import Image
+
 
 
 compName = socket.gethostname()
@@ -50,7 +53,7 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
     zSmp     = [465, 500, 659, 910, 819, 662]
     
   if "tva_990706" in prjName:
-    distance = [11, 31, 65, 89]
+    distance = [11, 31, 65] #, 89]
     times    = [12.0, 13.5,14.5, 16.75]#12.25, 13.0, 14.0, 16.75]
     zSmp     = [501, 505, 500, 533]
   
@@ -89,6 +92,7 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
       avgObsCur.execute(createStr)
     
     for varName in varNames:
+      trIds = []
        # Set Omax to zero for max plume no.
       if varName == 'SO2':
         oMax  = [0 for i in range(13)]
@@ -119,61 +123,62 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
           pls = [9,10,11]
         if dist == 89:
           pls = [12] 
+    
+      if createDBFlag:
+        if varName == 'SO2':
+          preQry1  = "select count(xSmp) from samTable a,smpTable p where a.colNo=p.colNo and "
+          preQry1 += "varName = '%s' and zSmp = %f and time = %3f order by smpId"%(varName,zSmp[idt],times[idt])
+          xCount = utilDb.db2Array(preCur1,preQry1)[0]
+        xArray = np.zeros(xCount)
+        aveArray= np.zeros(xCount)-9999.
+        for i in range(xCount):
+          xArray[i] = float(i-xCount/2)*lArc
         
-        if createDBFlag:
+        trIds = []
+
+        for ipl in pls:          
+          obsDbName = obsPfx + str(dist) + 'km_obs' + str(ipl) + '.csv.db'
+          print '\n obsDbName = ',obsDbName
+          obsConn = sqlite3.connect(obsDbName)
+          obsConn.row_factory = sqlite3.Row
+          obsCur = obsConn.cursor()
+          # Observations
+          if "tva_990706" in prjName:
+            obsQry = 'select TRID, CAST(plumeKM as real), ' + varName + '/1000 from dataTable where plumeKM > -9998.'
+          else:
+            obsQry = 'select TRID, CAST(plumeKM as real), ' + varName + ' from dataTable where plumeKM > -9998.'
+          obsArray = utilDb.db2Array(obsCur, obsQry)
+          print obsQry,obsArray[0][0]
+          trIds.append(int(obsArray[0][0]))
           if varName == 'SO2':
-            preQry1  = "select count(xSmp) from samTable a,smpTable p where a.colNo=p.colNo and "
-            preQry1 += "varName = '%s' and zSmp = %f and time = %3f order by smpId"%(varName,zSmp[idt],times[idt])
-            xCount = utilDb.db2Array(preCur1,preQry1)[0]
-          xArray = np.zeros(xCount)
-          aveArray= np.zeros(xCount)-9999.
-          for i in range(xCount):
-            xArray[i] = float(i-xCount/2)*lArc
+             oMax[ipl] = np.where(obsArray[:,2] == obsArray[:,2].max())[0][0]
+             print 'Max Obs SO2 at x index = ', oMax[ipl],' with x, value = ',obsArray[oMax[ipl],1],obsArray[oMax[ipl],2]
+
+          maxDist = obsArray[oMax[ipl],1]
+          for i in range(len(obsArray)):
+            # Set x values where SO2 max to obs x value for plume ip1
+            obsArray[i,1] = obsArray[i,1] - maxDist
+          aveArray = np.interp(xArray, obsArray[:,1], obsArray[:,2])
           
-          trIds = []
-          for ipl in pls:          
-            obsDbName = obsPfx + str(dist) + 'km_obs' + str(ipl) + '.csv.db'
-            print '\n obsDbName = ',obsDbName
-            obsConn = sqlite3.connect(obsDbName)
-            obsConn.row_factory = sqlite3.Row
-            obsCur = obsConn.cursor()
-            # Observations
-            if "tva_990706" in prjName:
-              obsQry = 'select TRID, CAST(plumeKM as real), ' + varName + '/1000 from dataTable where plumeKM > -9998.'
-            else:
-              obsQry = 'select TRID, CAST(plumeKM as real), ' + varName + ' from dataTable where plumeKM > -9998.'
-            obsArray = utilDb.db2Array(obsCur, obsQry)
-            print obsQry,obsArray[0][0]
-            trIds.append(int(obsArray[0][0]))
-            if varName == 'SO2':
-               oMax[ipl] = np.where(obsArray[:,2] == obsArray[:,2].max())[0][0]
-               print 'Max Obs SO2 at x index = ', oMax[ipl],' with x, value = ',obsArray[oMax[ipl],1],obsArray[oMax[ipl],2]
-  
-            maxDist = obsArray[oMax[ipl],1]
-            for i in range(len(obsArray)):
-              # Set x values where SO2 max to obs x value for plume ip1
-              obsArray[i,1] = obsArray[i,1] - maxDist
-            aveArray = np.interp(xArray, obsArray[:,1], obsArray[:,2])
-            
-            inStr = "INSERT into %s values("%tblName
-            for i,x in enumerate(xArray):
-              insertStr = inStr + '%s, %5.2f, %5.3f, "%s", %g)'%(str(obsArray[0][0]),dist,x,varName,aveArray[i])
-              print insertStr
-              avgObsCur.execute(insertStr) 
-            avgObsConn.commit()
-        else:
-          trIds = []
-          for ipl in pls:          
-            obsDbName = obsPfx + str(dist) + 'km_obs' + str(ipl) + '.csv.db'
-            print '\n obsDbName = ',obsDbName
-            obsConn = sqlite3.connect(obsDbName)
-            obsConn.row_factory = sqlite3.Row
-            obsCur = obsConn.cursor()
-            # Observations
-            obsQry = 'select distinct(TRID) from dataTable'
-            obsArray = utilDb.db2Array(obsCur, obsQry)
-            print obsQry,obsArray[0][0]
-            trIds.append(int(obsArray[0][0]))
+          inStr = "INSERT into %s values("%tblName
+          for i,x in enumerate(xArray):
+            insertStr = inStr + '%s, %5.2f, %5.3f, "%s", %g)'%(str(obsArray[0][0]),dist,x,varName,aveArray[i])
+            print insertStr
+            avgObsCur.execute(insertStr) 
+          avgObsConn.commit()
+      else:
+        trIds = []
+        for ipl in pls:          
+          obsDbName = obsPfx + str(dist) + 'km_obs' + str(ipl) + '.csv.db'
+          print '\n obsDbName = ',obsDbName
+          obsConn = sqlite3.connect(obsDbName)
+          obsConn.row_factory = sqlite3.Row
+          obsCur = obsConn.cursor()
+          # Observations
+          obsQry = 'select distinct(TRID) from dataTable'
+          obsArray = utilDb.db2Array(obsCur, obsQry)
+          print obsQry,obsArray[0][0]
+          trIds.append(int(obsArray[0][0]))
       trIds.append(-1)
       # Prediction query
       if varName == "NOx":
@@ -228,7 +233,7 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
         figName  = str(dist) +'km_' + str(trId) + '_' + varName +'_'+ str(times[idt]) + 'hr.png'
         figTitle = '%s (@ %d km for %d)'%(varName,dist,trId)
         calcStats(obsArray, preArray1,statFile=statFile)
-        if trID == -1:
+        if trId == -1:
           statFile.write("\n")
         pltCmpConc(dist, varName, obsArray, preArray1, preArray2, figTitle, figName)
     
@@ -308,19 +313,25 @@ def pltCmpConc(dist, varName, obsData, preData1, preData2, figTitle, figName):
      c1 = min(preData1[-1,1],preData1[0,1])
     if preData2 is not None:
      c2 = min(preData2[-1,1],preData2[0,1])
+  # creating Color plot or grayscale plot
+  colorPlot = False
+  
   if obsData is not None:
     C = obsData[:,1] - fac*cO
-    LhO  = plt.plot(obsData[:,0],C,linestyle='None',marker='o',markersize=6,markerfacecolor='green') 
+    curColor = "green"
+    LhO  = plt.plot(obsData[:,0],C,linestyle='None',marker='o',markersize=6,markerfacecolor='0.25') 
     LkO  = 'OBS'
     lgndList.append(LkO)
   if preData1 is not None: 
     C = ma.masked_where(preData1[:,1]<0.,preData1[:,1]) - fac*c1
-    LhP1 = plt.plot(preData1[:,0],C,linestyle='-',color='red',marker='s',markersize=6,markerfacecolor='red')
+    curColor = 'red'
+    LhP1 = plt.plot(preData1[:,0],C,linestyle='-',color='0.5',marker='s',markersize=6,markerfacecolor='0.5')
     LkP1 = 'SCICHEM-2012'
     lgndList.append(LkP1)
   if preData2 is not None:
     C = ma.masked_where(preData2[:,1]<0.,preData2[:,1]) - fac*c2
-    LhP2 = plt.plot(preData2[:,0],C,linestyle='-',color='cyan',marker='^',markersize=6,markerfacecolor='blue')
+    curColor = 'cyan'
+    LhP2 = plt.plot(preData2[:,0],C,linestyle='-',color='0.75',marker='^',markersize=6,markerfacecolor='0.75')
     LkP2 = 'SCICHEM-99'
     lgndList.append(LkP2)
   plt.ylabel('Perturbation Concentration (ppm)')
@@ -338,6 +349,14 @@ def pltCmpConc(dist, varName, obsData, preData1, preData2, figTitle, figName):
   plt.setp(ltext,fontsize=9)
   fig.hold(False)
   plt.savefig(figName)
+  
+  #image = Image.open(figName).convert("L")
+  #arr = np.asarray(image)
+  #plt.imshow(arr, cmap = cm.Greys_r)
+  #fignameGraySc = figName + "gs"
+  #plt.show()
+  
+  #plt.savefig(fignameGraySc)
   return
 
 def getSmpDb(prjName):
@@ -353,40 +372,41 @@ def getSmpDb(prjName):
 # Main program
 if __name__ == '__main__':
 
+  
   if compName == 'sm-bnc':
     #runDir='d:\\SCIPUFF\\runs\\EPRI\\Nash99'
     #runDir='d:\\SCICHEM-2012\\TVA_990715'
-    runDir = 'd:\\scipuff\\runs\EPRI\\tva_980825'
+    runDir = 'd:\\scipuff\\runs\EPRI\\tva_980826'
   if compName == 'pj-linux4':
     #runDir = '/home/user/bnc/scipuff/runs/EPRI/tva/tva_980825'
     runDir = '/home/user/bnc/scipuff/EPRI_121001/runs/tva/tva_990715'
   if compName == 'sage-d600':
-    runDir = 'D:\\SCICHEM-2012\\TVA_990706' 
+    runDir = 'D:\\SCICHEM-2012\\TVA_980826' 
   os.chdir(runDir)
 
   print 'runDir = ',runDir
 
   # Observed data 
-  obsPfx = os.path.join('OBS','tva_070699_')
+  obsPfx = os.path.join('OBS','tva_082698_')
   #obsPfx = os.path.join('OBS','cumb2_')
   print obsPfx
 
   # Predicted SCICHEM-2012 data
-  prjName1 = os.path.join('SCICHEM-2012','tva_990706')
+  prjName1 = os.path.join('SCICHEM-2012','tva_980825')
   print '**********' , 
   prjName1
   preConn1,preCur1 = getSmpDb(prjName1)
 
   # Predicted SCICHEM-01 data
-  prjName2 = os.path.join('SCICHEM-01','070699_vo3_lin_intel')
-  #prjName2 = os.path.join('SCICHEM-01','TVA_990706')
+  #prjName2 = os.path.join('SCICHEM-01','082698_vo3_lin_intel')
+  prjName2 = os.path.join('SCICHEM-01','TVA_082698')
   preConn2,preCur2 = getSmpDb(prjName2)
   print prjName2
   
   # Use prePfx2 + '_' + str(dist) + 'km' + '.csv.db'
-  #prePfx2 = os.path.join('SCICHEM-01','cumb2')
+  prePfx2 = os.path.join('SCICHEM-01','cumb2')
   #prePfx2 = os.path.join('SCICHEM-01','TVA_082598')
-  prePfx2 = None
+  #prePfx2 = None
 
   mainProg(prjName=prjName1,obsPfx=obsPfx,preCur1=preCur1,preCur2=preCur2,prePfx2=prePfx2)
 
