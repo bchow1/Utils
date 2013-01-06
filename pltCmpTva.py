@@ -253,13 +253,13 @@ def pltCmpConc(dist, varName, obsData, preData1, preData2, figTitle, figName):
     c1 = min(preData1[-1,1],preData1[0,1])
     c2 = min(preData2[-1,1],preData2[0,1])
   C = obsData[:,1] - fac*cO
-  LhO  = plt.plot(obsData[:,0],C,linestyle='None',marker='o',markersize=6,markerfacecolor='green') 
+  LhO  = plt.plot(obsData[:,0],C,linestyle='None',marker='o',markersize=6,markerfacecolor='0.25') 
   LkO  = 'OBS'
   C = ma.masked_where(preData1[:,1]<0.,preData1[:,1]) - fac*c1
-  LhP1 = plt.plot(preData1[:,0],C,linestyle='-',color='red',marker='s',markersize=6,markerfacecolor='red')
+  LhP1 = plt.plot(preData1[:,0],C,linestyle='-',color='0.5',marker='s',markersize=6,markerfacecolor='0.5')
   LkP1 = 'SCICHEM-2012'
   C = ma.masked_where(preData2[:,1]<0.,preData2[:,1]) - fac*c2
-  LhP2 = plt.plot(preData2[:,0],C,linestyle='-',color='cyan',marker='^',markersize=6,markerfacecolor='blue')
+  LhP2 = plt.plot(preData2[:,0],C,linestyle='-',color='0.75',marker='^',markersize=6,markerfacecolor='0.75')
   LkP2 = 'SCICHEM-99'
   plt.ylabel('Perturbation Concentration (ppm)')
   plt.xlabel('Cross plume distance (km)')
@@ -311,7 +311,7 @@ if __name__ == '__main__':
   if compName == 'sage-d600':
     runDir = 'D:\\SCICHEM-2012' 
 
-  prjName = 'tva_990706'
+  prjName = 'tva_980825' #'tva_990706'
 
   runDir = os.path.join(runDir,prjName)
   os.chdir(runDir)
@@ -325,7 +325,7 @@ if __name__ == '__main__':
 
   # Observed data 
   if '980825' in prjName1:
-    obsPfx = os.path.join('OBS','cumb1_')
+    obsPfx = os.path.join('OBS','tva_082598_')
   if '980826' in prjName1:
     obsPfx = os.path.join('OBS','cumb2_')
   if '990715' in prjName1:
