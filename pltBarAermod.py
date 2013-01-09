@@ -5,6 +5,7 @@ import socket
 import numpy as np
 import matplotlib.pyplot as plt
 import sqlite3
+import measure
 
 compName = socket.gethostname()
 
@@ -27,8 +28,8 @@ def getSmpDb(prjName):
 def mainProg():
 
   #prjName = 'baldwin'
-  #prjName = 'bowline'
-  prjName = 'kinso2'
+  prjName = 'bowline'
+  #prjName = 'kinso2'
   
   if compName == 'sm-bnc':
     os.chdir('d:\\SCICHEM-2012\\' + prjName)
@@ -70,6 +71,8 @@ def mainProg():
   
   
   obsDir = os.path.join('..','Obs_Conc')
+  statFile = open(prjName+"_stat.csv","w")
+  statFile.write("Case, Maxhr, Fac1, Fac5, upa \n")
 
   # Predicted data set 1
   preConn1,preCur1 = getSmpDb(prjName)
@@ -102,7 +105,10 @@ def mainProg():
     preQry1 = preQry + str(smpId)
     pre1Max1Hr.append(utilDb.db2Array(preCur1,preQry1)[0][0]*pre2Fac)
   print 'pre1Max1Hr = ',pre1Max1Hr
-
+  if statFile is not None:
+    statFile.write("%s, %s"%(prjName, '1 hr'))
+  calcStats(obsMax1Hr,pre1Max1Hr,statFile)
+  
   '''
   pre2Max1Hr = []
   for smpId in smpIds:
@@ -134,7 +140,9 @@ def mainProg():
         pre1Max3Hr[j] = curVal
   pre1Max3Hr = pre1Max3Hr*pre2Fac
   print 'pre1Max3Hr = ',pre1Max3Hr
-  
+  if statFile is not None:
+    statFile.write("%s, %s"%(prjName, '3 hr'))
+  calcStats(obsMax3Hr,pre1Max3Hr,statFile)
   '''
   pre2Max3Hr = np.zeros(nSmp)
   for j,smpId in enumerate(smpIds):
@@ -170,7 +178,9 @@ def mainProg():
   pre1Max24Hr = pre1Max24Hr*pre2Fac
   print 'pre1Max24Hr = ',pre1Max24Hr
   print 'Max val for 24 hrs = ', max(pre1Max24Hr)
-  
+  if statFile is not None:
+    statFile.write("%s, %s"%(prjName, '24 hr'))
+  calcStats(obsMax24Hr,pre1Max24Hr,statFile)
   '''
   pre2Max24Hr = np.zeros(nSmp)
   for j,smpId in enumerate(smpIds):
@@ -211,25 +221,35 @@ def mainProg():
   ## 1 hr Max
   MaxObs[0]  = max(obsMax1Hr)
   MaxPre1[0] = max(pre1Max1Hr)
+  print '1Hr: Obs,Pre1,Pre2,rat1,rat2 = ',MaxObs[0],MaxPre1[0],MaxPre2[0],\
+         MaxPre1[0]/MaxObs[0],MaxPre2[0]/MaxObs[0]
   #MaxPre2[0] = max(pre2Max1Hr)
   
   ## 3 hr Max
   MaxObs[1]  = max(obsMax3Hr)
   MaxPre1[1] = max(pre1Max3Hr)
   #MaxPre2[1] = max(pre2Max3Hr)
-  
+  print '3Hr: Obs,Pre1,Pre2,rat1,rat2 = ',MaxObs[1],MaxPre1[1],MaxPre2[1],\
+         MaxPre1[1]/MaxObs[1],MaxPre2[1]/MaxObs[1] 
   ## 24 hr Max
   MaxObs[2]  = max(obsMax24Hr)
   MaxPre1[2] = max(pre1Max24Hr)
   #MaxPre2[2] = max(pre2Max24Hr)
+  print '24Hr: Obs,Pre1,Pre2,rat1,rat2 = ',MaxObs[2],MaxPre1[2],MaxPre2[2],\
+         MaxPre1[2]/MaxObs[2],MaxPre2[2]/MaxObs[2]
   
   ## Period Max
   
   MaxPre1[3] = max(pre1MaxPerHr)
   #MaxPre2[3] = max(max(pre2Max1Hr), max(pre2Max3Hr),max(pre2Max24Hr))
-  
+  print 'Period: Obs,Pre1,Pre2,rat1,rat2 = ',MaxObs[3],MaxPre1[3],MaxPre2[3],\
+         MaxPre1[3]/MaxObs[3],MaxPre2[3]/MaxObs[3]
   
   print  MaxObs, MaxPre1 , MaxPre2
+  
+  if statFile is not None:
+    statFile.write("%s, %s"%(prjName, 'Max'))
+  calcStats(MaxObs,MaxPre1,statFile)
   
   title = '%s: Maximum of Time Averaged Concentration'%prjName.upper()
   pltName = prjName + '_Max.png'
@@ -242,9 +262,23 @@ def mainProg():
   preConn2.close()
   print '**Done :-)'
       
+def calcStats(obsArray, preArray,statFile=None):
+  print "In calcStats"
+  print obsArray
+  print preArray
+  print max(obsArray), max(preArray)
+  upa =  measure.upa(obsArray, preArray)
+  fac2 = measure.fac2(obsArray, preArray)
+  #pearCoeff = pearsonr(obsArray[:,1],preArray[:,1])
+  fac5 = measure.fac5(obsArray,preArray)
+  #upa = measure.upa(obsArray, preArray)
+  print "<--obsMean %%%%%%%%%% NMSE--> %%%%%%%%%%%% Pearson Coeff"
+  print fac2, fac5
+  if statFile is not None:
+    statFile.write(",  %8.3f, %8.3f,%8.3f\n"%(fac2, fac5, upa))
 
 def plotBarGraph(obsArr, preArr1, preArr2, title, pltName,yMax=None, xTicLab=None):
-  
+  print pltName
   N = len(preArr1)
 
   width = 0.25                # the width of the bars
@@ -252,10 +286,17 @@ def plotBarGraph(obsArr, preArr1, preArr2, title, pltName,yMax=None, xTicLab=Non
 
   fig = plt.figure()
   ax = fig.add_subplot(111)
+  """
+  kwargs = {'hatch':'|'}
+rects2 = ax.bar(theta, day7, width,fill=False, align='edge', alpha=1, **kwargs)
 
-  rectsO  = ax.bar(ind, obsArr, width, color='r')
-  rects1  = ax.bar(ind+width, preArr1, width, color='b')  
-  rects2  = ax.bar(ind+width*2, preArr2, width, color='g')
+kwargs = {'hatch':'-'}
+rects1 = ax.bar(theta, day1, width,fill=False, align='edge', alpha=1, **kwargs)
+  """
+  kwargs = {'hatch':'|'}
+  rectsO  = ax.bar(ind, obsArr, width, color='w' ,hatch='\\')
+  rects1  = ax.bar(ind+width, preArr1, width, color='w', hatch='O')  
+  rects2  = ax.bar(ind+width*2, preArr2, width, color='w', hatch='*')
 
   # add some
   ax.set_ylabel('Concentration(ug/m3)')

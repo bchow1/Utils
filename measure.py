@@ -332,9 +332,11 @@ def upa(data1, data2):
 
     @rtype: float
     @return: Unpaired Peak Accuracy of data1 and data2.
-    """
     max2 = data2.max()
     return (data1.max() - max2) / max2
+    """
+    max2 = max(data2)
+    return (max(data1) - max2) / max2
 
 
 ## Normalized Mean Bias (NMB)

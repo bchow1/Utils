@@ -207,8 +207,8 @@ if __name__ == '__main__':
   # local modules
   import utilDb
 
-  #os.chdir("D:\\SCICHEM-2012\\Sept2012\\071599")
-  #sys.argv = ["","-s,","tva_071599_16km_obs4.csv"]
+  os.chdir("D:\\SCICHEM-2012\\OrigTVA")
+  sys.argv = ["","-s,","tva_070699_89km_obs12.csv"]
 
   if sys.argv.__len__() < 2:
     print 'Usage: tab2db.py [-s separator] [-n colname] [-t coltype] [-c collist] table1.txt [table2.txt ... ]'

@@ -199,11 +199,14 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
             print 'Adjusted preArray2 x,c = ',preArray2[i,:]
            
         # Plot
-        figName  = str(dist) +'km_' +varName +'_'+ str(times[idt]) + 'hr_obs' + str(ipl) + '.png'
+        #figName  = str(dist) +'km_' +varName +'_'+ str(times[idt]) + 'hr_obs' + str(ipl) + '.png'
+        npzFile = str(dist) +'km_'+ '_' +  str(ipl) + '_' + varName +'_'+ str(times[idt]) + 'hr' + '.npz'
         #figTitle = '%s (@ %d km for plume %d)'%(varName,dist,ipl)
         figTitle = '%s (@ %d km)'%(varName,dist)
-        print figName
-        pltCmpConc(dist, varName, obsArray, preArray1, preArray2, figTitle, figName)
+        #print figName
+        #pltCmpConc(dist, varName, obsArray, preArray1, preArray1, figTitle, figName)
+        np.savez(npzFile,obsArray,preArray1,preArray2)
+
            
         # Get statistics
         pre1 = np.copy(obsArray)
@@ -227,6 +230,70 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
       #preConn2.close()
           
   return
+def createSubPlots():
+  print 'Creating sub plots'
+  params1 = {'axes.labelsize': 10, 'text.fontsize': 10, 'xtick.labelsize': 10,
+                'ytick.labelsize': 10, 'legend.pad': 0.1,  
+                'legend.fontsize': 8, 'lines.markersize': 6, 'lines.width': 2.0,
+                'font.size': 10, 'text.usetex': False}
+  plt.rcParams.update(params1)
+  varName = ['NOx','NOy','O3','SO2']  
+
+  fList = os.listdir('.')
+  for fName in fList:
+    if fName.endswith('.npz'):
+      if 'SO2' in fName:
+        fig = plt.figure()
+        plt.clf()
+        fig.hold(True)        
+        dist = fName.split('_')[0].replace('km','')
+        plt.title('Downwind distance %s km '%dist)
+        ax = fig.add_subplot(111)
+        plt.text(.3,-0.09,'Cross plume distance(km)',transform=ax.transAxes,fontsize=14)
+        plt.text(-.15,0.8,'Perturbation Concentration (ppm)',transform=ax.transAxes,rotation='vertical',fontsize=14)
+        plt.setp(plt.gca(), frame_on=False, xticks=(), yticks=())
+        figName = fName.replace('_SO2_','').replace('.npz','.png')
+        for i in range(4):
+          fig,LhO,LhP1,LhP2 = subplotConc(fig,fName,dist,i,varName[i])
+        fig.legend([LhO,LhP1,LhP2],['OBSERVED','SCICHEM-2012','SCICHEM-99'])
+        fig.hold(False)
+        plt.savefig(figName)         
+         
+def subplotConc(fig,fName,dist,i,varName):
+  fName = fName.replace('SO2',varName)  
+  print fName
+  
+  npzfile = np.load(fName)
+  obsData = npzfile['arr_0'] 
+  preData1 = npzfile['arr_1'] 
+  preData2 = npzfile['arr_2']
+  
+  ax = fig.add_subplot(2,2,i+1)
+  #print obsData[:,1]
+  if varName == 'O3':
+    cO = max(obsData[-1,1],obsData[0,1])
+    c1 = max(preData1[-1,1],preData1[0,1])
+    c2 = max(preData2[-1,1],preData2[0,1])
+  else:
+    cO = min(obsData[-1,1],obsData[0,1])
+    c1 = min(preData1[-1,1],preData1[0,1])
+    c2 = min(preData2[-1,1],preData2[0,1])
+  C = obsData[:,1] - cO
+  LhO, = plt.plot(obsData[:,0],C,linestyle='None',marker='o',markersize=6,markerfacecolor='0.25') 
+  C = ma.masked_where(preData1[:,1]<0.,preData1[:,1]) - c1
+  LhP1, = plt.plot(preData1[:,0],C,linestyle='-',color='0.5',marker='s',markersize=6,markerfacecolor='0.5')
+  C = ma.masked_where(preData2[:,1]<0.,preData2[:,1]) - c2
+  LhP2, = plt.plot(preData2[:,0],C,linestyle='-',color='0.75',marker='^',markersize=6,markerfacecolor='0.75')
+  if dist < 21:
+    plt.xlim([-10,10])
+  else:
+    plt.xlim([-30,30])
+  #if varName == 'O3':
+  #  plt.ylim([0,0.1])
+  if i == 0 or i == 1:
+    ax.set_xticklabels([])
+  return fig,LhO,LhP1,LhP2
+  
           
 def pltCmpConc(dist, varName, obsData, preData1, preData2, figTitle, figName):
   #import pdb; pdb.set_trace()
@@ -253,13 +320,13 @@ def pltCmpConc(dist, varName, obsData, preData1, preData2, figTitle, figName):
     c1 = min(preData1[-1,1],preData1[0,1])
     c2 = min(preData2[-1,1],preData2[0,1])
   C = obsData[:,1] - fac*cO
-  LhO  = plt.plot(obsData[:,0],C,linestyle='None',marker='o',markersize=6,markerfacecolor='green') 
+  LhO  = plt.plot(obsData[:,0],C,linestyle='None',marker='o',markersize=6,markerfacecolor='0.25') 
   LkO  = 'OBS'
   C = ma.masked_where(preData1[:,1]<0.,preData1[:,1]) - fac*c1
-  LhP1 = plt.plot(preData1[:,0],C,linestyle='-',color='red',marker='s',markersize=6,markerfacecolor='red')
+  LhP1 = plt.plot(preData1[:,0],C,linestyle='-',color='0.5',marker='s',markersize=6,markerfacecolor='0.5')
   LkP1 = 'SCICHEM-2012'
   C = ma.masked_where(preData2[:,1]<0.,preData2[:,1]) - fac*c2
-  LhP2 = plt.plot(preData2[:,0],C,linestyle='-',color='cyan',marker='^',markersize=6,markerfacecolor='blue')
+  LhP2 = plt.plot(preData2[:,0],C,linestyle='-',color='0.75',marker='^',markersize=6,markerfacecolor='0.75')
   LkP2 = 'SCICHEM-99'
   plt.ylabel('Perturbation Concentration (ppm)')
   plt.xlabel('Cross plume distance (km)')
@@ -311,7 +378,7 @@ if __name__ == '__main__':
   if compName == 'sage-d600':
     runDir = 'D:\\SCICHEM-2012' 
 
-  prjName = 'tva_990706'
+  prjName = 'tva_980825' #'tva_990706'
 
   runDir = os.path.join(runDir,prjName)
   os.chdir(runDir)
@@ -325,7 +392,7 @@ if __name__ == '__main__':
 
   # Observed data 
   if '980825' in prjName1:
-    obsPfx = os.path.join('OBS','cumb1_')
+    obsPfx = os.path.join('OBS','tva_082598_')
   if '980826' in prjName1:
     obsPfx = os.path.join('OBS','cumb2_')
   if '990715' in prjName1:
@@ -352,7 +419,7 @@ if __name__ == '__main__':
     print '***WARNING: using 990715 SCICHEM-01 file*** ',prjName2
     preConn2,preCur2 = getSmpDb(prjName2)
 
-  mainProg(prjName=prjName1,obsPfx=obsPfx,preCur1=preCur1,preCur2=preCur2,prePfx2=prePfx2)
-
+  #mainProg(prjName=prjName1,obsPfx=obsPfx,preCur1=preCur1,preCur2=preCur2,prePfx2=prePfx2)
+  createSubPlots()
   #preConn1.close()
   #preConn2.close()
