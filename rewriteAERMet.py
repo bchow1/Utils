@@ -5,12 +5,7 @@ import sys
 import numpy as np
 import numpy.ma as ma
 import matplotlib.pyplot as plt
-import sqlite3
 import time
-
-# Local modules
-sys.path.append('C:\\cygwin\\home\\sid\\python')
-import utilDb
 
 # Code for SCICHEM 2012 plots
 
@@ -112,8 +107,7 @@ def mainProg(dataFile):
 # Main program
 if __name__ == '__main__': 
 
-  runDir = os.getcwd() 
-  #runDir = 'D:\\SCICHEM-2012\\kinso2\\SCICHEM'
+  runDir = 'D:\\SCIPUFF\\EPRI\\runs\\kos_090811'
   #runDir = '/home/user/bnc/scipuff/runs/EPRI/wwright'
     
   dataFile = raw_input('AERMOD datafile name? ')
