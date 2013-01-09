@@ -1,7 +1,7 @@
 #
 import os
 import sys
-import ast
+import socket
 import subprocess
 import fileinput
 import sqlite3
@@ -162,28 +162,35 @@ if __name__ == '__main__':
     print 'Usage: readPuf.py prjName1[:prjName2 ...]'
     sys.exit()
 
+  compName = socket.gethostname()
+
   env = os.environ.copy()
   env["SCICHEM"] = "False"
   if sys.platform == 'win32':
+    compiler = "intel"
+    version = "Debug"
     if env["SCICHEM"] == "True":
-      runDir = "D:\EPRI\\git\\runs\\tva"
-      prjName = 'noambstp'
-      SCIPUFF_BASEDIR="D:\\EPRI\\git\\workspace\\Debug"
-      readpuf = ["%s\\readpuf.exe" % SCIPUFF_BASEDIR]
+      if compName == 'sm-bnc' or compName == 'sage-d600':
+        SCIPUFF_BASEDIR="D:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\"
+        binDir = os.path.join(SCIPUFF_BASEDIR,"workspace","EPRI","bin",compiler,"Win32",version)
+        iniFile = "D:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\workspace\\EPRI\\scipuff.ini"
+      env["PATH"] = "%s" % (binDir)
+      readpuf  = ["%s\\scipp.exe"%binDir,"-I:%s"%iniFile,"-R:RP"]
     else:
-      runDir = "J:\BNC\EPRI\\runs\\stepAmbwFlx"
-      SCIPUFF_BASEDIR="D:\\hpac\\gitEPRI\\bin"
-      iniFile = "D:\\hpac\\gitEPRI\\bin\\scipuff.ini"
-      compiler = 'intel'
-      version = 'release'
-      OldPath = env["PATH"]
-      bindir = SCIPUFF_BASEDIR + "\\" + compiler + "\\" + version
-      urbdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\nonurban"  + "\\" + version
-      vendir = SCIPUFF_BASEDIR + "\\vendor" 
+      if compName == 'sm-bnc' or compName == 'sage-d600':
+        SCIPUFF_BASEDIR="D:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\"
+        binDir = os.path.join(SCIPUFF_BASEDIR,"workspace","EPRI","bin",compiler,"Win32",version)
+        iniFile = "D:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\workspace\\EPRI\\scipuff.ini"
+      env["PATH"] = "%s" % (binDir)
+      readpuf  = ["%s\\scipp.exe"%binDir,"-I:%s"%iniFile,"-R:RP"]
+      #OldPath = env["PATH"]
+      #bindir = SCIPUFF_BASEDIR + "\\" + compiler + "\\" + version
+      #urbdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\nonurban"  + "\\" + version
+      #vendir = SCIPUFF_BASEDIR + "\\vendor" 
       #env["PATH"] = "%s;%s;%s;%s" % (bindir,urbdir,vendir,OldPath)
-      env["PATH"] = "%s;%s;%s" % (bindir,urbdir,vendir)
+      #env["PATH"] = "%s;%s;%s" % (bindir,urbdir,vendir)
       print env["PATH"]
-      readpuf  = ["%s\\scipp.exe"%bindir,"-I:%s"%iniFile,"-R:RP"]
+      readpuf  = ["%s\\scipp.exe"%binDir,"-I:%s"%iniFile,"-R:RP"]
     tail = '\r\n'
   else:
     SCIPUFF_BASEDIR = "/home/user/bnc/scipuff/EPRI_121001/UNIX/EPRI/bin/linux/ifort_debug"
