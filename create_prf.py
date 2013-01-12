@@ -38,7 +38,7 @@ for line in fileinput.input(csvFile):
 fileinput.close()
 
 for tNo in TestNames.keys():
-  sfcFile = 'if%s.sfc'%TestNames[tNo][:6]
+  sfcFile = 'if%s.sfc'%TestNames[tNo]
   idLNo = None 
   for line in fileinput.input(sfcFile):
     if len(line.strip()) > 0:
@@ -47,6 +47,7 @@ for tNo in TestNames.keys():
       if idLNo is not None:
         if fileinput.lineno() == idLNo + 3:
           pid,x,y,z,tHr,wspd,wdir,mol = line.split()
+          print sfcFile,mol
           break
   fileinput.close()
   prfFile = 'if%s.prf'%TestNames[tNo]
