@@ -1,4 +1,5 @@
 #
+import os
 import sys
 import math
 import matplotlib.pyplot as plt
@@ -17,9 +18,12 @@ def getFloat(x):
 #ht = getFloat(raw_input('Heights? ')
 #dt = getFloat(raw_input('Distances? ')
 
+os.chdir('d:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\runs\\tva\\tva_990715')
 arcIn = open('samArc.in','r')
+arcs  = []
+hghts = []
 for line in arcIn:
-  if len(line.strip()) == 0:
+  if len(line.strip()) == 0. or line.startswith('#'):
     continue
   varName,varData = line.split('=')
   varName = varName.strip()
@@ -30,10 +34,12 @@ for line in arcIn:
   if varName == 'smpStr':
     smpStr = varData.strip()
   if varName == 'Arc':
-    arcs = map(float,varData.split(','))
+    arcs.append(float(varData))
   if varName == 'Height':
-    hghts = map(float,varData.split(','))
+    hghts.append(map(float,varData.split(',')))
 arcIn.close()
+print arcs
+print hghts
 
 smpFile = open('temp.sam','w')
 smpFile.write('SCIPUFF SENSOR\n')
@@ -46,7 +52,8 @@ for arcNo in range(len(arcs)):
     y = dist*math.sin(math.pi/180.*theta)
     xr.append(x)
     yr.append(y)
-    smpFile.write('%7.3f  %7.3f  %5.1f  %s Arc@%skm\n'%(x, y, hghts[arcNo], smpStr, dist ))
+    for hgt in hghts[arcNo]:
+      smpFile.write('%7.3f  %7.3f  %5.1f  %s Arc@%skm\n'%(x, y, hgt, smpStr, dist ))
   print xr[0],yr[0],xr[-1],yr[-1]
   plt.clf()
   plt.hold(True)

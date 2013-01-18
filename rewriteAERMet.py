@@ -5,17 +5,11 @@ import sys
 import numpy as np
 import numpy.ma as ma
 import matplotlib.pyplot as plt
-import sqlite3
 import time
-
-# Local modules
-sys.path.append('C:\\cygwin\\home\\sid\\python')
-import utilDb
 
 # Code for SCICHEM 2012 plots
 
 def mainProg(dataFile):
-
   colNames = ''
   colFormats = ''
 
@@ -93,13 +87,11 @@ def mainProg(dataFile):
   sfcFile = open('new_' + dataFile,'w')
   if dataFile.lower().endswith('.sfc'):
       # (3(I2,1X), I3,1X, I2,1X, F6.1,1X, 2(F6.3,1X), F5.0,1X, F8.1,1X, F5.2,1X,
-      # 2(F6.2,1X), F7.2,1X, F5.0, 5(1X,F6.1))
-      s  = '{0[0]:2d} {0[1]:2d} {0[2]:2d} {0[3]:3d} {0[4]:2d} '
-      s += '{0[5]:6.1f} {0[6]:6.3f} {0[7]:6.3f} {0[8]:5.0f} {0[9]:8.1f} '
-      s += '{0[10]:5.2f} {0[11]:6.2f} {0[12]:6.2f} {0[13]:7.2f} {0[14]:6.1f} ' 
-      s += '{0[15]:6.1f} {0[16]:6.1f} {0[17]:6.1f} {0[18]:6.1f} {0[19]:6.1f} '
-      s += '{0[20]:6.1f}\n'
-  if dataFile.endswith('.pfl'):
+      # 2(F6.2,1X), F7.2,1X, F5.0, 3(1X,F6.1))
+      s  = '{0[0]:2d} {0[1]:2d} {0[2]:2d} {0[3]:3d} {0[4]:2d} {0[5]:6.1f} '
+      s += '{0[6]:6.3f} {0[7]:6.3f} {0[8]:5.0f} {0[9]:8.1f} {0[10]:5.2f} {0[11]:6.2f} {0[12]:6.2f} '
+      s += '{0[13]:7.2f} {0[14]:6.1f} {0[15]:6.1f} {0[16]:6.1f} {0[17]:6.1f}\n'
+  if dataFile.lower().endswith('.pfl'):
       # 4(I2,1X), F6.1,1X, I1,1X, F5.0,1X, F7.2,1X, F7.1, 1X,F6.1, 1X,F7.2
       s  = '{0[0]:2d} {0[1]:2d} {0[2]:2d} {0[3]:2d} {0[4]:6.1f} {0[5]:1d} {0[6]:5.0f} '
       s += '{0[7]:7.2f} {0[8]:7.1f} {0[9]:6.1f} {0[10]:7.2f}\n'
@@ -112,8 +104,7 @@ def mainProg(dataFile):
 # Main program
 if __name__ == '__main__': 
 
-  runDir = os.getcwd() 
-  #runDir = 'D:\\SCICHEM-2012\\kinso2\\SCICHEM'
+  runDir = 'D:\\SCIPUFF\\EPRI\\runs\\kos_090811'
   #runDir = '/home/user/bnc/scipuff/runs/EPRI/wwright'
     
   dataFile = raw_input('AERMOD datafile name? ')

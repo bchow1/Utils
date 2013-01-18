@@ -52,6 +52,9 @@ global allPrj
 
 allPrj = prj()
 
+def chunks(l, n):
+  return [l[i:i+n].strip() for i in range(0, len(l), n)]
+
 def createSmpDb(prjNames,samFiles=None):
 
   print 'In dbUtil.createSmpDb, prjNames(must be a list) = ',prjNames
@@ -336,12 +339,14 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern=None,createTable=False):
           nDat = int(line) -1
           vnames = []
           nNames = 0
+          nvLen  = 0
         else: 
           if nNames < nDat:
             if not vnames:
-              tmpHead = line.split()[1:]
+              nvLen = line.index('C001')
+              tmpHead = chunks(line[nvLen:].strip(), nvLen)              
             else:
-              tmpHead = line.split()
+              tmpHead = chunks(line.strip(), nvLen)
             nNames += len(tmpHead)
             for vname in tmpHead:
               if vname[-3:] != '001':
@@ -506,8 +511,8 @@ if __name__ == '__main__':
   arg.set_defaults(prjNames=None,senName=None,samFiles=None)
   opt,args = arg.parse_args()
   #opt.prjNames = '071599_vo3_lin_intel'
-  #opt.prjNames = 'tva_980825_wamb_noLSV'
-  #opt.samFiles = 'tva_980825.sam'
+  opt.prjNames = '082598'
+  opt.samFiles = 'samploc.sam'
   #opt.prjNames = 'bowline_ss'
   #opt.samFiles = 'bowline_ss.sam'
   #
@@ -516,8 +521,8 @@ if __name__ == '__main__':
     print 'Error: prjNames or senName must be specified'
     print 'Usage: smp2db.py [-p prjName1[:prjName2...] [-a prj1.sam[:prj2.sam...]]] [ -e senName]'
   elif opt.prjNames is not None:
-    #os.chdir('d:\\SCIPUFF\\runs\\EPRI\\aermod\\Bowline\\SCICHEM')
-    print os.getcwd()
+    os.chdir('d:\\EPRI\\SCICHEM-99\\runs\\082598')
+    #print os.getcwd()
     prjNames = opt.prjNames.split(':')
     if opt.samFiles:
       samFiles = opt.samFiles.split(':')

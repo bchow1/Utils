@@ -11,6 +11,7 @@ else:
   sys.path.append('/usr/pc/biswanath/SourceEstimation/runs/FFT07/script')
   tail = '\n'
 
+'''
 mname = 'SF6'
 xmin = -116.16
 xmax = -116.00
@@ -32,3 +33,10 @@ while x <= xmax:
   print x,dx
   x = x + dx
 SenInp.close()
+'''
+# Create MC samFile
+samFile = open("d:\\SCIPUFF\\EPRI\\runs\\tva\\tva_990715\\temp.sam",'w')
+samFile.write("SCIPUFF SENSOR\n")
+for x in xrange(-100,101,2):
+  samFile.write('%10.5f 0.2287       200.0  MC    TRAC:(NO,NO2,O3)\n'%(x*0.001))
+samFile.close()
