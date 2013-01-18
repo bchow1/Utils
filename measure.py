@@ -416,7 +416,7 @@ def rnmse_2(data1, data2, cutoff = 0.):
     return math.sqrt((tmp * tmp).mean())
 
 
-def fac2(data1, data2):
+def fac2(data1, data2, cutoff=None):
     """
     Computes the proportion of values of data1 within a factor 2 of the values
     of data2.
@@ -431,6 +431,9 @@ def fac2(data1, data2):
     fac2 = 0.
     if len(data1) != len(data2):
         raise ValueError, "Data samples do not have the same length."
+    if cutoff is not None:
+      data1 = data1[data2 > cutoff]
+      data2 = data2[data2 > cutoff]
     Nexp = len(data2)
     for i in range(0, Nexp):
         if data1[i] >= 0.5 * data2[i] and data1[i] <= 2. * data2[i]:
@@ -466,7 +469,7 @@ def fac5(data1, data2):
 ##   \textrm{NMSE}_1 = \frac{\sum_{i=1}^{n} (x_i - y_i)^2}
 ##                          {(\sum_{i=1}^{n} x_i)(\sum_{i=1}^{n} y_i)}
 ## \end{displaymath}
-def nmse_1(data1, data2):
+def nmse_1(data1, data2, cutoff=None):
     """
     Computes Normalized Mean Square Error (NMSE_1) between data1 and data2.
     
@@ -481,6 +484,9 @@ def nmse_1(data1, data2):
     """
     if len(data1) != len(data2):
         raise ValueError, "Data samples do not have the same length."
+    if cutoff is not None:
+      data1 = data1[data2 > cutoff]
+      data2 = data2[data2 > cutoff]
     temp = data1 - data2
     temp = temp*temp
     return temp.mean() / (data1.mean() * data2.mean())
