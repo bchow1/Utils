@@ -28,8 +28,8 @@ def getSmpDb(prjName):
 def mainProg():
 
   #prjName = 'baldwin'
-  prjName = 'bowline'
-  #prjName = 'kinso2'
+  #prjName = 'bowline'
+  prjName = 'kinso2'
   
   if compName == 'sm-bnc':
     os.chdir('d:\\SCICHEM-2012\\' + prjName)
@@ -267,15 +267,14 @@ def calcStats(obsArray, preArray,statFile=None):
   print obsArray
   print preArray
   print max(obsArray), max(preArray)
-  upa =  measure.upa(obsArray, preArray)
-  fac2 = measure.fac2(obsArray, preArray)
+  upa =  measure.upa(preArray, obsArray)
+  fac2 = measure.fac2(preArray, obsArray)
   #pearCoeff = pearsonr(obsArray[:,1],preArray[:,1])
-  fac5 = measure.fac5(obsArray,preArray)
   #upa = measure.upa(obsArray, preArray)
   print "<--obsMean %%%%%%%%%% NMSE--> %%%%%%%%%%%% Pearson Coeff"
-  print fac2, fac5
+  print fac2, upa
   if statFile is not None:
-    statFile.write(",  %8.3f, %8.3f,%8.3f\n"%(fac2, fac5, upa))
+    statFile.write(",  %8.3f, %8.3f\n"%(fac2, upa))
 
 def plotBarGraph(obsArr, preArr1, preArr2, title, pltName,yMax=None, xTicLab=None):
   print pltName
