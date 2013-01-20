@@ -147,7 +147,7 @@ def rmse(data1, data2):
 ##   {\sqrt{\frac{1}{n}\sum_{i=1}^{n} (x_i - \overline{x})^{2} *
 ##       \frac{1}{n}\sum_{i=1}^{n} (y_i - \overline{y})^{2}}}
 ## \end{displaymath}
-def correlation(data1, data2):
+def correlation(data1, data2, cutoff=None):
     """ Computes the correlation between data1 and data2.
     @type data1: numpy.array
     @param data1: 1D array to compute correlation.
@@ -158,6 +158,8 @@ def correlation(data1, data2):
     @rtype: float
     @return: Correlation coefficient between data1 and data2.
     """
+    data1 = data1[data2 > cutoff]
+    data2 = data2[data2 > cutoff]
     if len(data1) != len(data2):
         raise ValueError, "Data samples do not have the same length."
     diff1 = data1 - data1.mean()
@@ -430,7 +432,7 @@ def fac2(data1, data2, cutoff=None):
     """
     fac2 = 0.
     if len(data1) != len(data2):
-        raise ValueError, "Data samples do not have the same length."
+        raise ValueError, "Data samples do not have the same length." 
     if cutoff is not None:
       data1 = data1[data2 > cutoff]
       data2 = data2[data2 > cutoff]
