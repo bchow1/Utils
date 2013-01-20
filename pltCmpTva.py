@@ -374,13 +374,16 @@ def pltCmpConc(dist, varName, obsData, preData1, preData2, figTitle, figName):
 def calcStats(obsArray, preArray,statFile=None):
   obsMean =  np.mean(obsArray[:,1])
   predMean = np.mean(preArray[:,1])
-  NMSE = measure.nmse_1(preArray[:,1],obsArray[:,1])
-  NME = measure.nme(preArray[:,1],obsArray[:,1])
+  print 'Min:',min(obsArray[:,1]),min(preArray[:,1])
+  if min(obsArray[:,1])< 0.:
+    pass
+  NMSE = measure.nmse_1(preArray[:,1],obsArray[:,1], cutoff=0.0)
+  #NME = measure.nme(preArray[:,1],obsArray[:,1], cutoff=0.0)
   #pearCoeff = pearsonr(obsArray[:,1],preArray[:,1])
   biasFac = measure.bf(preArray[:,1],obsArray[:,1], cutoff=0.0)
   MFB = measure.mfbe(preArray[:,1],obsArray[:,1], cutoff=0.0)
   mnbe = measure.mnbe(preArray[:,1],obsArray[:,1], cutoff=0.0)
-  correlation = measure.correlation(preArray[:,1],obsArray[:,1] )
+  correlation = measure.correlation(preArray[:,1],obsArray[:,1], cutoff=0.0 )
   mage = measure.mage(preArray[:,1],obsArray[:,1])
   print 'stats: ',obsMean, predMean, NMSE, biasFac, correlation
   if statFile is not None:
@@ -406,8 +409,8 @@ if __name__ == '__main__':
   if compName == 'sage-d600':
     runDir = 'D:\\SCICHEM-2012' 
 
-  prjName = 'tva_980825' #
-  #prjName = 'tva_990715'
+  #prjName = 'tva_980826' #
+  prjName = 'tva_990715'
   runDir = os.path.join(runDir,prjName)
   os.chdir(runDir)
   print 'runDir = ',runDir
