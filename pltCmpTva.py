@@ -35,41 +35,49 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
 
   if "tva_990715" in prjName:
     distance = [16, 62, 106]
-    times    = [11.5, 12.5, 17.0]
-    zSmp     = [415, 584, 582]
+    times    = [11.5, 12.25, 16.5]#[11.75, 12.5, 17]#
+    zSmp     = [411, 727, 438]#[445, 589, 587]#
+    #times2    = [12.0, 12.5, 16.5]
+    zSmp2     = [415, 584, 582]
 
   if "tva_980825" in prjName:
     distance = [20, 55, 110]
-    times    = [12, 12.75, 14.5]
-    zSmp     = [520, 600, 620]
+    times    = [11.5, 12.75, 14.75]#
+    times2    = [11.25, 13.0, 14.5]
+    zSmp     = [506, 488, 465]
+    #plot_1_6_9 [743, 778, 774]#
+    zSmp2    = [520, 600, 620]
     
   if "tva_980826" in prjName:
-    distance = [18, 27, 86, 59, 93, 126]
-    times    = [10.25, 10.5, 12, 12.5, 12.75, 13]
-    zSmp     = [465, 500, 659, 910, 819, 662]   
+    distance = [18, 27, 86, 59, 93, 141]
+    times    = [10.25, 10.75, 12.25, 12.5, 12.75, 13.25]
+    zSmp     = [454, 480, 659, 868, 819, 644]   
+    times2   = [10.25, 10.5, 12, 12.5, 12.75, 13]
+    zSmp2    = [465, 500, 659, 910, 819, 662]   
 
   if "tva_990706" in prjName:
-    distance = [11, 31, 65, 89]
-    times    = [12.0, 13.5,14.5, 16.75]#12.25, 13.0, 14.0, 16.75]
-    zSmp     = [501, 505, 500, 533]
+    distance = [11, 31, 65]#, 89]
+    times    = [12.5, 13.25, 16.25]#[12.0, 13.0, 16.0, 16.75]
+    zSmp     = [515, 509, 491]#[505, 491, 448, 533]
+    #times2    = [12.0, 13.5,16.25]#, 16.75]
+    zSmp2     = [501, 505, 500]#, 533]
   
   statFile = open(prjName+"_stat.csv","w")
-  statFile.write("Case, Distance, PlumeNo, Species, Mean Obs, Mean Pre, NMSE, FB, r\n")
+  statFile.write("Case, Distance, PlumeNo, Species, Mean Obs, Mean Pre, NMSE, MFB, r\n")
 
   
   for idt,dist in enumerate(distance): 
 
-    if preCur2 is None:
-      if prePfx2 is None:
-        print "Must provide prefix for SCICHEM-01 prediction"
-        return
-      # Predictions SCICHEM-01
-      pre2DbName =  prePfx2 + '_' + str(dist) + 'km' + '.csv.db'       
-      print 'Predicted DB SCICHEM99', pre2DbName
-      preConn2 = sqlite3.connect(pre2DbName)
-      preConn2.row_factory = sqlite3.Row
-      preCur2 = preConn2.cursor()
-      print preConn2
+    if prePfx2 is None:
+      print "Must provide prefix for SCICHEM-01 prediction"
+      return
+    # Predictions SCICHEM-01
+    pre2DbName = prePfx2+'.smp.db' #prePfx2 + '_' + str(dist) + 'km' + '.csv.db'       
+    print 'Predicted DB SCICHEM99', pre2DbName
+    preConn2 = sqlite3.connect(pre2DbName)
+    preConn2.row_factory = sqlite3.Row
+    preCur2 = preConn2.cursor()
+    print preConn2
     
     lArc = 2.*dist*np.pi/180.
    
@@ -101,9 +109,21 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
       if prePfx2 is None:
         preArray2 = utilDb.db2Array(preCur2,preQry1)
       else:
-        preQry2 = 'select dist, ' + varName + ' from dataTable'
-        preArray2 = utilDb.db2Array(preCur2,preQry2)
+        #preQry2 = 'select dist, ' + varName + ' from dataTable'
+        if varName == "NOx":
+          preQry2 = 'select xSmp,Sum(Value) from samTable a,smpTable p where a.colNo=p.colNo'
+          preQry2 += " and varName in ('NO2', 'NO' ) "
+          preQry2 += " and zSmp = %f and time = %3f group by smpId"%(zSmp2[idt],times[idt])
+        elif varName == 'NOy':
+          preQry2 = "select xSmp,Sum(Value) from samTable a,smpTable p where a.colNo=p.colNo"
+          preQry2 += " and varName in ('NO2','NO','NO3','N2O5','HNO3','HONO','PAN'  ) "
+          preQry2 += " and zSmp = %f and time = %3f group by smpId"%(zSmp2[idt],times[idt])
+        else:  
+          preQry2  = "select xSmp,Value from samTable a,smpTable p where a.colNo=p.colNo and "
+          preQry2 += "varName = '%s' and zSmp = %f and time = %3f order by smpId"%(varName,zSmp2[idt],times[idt])      
         
+        preArray2 = utilDb.db2Array(preCur2,preQry2)
+      print preQry1  
       if varName == 'SO2':
         # Set x index where SO2 is max. Same for all obs plumes
         iMax2 = np.where(preArray2[:,1] == preArray2[:,1].max())[0][0]
@@ -121,7 +141,7 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
         if dist == 20:
           pls = [3,4,5]
         if dist == 55:
-          pls = [6] #[6,7,8]
+          pls = [6,7,8]
         if dist == 110:
           pls = [9,10,11]
           
@@ -136,7 +156,7 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
           pls = [9] 
         if dist ==93:
           pls = [10]
-        if dist == 126:
+        if dist == 141:
           pls = [11]    
 
       if "tva_990706" in prjName:
@@ -274,20 +294,24 @@ def subplotConc(fig,fName,dist,i,varName):
     cO = max(obsData[-1,1],obsData[0,1])
     c1 = max(preData1[-1,1],preData1[0,1])
     c2 = max(preData2[-1,1],preData2[0,1])
+    plt.text(0.85,0.1,'%s'%varName,transform=ax.transAxes)
   else:
     cO = min(obsData[-1,1],obsData[0,1])
     c1 = min(preData1[-1,1],preData1[0,1])
     c2 = min(preData2[-1,1],preData2[0,1])
+    #plt.text(0.1,0.8,'%s'%varName,transform=ax.transAxes)
+    plt.text(0.85,0.9,'%s'%varName,transform=ax.transAxes)  
   C = obsData[:,1] - cO
   LhO, = plt.plot(obsData[:,0],C,linestyle='None',marker='o',markersize=6,markerfacecolor='0.25') 
   C = ma.masked_where(preData1[:,1]<0.,preData1[:,1]) - c1
   LhP1, = plt.plot(preData1[:,0],C,linestyle='-',color='0.5',marker='s',markersize=6,markerfacecolor='0.5')
   C = ma.masked_where(preData2[:,1]<0.,preData2[:,1]) - c2
   LhP2, = plt.plot(preData2[:,0],C,linestyle='-',color='0.75',marker='^',markersize=6,markerfacecolor='0.75')
-  if dist < 21:
+  if int(dist) < 30:
     plt.xlim([-10,10])
   else:
     plt.xlim([-30,30])
+  
   #if varName == 'O3':
   #  plt.ylim([0,0.1])
   if i == 0 or i == 1:
@@ -350,13 +374,20 @@ def pltCmpConc(dist, varName, obsData, preData1, preData2, figTitle, figName):
 def calcStats(obsArray, preArray,statFile=None):
   obsMean =  np.mean(obsArray[:,1])
   predMean = np.mean(preArray[:,1])
-  NMSE = measure.nmse_1(obsArray[:,1], preArray[:,1])
+  print 'Min:',min(obsArray[:,1]),min(preArray[:,1])
+  if min(obsArray[:,1])< 0.:
+    pass
+  NMSE = measure.nmse_1(preArray[:,1],obsArray[:,1], cutoff=0.0)
+  #NME = measure.nme(preArray[:,1],obsArray[:,1], cutoff=0.0)
   #pearCoeff = pearsonr(obsArray[:,1],preArray[:,1])
-  biasFac = measure.bf(obsArray[:,1],preArray[:,1], cutoff=0.0)
-  correlation = measure.correlation(obsArray[:,1], preArray[:,1])
+  biasFac = measure.bf(preArray[:,1],obsArray[:,1], cutoff=0.0)
+  MFB = measure.mfbe(preArray[:,1],obsArray[:,1], cutoff=0.0)
+  mnbe = measure.mnbe(preArray[:,1],obsArray[:,1], cutoff=0.0)
+  correlation = measure.correlation(preArray[:,1],obsArray[:,1], cutoff=0.0 )
+  mage = measure.mage(preArray[:,1],obsArray[:,1])
   print 'stats: ',obsMean, predMean, NMSE, biasFac, correlation
   if statFile is not None:
-    statFile.write("%8.3f, %8.3f, %8.3f, %8.3f,%8.3f\n"%(obsMean,predMean,NMSE,biasFac,correlation))
+    statFile.write("%8.3f, %8.3f, %8.3f, %8.3f,%8.3f\n"%(obsMean,predMean,NMSE,MFB,correlation))
 
 def getSmpDb(prjName):
     mySciFiles = SCI.Files(prjName)
@@ -378,8 +409,8 @@ if __name__ == '__main__':
   if compName == 'sage-d600':
     runDir = 'D:\\SCICHEM-2012' 
 
-  prjName = 'tva_980825' #'tva_990706'
-
+  #prjName = 'tva_980826' #
+  prjName = 'tva_990715'
   runDir = os.path.join(runDir,prjName)
   os.chdir(runDir)
   print 'runDir = ',runDir
@@ -394,9 +425,15 @@ if __name__ == '__main__':
   if '980825' in prjName1:
     obsPfx = os.path.join('OBS','tva_082598_')
   if '980826' in prjName1:
-    obsPfx = os.path.join('OBS','cumb2_')
+    if compName == 'sage-d600':
+      obsPfx = os.path.join('OBS','cumb1_')
+    else:
+      obsPfx = os.path.join('OBS','cumb2_')
   if '990715' in prjName1:
-    obsPfx = os.path.join('OBS','cumb2_')
+    if compName == 'sage-d600':
+      obsPfx = os.path.join('OBS','tva_071599_')
+    else:
+      obsPfx = os.path.join('OBS','cumb2_')
   if '990706' in prjName1:
     obsPfx = os.path.join('OBS','tva_070699_')
   print obsPfx
@@ -409,17 +446,18 @@ if __name__ == '__main__':
   if '980825' in prjName1:
     prePfx2 = os.path.join('SCICHEM-01','TVA_082598')
   if '980826' in prjName1:
-    prePfx2 = os.path.join('SCICHEM-01','cumb2')
+    prePfx2 = os.path.join('SCICHEM-01','082698')
   if '990715' in prjName1:
-    prjName2 = os.path.join('SCICHEM-01','071599_vo3_lin_intel')
+    prjName2 = os.path.join('SCICHEM-01','071599')
     print prjName2
     preConn2,preCur2 = getSmpDb(prjName2)
+    prePfx2 = prjName2
   if '990706' in prjName1:
-    prjName2 = os.path.join('SCICHEM-01','071599_vo3_lin_intel')
-    print '***WARNING: using 990715 SCICHEM-01 file*** ',prjName2
+    prjName2 = os.path.join('SCICHEM-01','070699')
     preConn2,preCur2 = getSmpDb(prjName2)
+    prePfx2 = prjName2
 
-  #mainProg(prjName=prjName1,obsPfx=obsPfx,preCur1=preCur1,preCur2=preCur2,prePfx2=prePfx2)
-  createSubPlots()
+  mainProg(prjName=prjName1,obsPfx=obsPfx,preCur1=preCur1,preCur2=preCur2,prePfx2=prePfx2)
+  #createSubPlots()
   #preConn1.close()
   #preConn2.close()
