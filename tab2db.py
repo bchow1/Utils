@@ -4,7 +4,6 @@ import sys
 import ast
 import sqlite3
 import fileinput
-import numpy as np
 '''
 Convert data table from ASCII to db. Use the column names
 from first line which may or may not start with '#'.
@@ -140,6 +139,8 @@ def makeDb(fName,separator=None,headLineNo=1,colname=None,coltype=None,collist=N
         colTypes.append('integer')
       elif cType == 'r':
         colTypes.append('real')
+      elif cType == 's':
+        colTypes.append('string')
       else:
         colTypes.append('string')
   #print 'Using Column types = ',colTypes
@@ -198,19 +199,26 @@ def makeDb(fName,separator=None,headLineNo=1,colname=None,coltype=None,collist=N
     dbConn.commit()
     dbConn.close()
     #print 'Created db file for ',fName
-  return
+  return 
 
 if __name__ == '__main__':
 
   import optparse
-
   # local modules
   import utilDb
+  
+  #os.chdir("D:\\SCIPUFF\\EPRI\\runs\\tva\\tva_990715")
+  #sys.argv = ["","-s,","negO3_puff.dat"]
 
-  os.chdir("D:\\SCIPUFF\\EPRI\\runs\\tva\\tva_990715")
-  sys.argv = ["","-s,","negO3_puff.dat"]
-
-
+  os.chdir("D:\\Aermod\\v12345\\runs\\clifty\\AERMOD")
+  
+  # Args for PST files
+  args    = ["","-n","x,y,Cavg,zElev,zHill,zFlag,Ave,Grp,Date","-t","rrrrrrsss","-c","1-9"]
+  prjName = 'CCRAER'
+  for fName in [prjName+"01.PST",prjName+"03.PST",prjName+"24.PST"]:
+    sys.argv = args
+    sys.argv.extend([fName])
+  
   if sys.argv.__len__() < 2:
     print 'Usage: tab2db.py [-s separator] [-n colname] [-t coltype] [-c collist] table1.txt [table2.txt ... ]'
     print 'Example: python ~/python/tab2db.py -s "," -n "hrs,mrate,lat,lon" -t rrrr -c "1,2,5" RT970925.DAT'
@@ -233,3 +241,4 @@ if __name__ == '__main__':
     makeDb(fName,separator=opt.separator,colname=opt.colname,coltype=opt.coltype,collist=opt.collist)
     dbFile = fName + '.db'
     print str(utilDb.db2List(dbFile,'select sql from sqlite_master where type="table"')[0][0])
+  print "Done :-)"
