@@ -28,8 +28,8 @@ def getSmpDb(prjName):
 def mainProg():
 
   #prjName = 'baldwin'
-  #prjName = 'bowline'
-  prjName = 'kinso2'
+  prjName = 'bowline'
+  #prjName = 'kinso2'
   
   if compName == 'sm-bnc':
     os.chdir('d:\\SCICHEM-2012\\' + prjName)
@@ -264,11 +264,13 @@ def mainProg():
       
 def calcStats(obsArray, preArray,statFile=None):
   print "In calcStats"
+  obsArray = np.array(obsArray)
+  preArray = np.array(preArray)
   print obsArray
   print preArray
   print max(obsArray), max(preArray)
   upa =  measure.upa(preArray, obsArray)
-  fac2 = measure.fac2(preArray, obsArray)
+  fac2 = measure.fac2(preArray, obsArray, cutoff=0.0)
   #pearCoeff = pearsonr(obsArray[:,1],preArray[:,1])
   #upa = measure.upa(obsArray, preArray)
   print "<--obsMean %%%%%%%%%% NMSE--> %%%%%%%%%%%% Pearson Coeff"
