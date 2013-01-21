@@ -581,3 +581,19 @@ def fmt(data1, data2):
     else:
         fmt = 0.
     return fmt
+  
+def rhc( valData, n=26):
+    """
+    Computes the robust highest concentration
+
+    @rtype: float
+    @return: The figure of merit in time of data2 and data1.
+    """
+   
+    valArray = numpy.sort(valData)[::-1]  
+    valMax= valArray[n-1]
+    valAvg = numpy.mean(valArray[0:n-2])
+    valRhc = valMax + (valAvg -valMax)*math.log((3*n-1)/2)
+    return valRhc
+    
+    
