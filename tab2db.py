@@ -114,7 +114,7 @@ def insertDb(dbCur,nCol,colTypes,colValues):
   dbCur.execute(insertStr)
   return
 
-def makeDb(fName,separator=None,headLineNo=1,colname=None,coltype=None,collist=None):
+def makeDb(fName,separator=None,comment=None,headLineNo=1,colname=None,coltype=None,collist=None):
 
   # Get column separator 
   #print 'Using Separator = ',separator
@@ -166,6 +166,9 @@ def makeDb(fName,separator=None,headLineNo=1,colname=None,coltype=None,collist=N
   lWarn = True
   fileinput.close()
   for line in fileinput.input(fName):
+    if comment is not None:
+      if line.strip().startswith(comment):
+        continue
     if fileinput.lineno() < headLineNo:
       continue
     if colNames is None:
@@ -210,25 +213,27 @@ if __name__ == '__main__':
   #os.chdir("D:\\SCIPUFF\\EPRI\\runs\\tva\\tva_990715")
   #sys.argv = ["","-s,","negO3_puff.dat"]
 
-  os.chdir("D:\\Aermod\\v12345\\runs\\clifty\\AERMOD")
+  os.chdir("D:\\Aermod\\v12345\\runs\\pgrass\\AERMOD")
   
   # Args for PST files
-  args    = ["","-n","x,y,Cavg,zElev,zHill,zFlag,Ave,Grp,Date","-t","rrrrrrsss","-c","1-9"]
-  prjName = 'CCRAER'
-  for fName in [prjName+"01.PST",prjName+"03.PST",prjName+"24.PST"]:
+  args    = ["","-m","*","-n","x,y,Cavg,zElev,zHill,zFlag,Ave,Grp,Date","-t","rrrrrrsss","-c","1-9"]
+  prjName = 'PGRASS'
+  for fName in [prjName+"01.PST"]: #,prjName+"03.PST",prjName+"24.PST"]:
     sys.argv = args
     sys.argv.extend([fName])
   
   if sys.argv.__len__() < 2:
-    print 'Usage: tab2db.py [-s separator] [-n colname] [-t coltype] [-c collist] table1.txt [table2.txt ... ]'
+    print 'Usage: tab2db.py [-s separator] [-m comment ] [-n colname] [-t coltype] [-c collist] table1.txt [table2.txt ... ]'
     print 'Example: python ~/python/tab2db.py -s "," -n "hrs,mrate,lat,lon" -t rrrr -c "1,2,5" RT970925.DAT'
     sys.exit()
   arg = optparse.OptionParser()
   arg.add_option("-s",action="store",type="string",dest="separator")
+  arg.add_option("-m",action="store",type="string",dest="comment")
   arg.add_option("-n",action="store",type="string",dest="colname")
   arg.add_option("-t",action="store",type="string",dest="coltype")
   arg.add_option("-c",action="store",type="string",dest="collist")
   arg.set_defaults(separator=None)
+  arg.set_defaults(comment=None)
   arg.set_defaults(colname=None)
   arg.set_defaults(coltype=None)
   arg.set_defaults(collist=None)
@@ -238,7 +243,7 @@ if __name__ == '__main__':
   for fName in args:
     print '\nRunning makeDb for file ',fName
     #print opt.separator,opt.colname,opt.coltype,opt.collist
-    makeDb(fName,separator=opt.separator,colname=opt.colname,coltype=opt.coltype,collist=opt.collist)
+    makeDb(fName,separator=opt.separator,comment=opt.comment,colname=opt.colname,coltype=opt.coltype,collist=opt.collist)
     dbFile = fName + '.db'
     print str(utilDb.db2List(dbFile,'select sql from sqlite_master where type="table"')[0][0])
   print "Done :-)"
