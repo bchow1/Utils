@@ -20,6 +20,7 @@ import setSCIparams as SCI
 
 def getSmpDb(prjName):
     mySciFiles = SCI.Files(prjName)
+
     smpDb = '%s.smp.db'%(prjName)
     (smpDbConn,smpDbCur,smpCreateDb) = utilDb.Smp2Db(smpDb,mySciFiles)
     return (smpDbConn,smpDbCur)
@@ -30,6 +31,7 @@ def mainProg():
   #prjName = 'baldwin'
   prjName = 'bowline'
   #prjName = 'kinso2'
+  #prjName = 'CLIFTY'
   
   if compName == 'sm-bnc':
     os.chdir('d:\\SCICHEM-2012\\' + prjName)
@@ -56,6 +58,10 @@ def mainProg():
     obs1HrFile  = 'bow01.obs'
     obs3HrFile  = 'bow03.obs'
     obs24HrFile = 'bow24.obs'
+    
+    pre2_1HrFile  = 'BOWAER01.PST.db'
+    pre2_3HrFile  = 'BOWAER03.PST.db'
+    pre2_4HrFile  = 'BOWAER24.PST.db'
     MaxPre2 = [511.55, 467.66, 289.50, 20.22] # From SS spread sheet
     MaxObs[3]= 14.23
     yMax = 850
@@ -68,7 +74,11 @@ def mainProg():
     MaxPre2 = [2997.35, 2261.82, 327.92, 12.17] # From SS spread sheet
     MaxObs[3]= 12.6
     yMax = 3100
-  
+  if prjName == 'CLIFTY':
+     prePrj2 = 'CLIFTY'
+     pre2_1HrFile  = 'CCRAER01.PST.db'
+     pre2_3HrFile  = 'CCRAER03.PST.db'
+     pre2_4HrFile = 'CCRAER024.PST.db'
   
   obsDir = os.path.join('..','Obs_Conc')
   statFile = open(prjName+"_stat.csv","w")
@@ -78,13 +88,44 @@ def mainProg():
   preConn1,preCur1 = getSmpDb(prjName)
 
   # Predicted data set 2
-  preConn2,preCur2 = getSmpDb(prePrj2)
+  #preConn2,preCur2 = getSmpDb(prePrj2)
     
   smpIds = map(int,utilDb.db2Array(preCur1,'select distinct(smpid) from samTable'))
   nSmp   = len(smpIds)
+  print nSmp
+   
   #print smpIds
- 
+  for i in range(0,1):
+    print i
+    pre2Dir = os.path.join('..','AERMOD')
+    print pre2Dir
+    pre2DbName = pre2Dir +'\\'+ pre2_1HrFile #+ '.csv.db'  
+         
+    print 'pre2_DB', pre2DbName
+    pre2Conn = sqlite3.connect(pre2DbName)
+    pre2Conn.row_factory = sqlite3.Row
+    pre2Cur = pre2Conn.cursor()
+    print pre2Cur
+    
+    #pre2Qry = 'select max(Cavg) from dataTable group by Date order by max(Cavg) desc limit 26'
+    pre2Qry = 'select max(Cavg) maxConc,x, y from dataTable group by x,y order by maxConc desc'
+    print pre2Qry
+    pre2Array = utilDb.db2Array(pre2Cur,pre2Qry)
+    print pre2Array
+    pre2Max1Hr = pre2Array[:,0]
+    print 'AermodMax', pre2Max1Hr
+    
+    preQry  = "select max(value) from samTable a, smptable p where a.colno=p.colno "
+    preQry += "and varname='C' and smpId ="
+  
+    pre1Max1Hr = []
+    for smpId in smpIds:
+      preQry1 = preQry + str(smpId)
+      pre1Max1Hr.append(utilDb.db2Array(preCur1,preQry1)[0][0]*pre2Fac)
+    print 'pre1Max1Hr = ',pre1Max1Hr
+    
   # Obs data 
+  
   obs1Hr = np.loadtxt(os.path.join(obsDir,obs1HrFile))[:,-nSmp:]
   obs3Hr = np.loadtxt(os.path.join(obsDir,obs3HrFile))[:,-nSmp:]
   obs24Hr = np.loadtxt(os.path.join(obsDir,obs24HrFile))[:,-nSmp:]
@@ -96,19 +137,13 @@ def mainProg():
     obsMax3Hr.append(obs3Hr[:,Id].max())
     obsMax24Hr.append(obs24Hr[:,Id].max())
   print 'obsMax1Hr = ',obsMax1Hr
- 
-  preQry  = "select max(value) from samTable a, smptable p where a.colno=p.colno "
-  preQry += "and varname='C' and smpId ="
   
-  pre1Max1Hr = []
-  for smpId in smpIds:
-    preQry1 = preQry + str(smpId)
-    pre1Max1Hr.append(utilDb.db2Array(preCur1,preQry1)[0][0]*pre2Fac)
-  print 'pre1Max1Hr = ',pre1Max1Hr
   if statFile is not None:
-    statFile.write("%s, %s"%(prjName, '1 hr'))
+      statFile.write("%s, %s"%(prjName, '1 hr'))
   calcStats(obsMax1Hr,pre1Max1Hr,statFile)
+  '''
   
+  '''
   '''
   pre2Max1Hr = []
   for smpId in smpIds:
@@ -122,8 +157,8 @@ def mainProg():
   title = '%s: 1 Hr Max for Receptors'%prjName.upper()
   pltName = prjName + '_1hrMax.png'
   plotBarGraph(obsMax1Hr,pre1Max1Hr,pre2Max1Hr,title,pltName)
-  '''
-
+  
+  
   ######## 3 Hour Max ###############
   print 'obsMax3Hr = ',obsMax3Hr
 
@@ -144,6 +179,7 @@ def mainProg():
     statFile.write("%s, %s"%(prjName, '3 hr'))
   calcStats(obsMax3Hr,pre1Max3Hr,statFile)
   '''
+  '''
   pre2Max3Hr = np.zeros(nSmp)
   for j,smpId in enumerate(smpIds):
     preQry2 = preQry + str(smpId) + ' order by time'
@@ -160,7 +196,7 @@ def mainProg():
   plotBarGraph(obsMax3Hr,pre1Max3Hr,pre2Max3Hr,title,pltName,yMax=1000)
   print 'three hr max done'
   '''
-  
+  '''
    ######## 24 Hour Max ###############
   print 'obsMax24Hr = ',obsMax24Hr
 
@@ -181,7 +217,7 @@ def mainProg():
   if statFile is not None:
     statFile.write("%s, %s"%(prjName, '24 hr'))
   calcStats(obsMax24Hr,pre1Max24Hr,statFile)
-  '''
+  
   pre2Max24Hr = np.zeros(nSmp)
   for j,smpId in enumerate(smpIds):
     preQry2 = preQry + str(smpId) + ' order by time'
@@ -201,6 +237,7 @@ def mainProg():
   '''
   
   # Full period
+  '''
   preQry  = "select avg(value)from samTable a, smptable p where a.colno=p.colno and varname='C' and smpId = "
 
 
@@ -260,6 +297,7 @@ def mainProg():
   
   preConn1.close()
   preConn2.close()
+  '''
   print '**Done :-)'
       
 def calcStats(obsArray, preArray,statFile=None):
@@ -268,7 +306,7 @@ def calcStats(obsArray, preArray,statFile=None):
   preArray = np.array(preArray)
   print obsArray
   print preArray
-  print max(obsArray), max(preArray)
+  #print max(obsArray), max(preArray)
   upa =  measure.upa(preArray, obsArray)
   fac2 = measure.fac2(preArray, obsArray, cutoff=0.0)
   #pearCoeff = pearsonr(obsArray[:,1],preArray[:,1])
