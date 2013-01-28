@@ -407,7 +407,7 @@ if __name__ == '__main__':
   if compName == 'pj-linux4':
     runDir = '/home/user/bnc/scipuff/EPRI_121001/runs/tva'
   if compName == 'sage-d600':
-    runDir = 'D:\\SCICHEM-2012' 
+    runDir = 'D:\\SCICHEM-2012\\runs' 
 
   #prjName = 'tva_980826' #
   prjName = 'tva_990715'
