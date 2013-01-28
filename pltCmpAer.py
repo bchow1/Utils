@@ -29,7 +29,7 @@ def getSmpDb(prjName):
 def runProg(prjName):
  
   if compName == 'sm-bnc':
-    os.chdir('d:\\SCICHEM-2012\\' + prjName)
+    os.chdir('D:\\Aermod\\v12345\\runs\\' + prjName + '\\SCICHEM')
   if compName == 'sage-d600':
     os.chdir('D:\\SCICHEM-2012\\AermodTestCases\\' + prjName + '\\SCICHEM')
 
@@ -72,6 +72,10 @@ def runProg(prjName):
      sciName = 'TRACAER'
      obsName = 'TRACY'
      aerName = 'TRAER'
+  if prjName == 'pgrass':
+     sciName = 'PGRASS'
+     obsName = 'PGRSF6.SUM'
+     aerName = 'PGRASS'  
   
   obsDir = os.path.join('..','Obs_Conc')
   aerDir = os.path.join('..','Aermod')
@@ -88,18 +92,26 @@ def runProg(prjName):
   
   for iHr in [1,3,24]:
     
+    if iHr > 1 and (prjName == 'tracy' or prjName == 'PGRASS'):
+      continue
     # Read observations from obs directory from .obs files
-    obsFile     = os.path.join(obsDir,obsName + '%02d.obs'%iHr)
-    colList = (i for i in range(3,3+nSmp))
-    obsArray    = np.loadtxt(obsFile,usecols=colList)
-    obsArray    = np.hstack(obsArray)
-    print np.shape(obsArray)
-    obsArray = np.sort(obsArray)[::-1]
+    if prjName == 'pgrass':
+      obsFile = os.path.join(obsDir,obsName)
+      colList = (i for i in range(5,7))
+      QCArray    = np.loadtxt(obsFile,skiprows=4,usecols=colList)
+      obsArray   = QCArray[:,0]*QCArray[:,1]*1.e6 # ug/m3
+      print np.shape(obsArray)
+      obsArray = np.sort(obsArray)[::-1]
+    else:
+      obsFile     = os.path.join(obsDir,obsName + '%02d.obs'%iHr)
+      colList = (i for i in range(3,3+nSmp))
+      obsArray    = np.loadtxt(obsFile,usecols=colList)
+      obsArray    = np.hstack(obsArray)
+      obsArray = np.sort(obsArray)[::-1]
     print 'OBS max =', obsArray[0],obsArray[25]
     #for iSmp in range(nSmp):
     #  obsArray[:,iSmp] = np.sort(obsArray[:,iSmp])[::-1]
     #  print 'OBS max =', obsArray[0,iSmp],obsArray[25,iSmp]
-    
     
     aerFile = os.path.join(aerDir,aerName + '%02d.PST.db'%iHr)
     aerConn = sqlite3.connect(aerFile)
@@ -130,12 +142,15 @@ def runProg(prjName):
       sciQry += "and varname='C' order by value desc"
       sciArray = utilDb.db2Array(sciCur,sciQry,dim=1)
       sciArray = sciArray*sciFac
-      print 'SCICHEM max = ',sciArray[0],sciArray[25]  
+      print 'SCICHEM max = ',sciArray[0],sciArray[25]
+      if prjName == 'pgrass':
+        sci2Array = np.load('smpConc.npy')
+        sci2Array = sci2Array*sciFac
     
     # plot the arrays
-    figName = prjName + str(iHr) +'.png'
+    figName = prjName + str(iHr) +'_2.png'
     figTitle = '%s: Max Concentration for %02d Hr Average Concentrations'%(prjName.upper(),iHr)
-    plotData(obsArray, aerArray, sciArray, figName, figTitle)
+    plotData(obsArray, aerArray, sci2Array, figName, figTitle)
     
     obsRHC = measure.rhc(obsArray)
     sciRHC = measure.rhc(sciArray)
@@ -189,15 +204,18 @@ def plotData(obsArray, aerArray, sciArray, figName, figTitle, cutoff=0.0):
   maxVal = max(max(obsArray),max(aerArray),max(sciArray))
   plt.clf()
   plt.hold(True)
+  ax = plt.subplot(111)
   LSCI = plt.scatter(obsArray,sciArray,marker='o',color='r')
   LAER = plt.scatter(obsArray,aerArray,marker='d',color='b')
-  plt.xlim(0,maxVal)
-  plt.ylim(0,maxVal)
-  plt.plot([0,maxVal],[0,maxVal],'k-')
-  plt.plot([0,maxVal],[0,maxVal*0.5],'r-')
-  plt.plot([0,maxVal],[0,maxVal*2],'r-')
+  #plt.xlim(0,maxVal)
+  #plt.ylim(0,maxVal)
+  #plt.plot([0,maxVal],[0,maxVal],'k-')
+  #plt.plot([0,maxVal],[0,maxVal*0.5],'r-')
+  #plt.plot([0,maxVal],[0,maxVal*2],'r-')
   plt.xlabel(r'Observed ($\mu g/m^3$)')
   plt.ylabel(r'Predicted ($\mu g/m^3$)')
+  ax.set_xscale('log')
+  ax.set_yscale('log')
   plt.hold(False)
   plt.title(figTitle)
   plt.legend([LSCI,LAER],['SCICHEM', 'AERMOD'])
@@ -207,5 +225,5 @@ def plotData(obsArray, aerArray, sciArray, figName, figTitle, cutoff=0.0):
 # Main program
 if __name__ == '__main__':
   
-  for prjName in ['baldwin','bowline','kinso2','CLIFTY','martin','tracy']:
+  for prjName in ['pgrass']: #['baldwin','bowline','kinso2','CLIFTY','martin','tracy']:
     runProg(prjName)

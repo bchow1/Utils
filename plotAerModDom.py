@@ -17,7 +17,7 @@ if  compName == 'pj-linux4':
   sys.path.append('/home/user/bnc/python')
   runDir = ''
 if compName == 'sm-bnc':
-  runDir = 'D:\\Aermod\\v12345\\runs\\tracy\\SCICHEM'
+  runDir = 'D:\\Aermod\\v12345\\runs\\pgrass\\SCICHEM'
 os.chdir(runDir)
 
 sbl = []
@@ -26,7 +26,7 @@ rxy = []
 
 isSrc = False
 isRec = False
-for line in fileinput.input('TRACAER.AERMOD'):
+for line in fileinput.input('PGRASS.AERMOD'):
   lstrip = line.strip()
   if ' STARTING' in lstrip:
     if 'SO ' in lstrip:
@@ -52,6 +52,10 @@ for line in fileinput.input('TRACAER.AERMOD'):
     if 'DISCCART ' in lstrip:
       lsplit = lstrip.split()
       indx   = lsplit.index('DISCCART')
+      rxy.append([float(lsplit[indx+1]),float(lsplit[indx+2])])
+    if 'EVALCART ' in lstrip:
+      lsplit = lstrip.split()
+      indx   = lsplit.index('EVALCART')
       rxy.append([float(lsplit[indx+1]),float(lsplit[indx+2])])
 fileinput.close()
 
