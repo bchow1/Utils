@@ -18,7 +18,42 @@ if  compName == 'pj-linux4':
   runDir = ''
 if compName == 'sm-bnc':
   runDir = 'D:\\Aermod\\v12345\\runs\\tracy\\SCICHEM'
+if compName == 'sage-d600':
+  runDir = 'd:\\TestHPAC\\Outputs\\120803.1900\\Experimental\\MDAPassive\\prairie\\T_long'
 os.chdir(runDir)
+
+fList = os.listdir('./')
+smpList = []
+for fName in fList:
+  if fName.endswith('.smp'):
+    smpList.append(fName)
+
+print len(smpList),smpList
+
+smpConc = []
+for ns,smp in enumerate(smpList):
+  smpFile = open(smp,'r')
+  for line in smpFile:
+    nVar = (int(line.strip())-1)/3
+    break
+  smpFile.close()
+  colList  = [i for i in range(1,nVar*3+1,3)]
+  print smp,colList
+  if nVar < 4:
+    skipRows = 3
+  else:
+    skipRows = 4
+
+  conc = np.loadtxt(smp,skiprows=skipRows,usecols=colList)
+  
+  smpConc.extend(list(np.reshape(conc,np.size(conc))))
+
+smpConc = np.array(smpConc)
+smpConc = np.sort(smpConc)[::-1]
+np.size(smpConc)
+np.save('smpConc.npy',smpConc)
+    
+sys.exit()
 
 sxy = []
 rxy = []
