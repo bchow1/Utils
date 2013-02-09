@@ -7,20 +7,47 @@ import numpy.ma as ma
 import matplotlib.pyplot as plt
 import time
 
-# Code for SCICHEM 2012 plots
+# Rewrite and plot the AerMet input files
+
+def getSfcHead(dataFile):
+  sfcFile = open(dataFile,'r')
+  for line in sfcFile:
+    sfcHead = line
+    break
+  sfcFile.close()
+  return sfcHead
 
 def mainProg(dataFile):
-  colNames = ''
+  
+  colNames   = ''
   colFormats = ''
-
-  if dataFile.lower().endswith('.sfc'):
+  
+  if dataFile.startswith('new_'):
+    fileFmt   = 'Orig'
+  else:
+    #fileType   = 'None'
+    fileFmt   = 'Orig'
+    
+  #if dataFile.lower().endswith('.sfc'):
+  if 'surf' in dataFile.lower():
+    fileType = 'sfc'
+  
+  #if dataFile.lower().endswith('.pfl'):
+  if 'prof' in dataFile.lower():
+    fileType = 'pfl'
+  
+  if fileType == 'sfc':
     
     skiprows = 1
-    if dataFile.startswith('new_'):
+    
+    if fileFmt == 'Orig':
       colNames   = ('year','month','day','j_day','hour','H','u','w','VPTG','Zic',\
                     'Zim','L','Zo','Bo','r','Ws','Wd','zref','temp','ztemp')
       colFormats = ('int','int','int','int','int','float','float','float','float','float',\
                     'float','float','float','float','float','float','float','float','float','float')
+      
+      sfcHead = getSfcHead(dataFile)
+
     else:
       # 9, 9, 1, 244, 1, -40.9,  0.755,  -9.000, -9.000, -999., \
       # 1510., 927.9, 0.1500, 6.00, 1.00, 7.57, 173.0, 7.9, 287.1,\
@@ -31,14 +58,11 @@ def mainProg(dataFile):
       colFormats = ('int','int','int','int','int','float','float','float','float','float',\
                     'float','float','float','float','float','float','float','float','float','float',\
                     'float','float') # ,'float','float','float','S20')
-    
-      sfcFile = open(dataFile,'r')
-      for line in sfcFile:
-        sfcHead = line
-        break
-      sfcFile.close()
+      
+      sfcHead = getSfcHead(dataFile)
+      
 
-  if dataFile.lower().endswith('.pfl'):
+  if fileType == 'pfl':
     skiprows = 0
     # 80  8 30  3  100.0 1  159.    8.99    20.2    4.3    0.12
     colNames   = ('year','month','day','hour', 'height',\
@@ -99,15 +123,17 @@ def mainProg(dataFile):
   # Write new data files
   
   if not dataFile.startswith('new_'):
+    
     metFile = open('new_' + dataFile,'w')
     
-    if dataFile.lower().endswith('.sfc'):
+    if fileType == 'sfc':
       # (3(I2,1X), I3,1X, I2,1X, F6.1,1X, 2(F6.3,1X), F5.0,1X, F8.1,1X, F5.2,1X,
       # 2(F6.2,1X), F7.2,1X, F5.0, 3(1X,F6.1))
       fmtList = ['2d','2d','2d','3d','2d','6.1f','6.3f','6.3f','5.0f','8.1f','5.2f','6.2f','6.2f',\
                  '7.2f','6.1f','6.1f','6.1f','6.1f','6.1f','6.1f']
       metFile.write('%s'%sfcHead)
-    if dataFile.lower().endswith('.pfl'):
+
+    if fileType == 'pfl':
       # 4(I2,1X), F6.1,1X, I1,1X, F5.0,1X, F7.2,1X, F7.1, 1X,F6.1, 1X,F7.2
       fmtList = ['2d','2d','2d','2d','6.1f','1d','5.0f','7.2f','7.1f','6.1f','7.2f']
     
@@ -120,6 +146,7 @@ def mainProg(dataFile):
           sfmt = sfmt + '{0[%d]:%s} '%(idx,fmt)
       sfmt = sfmt + '\n'
       metFile.write(sfmt.format(metDat[row]))
+      
     metFile.close()
 
 # Main program
@@ -127,14 +154,14 @@ if __name__ == '__main__':
 
   #runDir = 'D:\\SCIPUFF\\EPRI\\runs\\kos_090811'
   #runDir = '/home/user/bnc/scipuff/runs/EPRI/wwright'
-  runDir = 'D:\\Aermod\\v12345\\runs\\martin\\SCICHEM'
+  runDir = 'D:\\Aermod\\v12345\\runs\\kinsf6\\SCICHEM'
     
   #dataFile = raw_input('AERMOD datafile name? ')
   #dataFile = '2009-10.SFC'
   #dataFile = 'kosovo11-ww-scipuff.sfc'
   #dataFile = 'kinso2.sfc'
   #dataFile = 'kinso2.pfl'
-  dataFile = 'mc.sfc'
+  dataFile = 'kinprof1.sf6'
 
   os.chdir(runDir)
   mainProg(dataFile)
