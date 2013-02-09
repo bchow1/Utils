@@ -88,12 +88,14 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
       # Prediction query
       if varName == "NOx":
         preQry1 = 'select xSmp,Sum(Value) from samTable a,smpTable p where a.colNo=p.colNo'
-        preQry1 += " and varName in ('NO2', 'NO' ) "
-        preQry1 += " and zSmp = %f and time = %3f group by smpId"%(zSmp[idt],times[idt])
+        preQry1 += " and varName = 'NO'"
+        #preQry1 += " and varName in ('NO2', 'NO' ) "
+        preQry1 += " and zSmp = %f and time = %3f group by xSmp"%(zSmp[idt],times[idt])
       elif varName == 'NOy':
-        preQry1 = "select xSmp,Sum(Value) from samTable a,smpTable p where a.colNo=p.colNo"
-        preQry1 += " and varName in ('NO2','NO','NO3','N2O5','HNO3','HONO','PAN'  ) "
-        preQry1 += " and zSmp = %f and time = %3f group by smpId"%(zSmp[idt],times[idt])
+        preQry1 = "select xSmp,Sum(Value)from samTable a,smpTable p where a.colNo=p.colNo"
+        preQry1 += " and varName = 'PAN'"
+        #preQry1 += " and varName in ('NO2','NO','NO3','N2O5','HNO3','HONO','PAN'  ) "
+        preQry1 += " and zSmp = %f and time = %3f group by xSmp"%(zSmp[idt],times[idt])
       else:  
         preQry1  = "select xSmp,Value from samTable a,smpTable p where a.colNo=p.colNo and "
         preQry1 += "varName = '%s' and zSmp = %f and time = %3f order by smpId"%(varName,zSmp[idt],times[idt])      
@@ -112,18 +114,20 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
         #preQry2 = 'select dist, ' + varName + ' from dataTable'
         if varName == "NOx":
           preQry2 = 'select xSmp,Sum(Value) from samTable a,smpTable p where a.colNo=p.colNo'
-          preQry2 += " and varName in ('NO2', 'NO' ) "
-          preQry2 += " and zSmp = %f and time = %3f group by smpId"%(zSmp2[idt],times[idt])
+          preQry2 += " and varName = 'NO2'"
+          #preQry2 += " and varName in ('NO2', 'NO' ) "
+          preQry2 += " and zSmp = %f and time = %3f group by xSmp"%(zSmp2[idt],times[idt])
         elif varName == 'NOy':
-          preQry2 = "select xSmp,Sum(Value) from samTable a,smpTable p where a.colNo=p.colNo"
-          preQry2 += " and varName in ('NO2','NO','NO3','N2O5','HNO3','HONO','PAN'  ) "
-          preQry2 += " and zSmp = %f and time = %3f group by smpId"%(zSmp2[idt],times[idt])
+          preQry2 = "select xSmp,Sum(Value)  from samTable a,smpTable p where a.colNo=p.colNo"
+          preQry2 += " and varName = 'PAN'"
+          #preQry2 += " and varName in ('NO2','NO','NO3','N2O5','HNO3','HONO','PAN'  ) "
+          preQry2 += " and zSmp = %f and time = %3f group by xSmp"%(zSmp2[idt],times[idt])
         else:  
           preQry2  = "select xSmp,Value from samTable a,smpTable p where a.colNo=p.colNo and "
-          preQry2 += "varName = '%s' and zSmp = %f and time = %3f order by smpId"%(varName,zSmp2[idt],times[idt])      
+          preQry2 += "varName = '%s' and zSmp = %f and time = %3f order by xSmp"%(varName,zSmp2[idt],times[idt])      
         
         preArray2 = utilDb.db2Array(preCur2,preQry2)
-      print preQry1  
+      print preQry2  
       if varName == 'SO2':
         # Set x index where SO2 is max. Same for all obs plumes
         iMax2 = np.where(preArray2[:,1] == preArray2[:,1].max())[0][0]
@@ -409,8 +413,8 @@ if __name__ == '__main__':
   if compName == 'sage-d600':
     runDir = 'D:\\SCICHEM-2012\\runs' 
 
-  #prjName = 'tva_980826' #
-  prjName = 'tva_990715'
+  prjName = 'tva_980825' #
+  #prjName = 'tva_990715'
   runDir = os.path.join(runDir,prjName)
   os.chdir(runDir)
   print 'runDir = ',runDir
@@ -458,6 +462,6 @@ if __name__ == '__main__':
     prePfx2 = prjName2
 
   mainProg(prjName=prjName1,obsPfx=obsPfx,preCur1=preCur1,preCur2=preCur2,prePfx2=prePfx2)
-  #createSubPlots()
+  createSubPlots()
   #preConn1.close()
   #preConn2.close()
