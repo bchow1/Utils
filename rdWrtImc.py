@@ -1,4 +1,3 @@
-
 #
 # Read section name from imc file
 # and save the species data in spList
@@ -28,12 +27,10 @@ def rdImc(imcName):
       if sctnName == 'Species':
         rdSpSec(line,spList)
   imcFile.close()
-
   print len(spList),spList[0],spList[-1]
   return spList
 
 def rdMCScn(scnName,form=None):
-  print scnName
   scnFile = open(scnName,'r')
   scnList = []
   
@@ -84,4 +81,3 @@ if __name__ == '__main__':
   rdMCScn(scnName)
   
   createDB(spList)
-  
