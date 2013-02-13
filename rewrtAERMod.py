@@ -3,8 +3,13 @@
 import os
 import sys
 import socket
+
+# Local lib files
 import setSCIparams as SCI
 import run_cmd
+
+# Local files
+import pltCmpAer
 
 # Rewrite and plot the AerMet input files
     
@@ -50,6 +55,13 @@ def rdWrtInp(inpName,outName,addSCI):
     outFile.write(line)
   inpFile.close()
   outFile.close()
+
+def getMaxConc(prjName):
+  sciConn,sciCur       = pltCmpAer.getSmpDb(prjName)
+  (nTimes,nSmp,smpIds) = pltCmpAer.countSmpDb(sciCur)
+  smpFac               = 1.e9
+  for iHr in [1.]:
+    sciArray = pltCmpAer.smpDbMax(sciCur,iHr,smpFac,smpIds=smpIds,nTimes=nTimes)
   
 # Main program
 if __name__ == '__main__':
@@ -76,6 +88,7 @@ if __name__ == '__main__':
   
   # CO
   coStr = '   DELPRJFI NO\n   MAXTSTEP 900.\n   DOMAIN RECEPTORS METERS\n'
+  coStr = coStr + '   OUTPTINT 3600\n'
   # MA
   maStr = '\nMA STARTING\n   MATCLASS SF6 Gas\n   DENSITY  SF6 1.2\n'
   maStr = maStr + '   GASDEPOS SF6 0.0\nMA FINISHED\n'
@@ -97,5 +110,6 @@ if __name__ == '__main__':
     inpFile = os.path.join(runDir,'..','AERMOD',inpName)
     prjName = inpName.replace('.','_')
     outName = prjName + '.aermod'
-    #rdWrtInp(inpFile,outName,addSCI)
+    rdWrtInp(inpFile,outName,addSCI)
     run_cmd.Command(env,runSCI,prjName+'\n','\n')
+    getMaxConc(prjName)
