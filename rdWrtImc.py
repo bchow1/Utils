@@ -5,6 +5,7 @@
 import os
 import sys
 import sqlite3
+import numpy as np
 
 def rdSpSec(line,spList):
   spList.append(line.strip().split())
@@ -30,20 +31,75 @@ def rdImc(imcName):
   print len(spList),spList[0],spList[-1]
   return spList
 
-def rdMCScn(scnName,form=None):
+def rdMCScn(scnName):
+  
   scnFile = open(scnName,'r')
   scnList = []
   
+  inScn = False
   for line in scnFile:
-    if len(line.strip()) > 0: 
-      if line.strip().startswith('&SCN'):
-        print 'Start Scn'
-      if line.strip().startswith('/'):
-        print 'Start Scn'
+    lStrip = line.strip()
+    if len(lStrip) > 0: 
+      if lStrip.startswith('&SCN'):
+        print 'Start Scn ',len(scnList)+1
+        inScn = True
+        scnLines = []
+        relList  = []
+      if lStrip.startswith('/'):
+        scnList.append([scnLines,relList])
+        inScn = False
+        print 'End Scn ',len(scnList)
+      # Reads SCICHEM-99 type MC release
+      if inScn:
+        if 'REL_MC' in line:
+          if lStrip.endswith(','):
+            lStrip = lStrip[:-1]
+          relList = map(float,lStrip.split('=')[1].strip().split(','))
+          print len(relList)
+        else:
+          scnLines.append(line)
   scnFile.close()
 
-  return
+  return scnList
 
+def wrtMCScn(spList,scnList,newRel=None):
+
+  # Get names and ambient concentrations from new spList 
+  if newRel is not None:
+    spNames = [spVal[0] for spVal in spList]
+    spConcs = [spVal[2] for spVal in spList]
+
+  scnFile = open('temp.scn','w')
+  for scnNo,scnVal in enumerate(scnList):
+    print '\n#START_MC ',scnNo+1
+    for line in scnVal[0]:
+      scnFile.write('%s'%line)
+    for spNo in range(len(spList)):
+      if scnVal[1][spNo] != 0.:
+        print '     ',spList[spNo][0],scnVal[1][spNo]
+    if newRel is not None:
+      print '#NEW_MC ',scnNo+1
+    else:
+      print '#END_MC ',scnNo+1
+    
+    # Replace relList with newRel values 
+    if newRel is not None:
+      for spNo in range(len(scnVal[1])):
+        scnVal[1][spNo] = 0.
+      for spName,spConc in newRel.iteritems():
+        spIndx = spNames.index(spName) 
+        scnVal[1][spIndx] = spConc
+      for spNo in range(len(spList)):
+        if scnVal[1][spNo] != 0.:
+          print '     ',spList[spNo][0],scnVal[1][spNo]
+      print '#END_MC ',scnNo+1
+               
+    scnFile.write(' REL_MC = ')
+    for spRel in scnVal[1]:
+      scnFile.write('%13.5e,'%spRel)
+    scnFile.write('\n/\n')
+  return
+  
 def openDb(dbName):
   dbConn = sqlite3.connect(dbName)
   dbConn.row_factory = sqlite3.Row
@@ -72,12 +128,18 @@ def createDB(spList):
 # Main Program
 
 if __name__ == '__main__':
-  runDir = 'D:\\negativeO3\\' 
-  os.chdir(runDir)
+  runDir = 'D:\\SCIPUFF\\EPRI\\runs\\negativeO3'
   imcName = 'scichem-99\\negO3_1hr_fix.imc'
-  spList = rdImc(imcName)
-
   scnName = 'scichem-99\\negO3_1hr_fix.scn'
-  rdMCScn(scnName)
+  #runDir = 'D:\\negativeO3\\' 
+
+  os.chdir(runDir)
+  spList = rdImc(imcName)
+  #createDB(spList)
+  scnList = rdMCScn(scnName)
   
-  createDB(spList)
+  #
+  newRel = {'NO2':3.21E+04,'NO':2.885E+05,'SO2':5.76E+02} 
+  wrtMCScn(spList,scnList,newRel=newRel)
+  
+
