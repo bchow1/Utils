@@ -63,11 +63,18 @@ def rdMCScn(scnName):
   return scnList
 
 def wrtMCScn(spList,scnList,newRel=None):
-
+  # This function writes a scn file. If newRel is present
+  # then the MC release mass is taken from newRel
+   
   # Get names and ambient concentrations from new spList 
   if newRel is not None:
     spNames = [spVal[0] for spVal in spList]
     spConcs = [spVal[2] for spVal in spList]
+
+  if newSpList is not None:
+    newSpNames = [spVal[0] for spVal in newSpList]
+    newSpConcs = [spVal[2] for spVal in newSpList]
+        
 
   scnFile = open('temp.scn','w')
   for scnNo,scnVal in enumerate(scnList):
@@ -99,7 +106,42 @@ def wrtMCScn(spList,scnList,newRel=None):
       scnFile.write('%13.5e,'%spRel)
     scnFile.write('\n/\n')
   return
+
+def wrtImcSpList(spList,newSpList):
+  # This function writes species section of an imc file using the 
+  # background concentrations from newSpList
+   
+  # Get names and ambient concentrations from new spList 
+  spNames = [spVal[0] for spVal in spList]
+  spConcs = [spVal[2] for spVal in spList]
+
+  newSpNames = [spVal[0] for spVal in newSpList]
+  newSpConcs = [spVal[2] for spVal in newSpList]
   
+  fmtList = ['10s','12s','18s','13s','9s','3s','6s']  
+  sfmt = '' 
+  for idx,fmt in enumerate(fmtList):
+    sfmt = sfmt + '{0[%d]:%s} '%(idx,fmt)
+  sfmt = sfmt + '\n'
+  
+  for spNo,spName in enumerate(spNames):
+    try:
+      indx = newSpNames.index(spName)
+      if abs(float(spConcs[spNo]) - float(newSpConcs[indx])) > 1.e-10:
+        spList[spNo][2] = newSpConcs[indx]
+        print 'For %s replacing amb = %s with %s'%(spName,spConcs[spNo],newSpConcs[indx])
+    except ValueError:
+      print 'Note: Cannot find %s in new species list '%spName
+
+  imcFile = open('temp.imc','w')
+  imcFile.write('#Species,Type,Ambient,Tolerance,deposition vel,wet scav,mw\n')
+  for line in spList:
+    imcFile.write(sfmt.format(line))
+  imcFile.close()   
+  
+  return                                                    
+
+      
 def openDb(dbName):
   dbConn = sqlite3.connect(dbName)
   dbConn.row_factory = sqlite3.Row
@@ -128,18 +170,33 @@ def createDB(spList):
 # Main Program
 
 if __name__ == '__main__':
+  
+  # Get new species background from input imc file 
+  if True:
+    curDir = os.getcwd()
+    #Input directory
+    inpDir = 'D:\\SCIPUFF\\EPRI\\runs\\negativeO3'
+    imcName = 'scichem-2012\\negO3_1hr_fix.imc'
+    os.chdir(inpDir)
+    newSpList = rdImc(imcName)
+    os.chdir(curDir)
+  
+  # Get new release list
+  newRel = {'NO2':3.21E+04,'NO':2.885E+05,'SO2':5.76E+02} 
+  
+  
+  # Output directory
   runDir = 'D:\\SCIPUFF\\EPRI\\runs\\negativeO3'
   imcName = 'scichem-99\\negO3_1hr_fix.imc'
   scnName = 'scichem-99\\negO3_1hr_fix.scn'
   #runDir = 'D:\\negativeO3\\' 
-
   os.chdir(runDir)
   spList = rdImc(imcName)
   #createDB(spList)
-  scnList = rdMCScn(scnName)
+  #scnList = rdMCScn(scnName)
   
   #
-  newRel = {'NO2':3.21E+04,'NO':2.885E+05,'SO2':5.76E+02} 
-  wrtMCScn(spList,scnList,newRel=newRel)
+  #wrtMCScn(spList,scnList,newRel=newRel)
+  wrtImcSpList(spList,newSpList)
   
 
