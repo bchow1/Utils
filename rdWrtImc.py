@@ -7,6 +7,8 @@ import sys
 import sqlite3
 import numpy as np
 
+MAX_MC = 250
+
 def rdSpSec(line,spList):
   spList.append(line.strip().split())
   return spList
@@ -104,6 +106,8 @@ def wrtMCScn(spList,scnList,newRel=None):
     scnFile.write(' REL_MC = ')
     for spRel in scnVal[1]:
       scnFile.write('%13.5e,'%spRel)
+    for i in range(len(scnVal[1]),MAX_MC):
+      scnFile.write('%13.5e,'%0.)
     scnFile.write('\n/\n')
   return
 
@@ -140,7 +144,6 @@ def wrtImcSpList(spList,newSpList):
   imcFile.close()   
   
   return                                                    
-
       
 def openDb(dbName):
   dbConn = sqlite3.connect(dbName)
@@ -193,10 +196,10 @@ if __name__ == '__main__':
   os.chdir(runDir)
   spList = rdImc(imcName)
   #createDB(spList)
-  #scnList = rdMCScn(scnName)
+  scnList = rdMCScn(scnName)
   
   #
-  #wrtMCScn(spList,scnList,newRel=newRel)
+  wrtMCScn(spList,scnList,newRel=newRel)
   wrtImcSpList(spList,newSpList)
   
 
