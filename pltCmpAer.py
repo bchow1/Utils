@@ -19,11 +19,46 @@ import setSCIparams as SCI
 
 
 def getSmpDb(prjName):
-    mySciFiles = SCI.Files(prjName)
+  mySciFiles = SCI.Files(prjName)
+  smpDb = '%s.smp.db'%(prjName)
+  (smpDbConn,smpDbCur,smpCreateDb) = utilDb.Smp2Db(smpDb,mySciFiles)
+  return (smpDbConn,smpDbCur)
 
-    smpDb = '%s.smp.db'%(prjName)
-    (smpDbConn,smpDbCur,smpCreateDb) = utilDb.Smp2Db(smpDb,mySciFiles)
-    return (smpDbConn,smpDbCur)
+def countSmpDb(smpDbCur):
+  smpIds = map(int,utilDb.db2Array(smpDbCur,'select distinct(smpid) from samTable'))
+  nSmp   = len(smpIds)
+  nTimes = utilDb.db2Array(smpDbCur,"select count(value) from samTable a, smptable p where a.colno=p.colno \
+                          and varname='C' and smpId =1",dim=0)
+  print 'nSmp,nTimes = ',nSmp,nTimes
+  return (nTimes,nSmp,smpIds)
+
+def smpDbMax(smpDbCur,iHr,smpFac,smpIds=None,nTimes=None):
+  
+  if nTimes is None:
+    (nTimes,nSmp,smpIds) = countSmpDb(smpDbCur)
+  else:
+    nSmp = len(smpIds)
+    
+  if iHr > 1:
+    preQry  = "select value from samTable a, smptable p where a.colno=p.colno "
+    preQry += "and varname='C' and smpId ="
+    sciMax  = np.zeros((nSmp,nTimes/iHr),float)
+    for j,smpId in enumerate(smpIds):
+      sciQry = preQry + str(smpId) + ' order by time'
+      hrMax  =  utilDb.db2Array(smpDbCur,sciQry)
+      # avgArray[j,:] = np.convolve(hrMax, np.ones(iHr)/iHr)
+      for i in range(0,len(hrMax)-iHr+1,iHr):
+        sciMax[j,i/iHr] = np.mean(hrMax[i:i+iHr])    
+    sciMax   = np.reshape(sciMax,np.size(sciMax))  
+    sciArray = np.sort(sciMax)[::-1]
+  else:
+    sciQry  = "select value from samTable a, smptable p where a.colno=p.colno "
+    sciQry += "and varname='C' order by value desc"
+    sciArray = utilDb.db2Array(smpDbCur,sciQry,dim=1)
+  sciArray = sciArray*smpFac
+  print 'SCICHEM max = ',sciArray[0],sciArray[25]
+  
+  return sciArray
 
 # Code for SCICHEM 2012 plots
 def runProg(prjName):
@@ -34,7 +69,7 @@ def runProg(prjName):
     os.chdir('D:\\SCICHEM-2012\\AermodTestCases\\' + prjName + '\\SCICHEM')
 
   print 'RunDir = ',os.getcwd()
-  sciFac = 1.e+9
+  sciFac = 1.e+9 # kg/m3 to microg/m3
   MaxVals = ['1 hr', '3hr', '24hr', 'All']
   MaxObs  = [0,0,0,0]  # OBS
   MaxPre1 = [0,0,0,0]  # SCICHEM-2012
@@ -44,6 +79,11 @@ def runProg(prjName):
     sciName = 'kinso2'
     obsName = 'kinso2'
     aerName = 'KS2AER'
+    yMax = 2500
+  if prjName == 'kinsf6':
+    sciName = 'KSF6-420_80I'
+    obsName = 'KINSF6'
+    aerName = 'KSF6-420.80O'
     yMax = 2500
   if prjName == 'bowline':
     sciName = 'bowline'
@@ -83,12 +123,8 @@ def runProg(prjName):
   statFile.write("Case, Dur, maxObs, maxAER, maxSCI, RHC_AER, RHC_SCI\n")
 
   # SCICHEM predictions
-  sciConn,sciCur = getSmpDb(sciName)
-  smpIds = map(int,utilDb.db2Array(sciCur,'select distinct(smpid) from samTable'))
-  nSmp   = len(smpIds)
-  nTimes = utilDb.db2Array(sciCur,"select count(value) from samTable a, smptable p where a.colno=p.colno \
-                          and varname='C' and smpId =1",dim=0)
-  print nSmp,nTimes
+  sciConn,sciCur       = getSmpDb(sciName)
+  (nTimes,nSmp,smpIds) = countSmpDb(sciCur)
   
   for iHr in [1,3,24]:
     
@@ -113,6 +149,7 @@ def runProg(prjName):
     #  obsArray[:,iSmp] = np.sort(obsArray[:,iSmp])[::-1]
     #  print 'OBS max =', obsArray[0,iSmp],obsArray[25,iSmp]
     
+    # Get AERMOD max concentration array
     aerFile = os.path.join(aerDir,aerName + '%02d.PST.db'%iHr)
     aerConn = sqlite3.connect(aerFile)
     aerConn.row_factory = sqlite3.Row
@@ -121,36 +158,14 @@ def runProg(prjName):
     aerArray = utilDb.db2Array(aerCur,aerQry,dim=1)
     print 'AERMOD max =', aerArray[0],aerArray[25]
     aerConn.close()
-            
-    if iHr > 1:
-      preQry  = "select value from samTable a, smptable p where a.colno=p.colno "
-      preQry += "and varname='C' and smpId ="
-      sciMax  = np.zeros((nSmp,nTimes/iHr),float)
-      for j,smpId in enumerate(smpIds):
-        sciQry = preQry + str(smpId) + ' order by time'
-        hrMax  =  utilDb.db2Array(sciCur,sciQry)
-        # avgArray[j,:] = np.convolve(hrMax, np.ones(iHr)/iHr)
-        for i in range(0,len(hrMax)-iHr+1,iHr):
-          sciMax[j,i/iHr] = np.mean(hrMax[i:i+iHr])
-      
-      sciMax = np.reshape(sciMax,np.size(sciMax))  
-      sciArray = np.sort(sciMax)[::-1]
-      sciArray = sciArray*sciFac
-      print 'SCICHEM max = ',sciArray[0],sciArray[25]
-    else:
-      sciQry  = "select value from samTable a, smptable p where a.colno=p.colno "
-      sciQry += "and varname='C' order by value desc"
-      sciArray = utilDb.db2Array(sciCur,sciQry,dim=1)
-      sciArray = sciArray*sciFac
-      print 'SCICHEM max = ',sciArray[0],sciArray[25]
-      if prjName == 'pgrass':
-        sci2Array = np.load('smpConc.npy')
-        sci2Array = sci2Array*sciFac
+    
+    # Get SCIPUFF max concentration array
+    sciArray = smpDbMax(sciCur,iHr,sciFac,smpIds=smpIds,nTimes=nTimes)
     
     # plot the arrays
     figName = prjName + str(iHr) +'_2.png'
     figTitle = '%s: Max Concentration for %02d Hr Average Concentrations'%(prjName.upper(),iHr)
-    plotData(obsArray, aerArray, sci2Array, figName, figTitle)
+    plotData(obsArray, aerArray, sciArray, figName, figTitle)
     
     obsRHC = measure.rhc(obsArray)
     sciRHC = measure.rhc(sciArray)
@@ -207,15 +222,15 @@ def plotData(obsArray, aerArray, sciArray, figName, figTitle, cutoff=0.0):
   ax = plt.subplot(111)
   LSCI = plt.scatter(obsArray,sciArray,marker='o',color='r')
   LAER = plt.scatter(obsArray,aerArray,marker='d',color='b')
-  #plt.xlim(0,maxVal)
-  #plt.ylim(0,maxVal)
-  #plt.plot([0,maxVal],[0,maxVal],'k-')
-  #plt.plot([0,maxVal],[0,maxVal*0.5],'r-')
-  #plt.plot([0,maxVal],[0,maxVal*2],'r-')
+  plt.xlim(0,maxVal)
+  plt.ylim(0,maxVal)
+  plt.plot([0,maxVal],[0,maxVal],'k-')
+  plt.plot([0,maxVal],[0,maxVal*0.5],'r-')
+  plt.plot([0,maxVal],[0,maxVal*2],'r-')
   plt.xlabel(r'Observed ($\mu g/m^3$)')
   plt.ylabel(r'Predicted ($\mu g/m^3$)')
-  ax.set_xscale('log')
-  ax.set_yscale('log')
+  #ax.set_xscale('log')
+  #ax.set_yscale('log')
   plt.hold(False)
   plt.title(figTitle)
   plt.legend([LSCI,LAER],['SCICHEM', 'AERMOD'])
@@ -225,5 +240,5 @@ def plotData(obsArray, aerArray, sciArray, figName, figTitle, cutoff=0.0):
 # Main program
 if __name__ == '__main__':
   
-  for prjName in ['pgrass']: #['baldwin','bowline','kinso2','CLIFTY','martin','tracy']:
+  for prjName in ['kinso2']: #['pgrass','baldwin','bowline','kinso2','CLIFTY','martin','tracy']:
     runProg(prjName)
