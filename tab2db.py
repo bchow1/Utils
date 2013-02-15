@@ -36,7 +36,8 @@ def setColNames(line,separator,collist=None):
   for i,colName in enumerate(colNames):
     colNames[i] = colName.strip().replace(' ','')
     if colName.startswith('_'):
-      colNames[i] = colName[1:] 
+      colNames[i] = colName[1:]
+    colNames[i] = colNames[i].replace('/','') 
   if collist is not None:
     cNames = []
     for i,colName in enumerate(colNames):
@@ -83,7 +84,7 @@ def initDb(fName,colNames,colTypes):
       createStr += ')'
     else:
       createStr += ', '
-  #print '\n',createStr
+  print '\n',createStr
   dbCur.execute(createStr)
   return (dbCur,dbConn)
 
@@ -114,7 +115,7 @@ def insertDb(dbCur,nCol,colTypes,colValues):
   dbCur.execute(insertStr)
   return
 
-def makeDb(fName,separator=None,comment=None,headLineNo=1,colname=None,coltype=None,collist=None):
+def makeDb(fName,separator=None,comment=None,hdrlno=1,colname=None,coltype=None,collist=None):
 
   # Get column separator 
   #print 'Using Separator = ',separator
@@ -169,17 +170,17 @@ def makeDb(fName,separator=None,comment=None,headLineNo=1,colname=None,coltype=N
     if comment is not None:
       if line.strip().startswith(comment):
         continue
-    if fileinput.lineno() < headLineNo:
+    if fileinput.lineno() < hdrlno:
       continue
     if colNames is None:
-      if fileinput.lineno() == headLineNo:
+      if fileinput.lineno() == hdrlno:
         colNames = setColNames(line,separator,collist=colList)
     nCol = len(colNames)
     if colTypes is not None:
       if len(colTypes) != nCol:
         print 'Error: \n Number of column types in \n %s\n   does not match number of column names in \n %s'%(colTypes,colNames)
         sys.exit()
-    if fileinput.lineno() == headLineNo:
+    if fileinput.lineno() == hdrlno:
       continue
     if len(line) > 0:
       colValues = getColValues(line,separator,collist=colList)
@@ -210,30 +211,43 @@ if __name__ == '__main__':
   # local modules
   import utilDb
   
-  #os.chdir("D:\\SCIPUFF\\EPRI\\runs\\tva\\tva_990715")
-  #sys.argv = ["","-s,","negO3_puff.dat"]
+  '''
+  os.chdir("D:\\SCIPUFF\\EPRI\\runs\\tva\\tva_990715")
+  sys.argv = ["","-s,","negO3_puff.dat"]
 
-  os.chdir("D:\\Aermod\\v12345\\runs\\pgrass\\AERMOD")
   
   # Args for PST files
+  os.chdir("D:\\Aermod\\v12345\\runs\\pgrass\\AERMOD")
   args    = ["","-m","*","-n","x,y,Cavg,zElev,zHill,zFlag,Ave,Grp,Date","-t","rrrrrrsss","-c","1-9"]
   prjName = 'PGRASS'
   for fName in [prjName+"01.PST"]: #,prjName+"03.PST",prjName+"24.PST"]:
     sys.argv = args
     sys.argv.extend([fName])
+  '''
   
+  # Args for KINSF6 files
+  os.chdir("D:\\Aermod\\v12345\\runs\\KINSF6\\Obs_Conc")
+  #args    = ["","-m","*","-n","YY,MM,DD,HH,ARC,RECNAM,RECX,RECY,RECZ     DIST  DIR     Q     CHI      CHI/Q","-t","rrrrrrsss","-c","1-9"]
+  obsName = 'KINSF6.SUM'
+  headLineNo = 3
+  args    = ["","-m","*","-d","3"]
+  sys.argv = args
+  sys.argv.extend([obsName])
+     
   if sys.argv.__len__() < 2:
-    print 'Usage: tab2db.py [-s separator] [-m comment ] [-n colname] [-t coltype] [-c collist] table1.txt [table2.txt ... ]'
+    print 'Usage: tab2db.py [-s separator] [-m comment ] [-d headerlineno ] [-n colname] [-t coltype] [-c collist] table1.txt [table2.txt ... ]'
     print 'Example: python ~/python/tab2db.py -s "," -n "hrs,mrate,lat,lon" -t rrrr -c "1,2,5" RT970925.DAT'
     sys.exit()
   arg = optparse.OptionParser()
   arg.add_option("-s",action="store",type="string",dest="separator")
   arg.add_option("-m",action="store",type="string",dest="comment")
+  arg.add_option("-d",action="store",type="int"   ,dest="hdrlno")
   arg.add_option("-n",action="store",type="string",dest="colname")
   arg.add_option("-t",action="store",type="string",dest="coltype")
   arg.add_option("-c",action="store",type="string",dest="collist")
   arg.set_defaults(separator=None)
   arg.set_defaults(comment=None)
+  arg.set_defaults(hdrlno=1)
   arg.set_defaults(colname=None)
   arg.set_defaults(coltype=None)
   arg.set_defaults(collist=None)
@@ -243,7 +257,7 @@ if __name__ == '__main__':
   for fName in args:
     print '\nRunning makeDb for file ',fName
     #print opt.separator,opt.colname,opt.coltype,opt.collist
-    makeDb(fName,separator=opt.separator,comment=opt.comment,colname=opt.colname,coltype=opt.coltype,collist=opt.collist)
+    makeDb(fName,separator=opt.separator,comment=opt.comment,hdrlno=opt.hdrlno,colname=opt.colname,coltype=opt.coltype,collist=opt.collist)
     dbFile = fName + '.db'
     print str(utilDb.db2List(dbFile,'select sql from sqlite_master where type="table"')[0][0])
   print "Done :-)"
