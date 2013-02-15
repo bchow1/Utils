@@ -10,7 +10,6 @@ import sqlite3
 import fileinput
 import optparse
 import time
-import math
 # modules from $HOME/python 
 import run_cmd
 import setSCIparams as SCI
@@ -216,9 +215,11 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern=None,createTable=False):
     else:
       if os.path.getsize(dbName) == 0:
         createTable =  True
-      elif os.path.exists(mySciFiles.prjName + '.smp'): 
-        if os.path.getmtime(dbName) < \
-          os.path.getmtime(mySciFiles.prjName + '.smp'):
+      elif os.path.exists(mySciFiles.smpFile):
+        print 'mtime for %s is %g and for %s is %g'%
+              (dbName,os.path.getmtime(dbName), os.path.getmtime(mySciFiles.smpFile))
+        if os.path.getmtime(dbName) <= \
+          os.path.getmtime(mySciFiles.smpFile):
           createTable = True
     
   smpConn = sqlite3.connect(dbName)
@@ -511,8 +512,10 @@ if __name__ == '__main__':
   arg.set_defaults(prjNames=None,senName=None,samFiles=None)
   opt,args = arg.parse_args()
   #opt.prjNames = '071599_vo3_lin_intel'
-  opt.prjNames = '082598'
-  opt.samFiles = 'samploc.sam'
+  #opt.prjNames = '070699_vo3'
+  #opt.samFiles = '070699_all.sam'
+  opt.prjNames = 'PGRASS'
+  opt.samFiles = 'PGRASS.sam'
   #opt.prjNames = 'bowline_ss'
   #opt.samFiles = 'bowline_ss.sam'
   #
@@ -521,7 +524,8 @@ if __name__ == '__main__':
     print 'Error: prjNames or senName must be specified'
     print 'Usage: smp2db.py [-p prjName1[:prjName2...] [-a prj1.sam[:prj2.sam...]]] [ -e senName]'
   elif opt.prjNames is not None:
-    os.chdir('d:\\EPRI\\SCICHEM-99\\runs\\082598')
+    #os.chdir('d:\\EPRI\\SCICHEM-99\\runs\\070699')
+    os.chdir('D:\\Aermod\\v12345\\runs\\pgrass\\SCICHEM')
     #print os.getcwd()
     prjNames = opt.prjNames.split(':')
     if opt.samFiles:
