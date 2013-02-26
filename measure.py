@@ -589,11 +589,11 @@ def rhc( valData, n=26):
     @rtype: float
     @return: The figure of merit in time of data2 and data1.
     """
-   
+    n        = min(len(valData),n)
     valArray = numpy.sort(valData)[::-1]  
-    valMax= valArray[n-1]
-    valAvg = numpy.mean(valArray[0:n-2])
-    valRhc = valMax + (valAvg -valMax)*math.log((3*n-1)/2)
+    valMax   = valArray[n-1]
+    valAvg   = numpy.mean(valArray[0:n-2])
+    valRhc   = valMax + (valAvg -valMax)*math.log((3*n-1)/2)
     return valRhc
     
     
