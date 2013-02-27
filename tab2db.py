@@ -26,13 +26,16 @@ def getColValues(line,separator,collist=None):
       colValues = cValues
   return colValues
 
-def setColNames(line,separator,collist=None):
-  if separator is None:
-    colNames = line.replace('#','').strip().split()
+def setColNames(line,separator,comment=None,collist=None):
+  if comment is None:
+    comment = '#'
+  lStrip = line.replace(comment,'').strip()  
+  if separator is None: # Use default of blank spaces
+    colNames = lStrip.split()
   else:
-    if line.strip().endswith(separator):
-      line = line.strip()[:-len(separator)]
-    colNames = line.replace('#','').strip().replace('"','').split(separator)
+    if lStrip.endswith(separator):
+      line = lStrip[:-len(separator)]
+    colNames = lStrip.replace('"','').split(separator)
   for i,colName in enumerate(colNames):
     colNames[i] = colName.strip().replace(' ','')
     if colName.startswith('_'):
@@ -115,19 +118,40 @@ def insertDb(dbCur,nCol,colTypes,colValues):
   dbCur.execute(insertStr)
   return
 
-def makeDb(fName,separator=None,comment=None,hdrlno=1,colname=None,coltype=None,collist=None):
+def checkNcol(colNames,colTypes=None,colValues=None,lWarn=False):
+  nName  = len(colNames) 
+  nCol   = nName
+  colLab = ['types','values']
+  for colN,colI in enumerate([colTypes,colValues]):
+    if colI is not None:
+      nI = len(colI) 
+      if nName != nI:
+        if lWarn:
+          nCol = min(nName,nI)
+          print 'Warning: \n Number of %s %d in \n %s\n does not match %d number of column names in \n %s'\
+                             %(colLab[colN],len(colI),colI,len(colNames),colNames)
+          print ' Using only %d columns '%(nCol)
+        else:
+          print 'Error: \n Number of column %s in \n %s\n   does not match number of column names in \n %s'\
+                            %(colLab[colN],colI,colNames)
+          sys.exit()
+  return nCol
+ 
+def makeDb(fName,separator=None,comment=None,hdrlno=0,colname=None,coltype=None,collist=None):
 
   # Get column separator 
   #print 'Using Separator = ',separator
 
   # Get column names 
   if colname is None:
-      colNames = None
+    colNames = None
+    nCol     = -1  
   else:
     if separator is None:
       colNames = colname.strip().split(',')
     else:
       colNames = colname.strip().split(separator)
+    nCol = len(colNames)
   #print 'Using Column names = ',colNames
 
   # Get column types 
@@ -149,10 +173,7 @@ def makeDb(fName,separator=None,comment=None,hdrlno=1,colname=None,coltype=None,
   if collist is None:
     colList = None
   else:
-    if separator is None:
-      cList = collist.split(',')
-    else:
-      cList = collist.split(separator)
+    cList = collist.split(',')
     colList = []
     for colNo in cList:
       if '-' in colNo:
@@ -167,29 +188,28 @@ def makeDb(fName,separator=None,comment=None,hdrlno=1,colname=None,coltype=None,
   lWarn = True
   fileinput.close()
   for line in fileinput.input(fName):
-    if comment is not None:
-      if line.strip().startswith(comment):
-        continue
-    if fileinput.lineno() < hdrlno:
-      continue
+    
+    # Set colnames from header line no if not set
     if colNames is None:
       if fileinput.lineno() == hdrlno:
-        colNames = setColNames(line,separator,collist=colList)
-    nCol = len(colNames)
-    if colTypes is not None:
-      if len(colTypes) != nCol:
-        print 'Error: \n Number of column types in \n %s\n   does not match number of column names in \n %s'%(colTypes,colNames)
-        sys.exit()
-    if fileinput.lineno() == hdrlno:
+        colNames = setColNames(line,separator,comment=comment,collist=colList)
+        nCol = checkNcol(colNames,colTypes=colTypes)
+        
+    if fileinput.lineno() <= hdrlno:
       continue
+    if comment is not None:
+      try:
+        indx = line.index(comment)
+        line = line[:indx].strip()
+      except ValueError:
+        pass
     if len(line) > 0:
       colValues = getColValues(line,separator,collist=colList)
-      if len(colValues) != nCol and lWarn:
-        print 'Warning: \n Number of values %d in \n %s\n does not match %d number of column names in \n %s'\
-               %(len(colValues),colValues,len(colNames),colNames)
-        colValues = colValues[:nCol]
-        print ' Using only %d columns '%(nCol)
-        lWarn = False
+      if lWarn:
+        nCol = checkNcol(colNames,colValues=colValues,lWarn=lWarn)
+        lWarn = False        
+      colValues = colValues[:nCol]
+      # set col types from colValues if not set earlier
       if colTypes is None:
         colTypes = setColTypes(colValues)
       if dbCur is None:
@@ -237,6 +257,7 @@ if __name__ == '__main__':
   if sys.argv.__len__() < 2:
     print 'Usage: tab2db.py [-s separator] [-m comment ] [-d headerlineno ] [-n colname] [-t coltype] [-c collist] table1.txt [table2.txt ... ]'
     print 'Example: python ~/python/tab2db.py -s "," -n "hrs,mrate,lat,lon" -t rrrr -c "1,2,5" RT970925.DAT'
+    print '   Note: Col numbers start from 1'
     sys.exit()
   arg = optparse.OptionParser()
   arg.add_option("-s",action="store",type="string",dest="separator")
@@ -259,5 +280,6 @@ if __name__ == '__main__':
     #print opt.separator,opt.colname,opt.coltype,opt.collist
     makeDb(fName,separator=opt.separator,comment=opt.comment,hdrlno=opt.hdrlno,colname=opt.colname,coltype=opt.coltype,collist=opt.collist)
     dbFile = fName + '.db'
+    print '\nCheck:'
     print str(utilDb.db2List(dbFile,'select sql from sqlite_master where type="table"')[0][0])
   print "Done :-)"
