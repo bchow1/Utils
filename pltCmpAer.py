@@ -17,6 +17,72 @@ if  compName == 'pj-linux4':
 import utilDb
 import setSCIparams as SCI
 
+def getObsArray(prjName,obsDir=None,obsName=None,iHr=1):
+  
+  if obsName is None:
+    obsNameList = {'kinso2':'kinso2','kinsf6':'KINSF6.SUM','bowline':'bow','clifty':'CCR75'}
+    obsNameList.update({'baldwin':'bal','martin':'MCR','tracy':'TRACY','pgrass':'PGRSF6.SUM'})
+    obsName = obsNameList[prjName]  
+  if obsDir is None:
+    obsDir = os.path.join('..','Obs_Conc')
+  # Read observations from obs directory from .obs files
+  if prjName == 'pgrass':
+    obsFile = os.path.join(obsDir,obsName)
+    colList = (i for i in range(5,7))
+    QCArray    = np.loadtxt(obsFile,skiprows=4,usecols=colList)
+    obsArray   = QCArray[:,0]*QCArray[:,1]*1.e6 # ug/m3
+    print np.shape(obsArray)
+  elif prjName.startswith('KSF6'):
+    obsFile = os.path.join(obsDir,obsName+'.db')
+    YY = prjName[9:11]
+    MM = prjName[5:6]
+    DD = prjName[6:8]
+    qryStr  = 'select max(CHI) from dataTable where YY = %s and MM = %s and DD = %s group by HH'%(YY,MM,DD)
+    obsArray = utilDb.db2Array(obsFile,qryStr,dim=1)
+    obsArray = obsArray/167.  # Convert from ppt to ug/m3 for SF6
+  else:
+    obsFile    = os.path.join(obsDir,obsName + '%02d.obs'%iHr)
+    obsHrArray = np.loadtxt(obsFile)
+    nHr        = len(obsHrArray)
+    obsArray   = np.zeros(nHr) - 999.
+    for hr in range(nHr):
+      obsArray[hr] = max(obsHrArray[hr,4:])
+  obsArray  = np.sort(obsArray)[::-1]
+  print 'OBS max =', obsArray[0],obsArray[25]
+  #for iSmp in range(nSmp):
+  #  obsArray[:,iSmp] = np.sort(obsArray[:,iSmp])[::-1]
+  #  print 'OBS max =', obsArray[0,iSmp],obsArray[25,iSmp]
+  return obsArray
+
+def getAerArray(prjName,aerDir=None,aerName=None,iHr=1):
+  
+  if aerName is None:
+    aerNameList = {'kinso2':'KS2AER','kinsf6':None,'bowline':'BOWAER','clifty':'CCRAER'}
+    aerNameList.update({'baldwin':'BALAER','martin':'MCRAT2','tracy':'TRAER','pgrass':'PGRASS'})
+    aerName = aerNameList[prjName]  
+    
+  if aerDir is None:
+    aerDir = os.path.join('..','Aermod')
+ 
+  if prjName.startswith('KSF6'):
+    aerName = os.path.join(aerDir,prjName).replace('I','R').replace('_','.')
+    useCols = [i for i in range(8)]
+    aerConc = np.loadtxt(aerName,skiprows=8,usecols=useCols)
+    aerArray = aerConc[:,1]
+    aerArray = np.sort(aerArray)[::-1]
+  else:
+    aerFile = os.path.join(aerDir,aerName + '%02d.PST.db'%iHr)
+    aerConn = sqlite3.connect(aerFile)
+    aerConn.row_factory = sqlite3.Row
+    aerCur = aerConn.cursor()    
+    #aerQry = 'select Cavg from datatable order by Cavg desc'
+    # Remove duplicate data period similar to RANK-FILE
+    aerQry = 'select max(Cavg) as cMax from datatable group by date order by cMax desc'
+    aerArray = utilDb.db2Array(aerCur,aerQry,dim=1)
+    print 'AERMOD max =', aerArray[0],aerArray[25]
+    aerConn.close()
+  
+  return aerArray
 
 def getSmpDb(prjName):
   mySciFiles = SCI.Files(prjName)
@@ -52,11 +118,11 @@ def smpDbMax(smpDbCur,iHr,smpFac,smpIds=None,nTimes=None):
     sciMax   = np.reshape(sciMax,np.size(sciMax))  
     sciArray = np.sort(sciMax)[::-1]
   else:
-    sciQry  = "select value from samTable a, smptable p where a.colno=p.colno "
-    sciQry += "and varname='C' order by value desc"
+    sciQry  = "select max(value) as maxVal from samTable a, smptable p where a.colno=p.colno "
+    sciQry += "and varname='C' and (time -round(time)) = 0. group by time order by maxVal desc"
     sciArray = utilDb.db2Array(smpDbCur,sciQry,dim=1)
   sciArray = sciArray*smpFac
-  print 'SCICHEM max = ',sciArray[0],sciArray[25]
+  print 'SCICHEM max = 1:',sciArray[0],', ',len(sciArray),':',sciArray[-1]
   
   return sciArray
 
@@ -77,48 +143,25 @@ def runProg(prjName):
   
   if prjName == 'kinso2':
     sciName = 'kinso2'
-    obsName = 'kinso2'
-    aerName = 'KS2AER'
     yMax = 2500
   if prjName == 'kinsf6':
     sciName = 'KSF6-420_80I'
-    obsName = 'KINSF6'
-    aerName = 'KSF6-420.80O'
     yMax = 2500
   if prjName == 'bowline':
     sciName = 'bowline'
-    obsName = 'bow'
-    aerName = 'BOWAER'
-    #obs3HrFile  = 'bow03.obs'
-    #pre2_1HrFile  = 'BOWAER01.PST.db'
     yMax = 850
   if prjName == 'baldwin':
-    #prePrj1 = os.path.join('..','fromSS','scipuff_prj')
     sciName = 'Baldwin'
-    obsName  = 'bal'
-    aerName = 'BALAER'
-    #MaxPre2 = [2997.35, 2261.82, 327.92, 12.17] # From SS spread sheet
-    #MaxObs[3]= 12.6
     yMax = 3100
   if prjName == 'CLIFTY':
-     sciName = 'CLIFTY75'
-     obsName = 'CCR75'
-     aerName = 'CCRAER'
+    sciName = 'CLIFTY75'
   if prjName == 'martin':
-     sciName = 'MCR_AER'
-     obsName = 'MCR'
-     aerName = 'MCRAT2'
+    sciName = 'MCR_AER'
   if prjName == 'tracy':
-     sciName = 'TRACAER'
-     obsName = 'TRACY'
-     aerName = 'TRAER'
+    sciName = 'TRACAER'
   if prjName == 'pgrass':
-     sciName = 'PGRASS'
-     obsName = 'PGRSF6.SUM'
-     aerName = 'PGRASS'  
+    sciName = 'PGRASS' 
   
-  obsDir = os.path.join('..','Obs_Conc')
-  aerDir = os.path.join('..','Aermod')
   statFile = open(prjName+"_stat.csv","w")
   statFile.write("Case, Dur, maxObs, maxAER, maxSCI, RHC_AER, RHC_SCI\n")
 
@@ -130,35 +173,13 @@ def runProg(prjName):
     
     if iHr > 1 and (prjName == 'tracy' or prjName == 'PGRASS'):
       continue
+    
     # Read observations from obs directory from .obs files
-    if prjName == 'pgrass':
-      obsFile = os.path.join(obsDir,obsName)
-      colList = (i for i in range(5,7))
-      QCArray    = np.loadtxt(obsFile,skiprows=4,usecols=colList)
-      obsArray   = QCArray[:,0]*QCArray[:,1]*1.e6 # ug/m3
-      print np.shape(obsArray)
-      obsArray = np.sort(obsArray)[::-1]
-    else:
-      obsFile     = os.path.join(obsDir,obsName + '%02d.obs'%iHr)
-      colList = (i for i in range(3,3+nSmp))
-      obsArray    = np.loadtxt(obsFile,usecols=colList)
-      obsArray    = np.hstack(obsArray)
-      obsArray = np.sort(obsArray)[::-1]
-    print 'OBS max =', obsArray[0],obsArray[25]
-    #for iSmp in range(nSmp):
-    #  obsArray[:,iSmp] = np.sort(obsArray[:,iSmp])[::-1]
-    #  print 'OBS max =', obsArray[0,iSmp],obsArray[25,iSmp]
+    obsArray = getObsArray(prjName,iHr=iHr)
     
     # Get AERMOD max concentration array
-    aerFile = os.path.join(aerDir,aerName + '%02d.PST.db'%iHr)
-    aerConn = sqlite3.connect(aerFile)
-    aerConn.row_factory = sqlite3.Row
-    aerCur = aerConn.cursor()    
-    aerQry = 'select Cavg from datatable order by Cavg desc'
-    aerArray = utilDb.db2Array(aerCur,aerQry,dim=1)
-    print 'AERMOD max =', aerArray[0],aerArray[25]
-    aerConn.close()
-    
+    aerArray = getAerArray(prjName,iHr=iHr)
+
     # Get SCIPUFF max concentration array
     sciArray = smpDbMax(sciCur,iHr,sciFac,smpIds=smpIds,nTimes=nTimes)
     
@@ -211,7 +232,7 @@ def runProg(prjName):
   '''
   print '**Done :-)'
   
-def plotData(obsArray, aerArray, sciArray, figName, figTitle, cutoff=0.0):
+def plotData(obsArray, aerArray, sciArray, figName, figTitle, cutoff=0.0, units=None):
   minLen = min(len(obsArray),len(aerArray),len(sciArray))
   aerArray = aerArray[:minLen][obsArray[:minLen] > cutoff]
   sciArray = sciArray[:minLen][obsArray[:minLen] > cutoff]
@@ -227,13 +248,15 @@ def plotData(obsArray, aerArray, sciArray, figName, figTitle, cutoff=0.0):
   plt.plot([0,maxVal],[0,maxVal],'k-')
   plt.plot([0,maxVal],[0,maxVal*0.5],'r-')
   plt.plot([0,maxVal],[0,maxVal*2],'r-')
-  plt.xlabel(r'Observed ($\mu g/m^3$)')
-  plt.ylabel(r'Predicted ($\mu g/m^3$)')
+  if units is None:
+    units = r'($\mu g/m^3$)'
+  plt.xlabel(r'Observed('  + units + ')')
+  plt.ylabel(r'Predicted(' + units + ')')
   #ax.set_xscale('log')
   #ax.set_yscale('log')
   plt.hold(False)
   plt.title(figTitle)
-  plt.legend([LSCI,LAER],['SCICHEM', 'AERMOD'])
+  plt.legend([LSCI,LAER],['SCICHEM', 'AERMOD'],loc='upper left')
   plt.savefig(figName)   
   return
               
