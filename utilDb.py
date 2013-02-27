@@ -62,7 +62,7 @@ def createSmpDb(prjNames,samFiles=None):
   myPrj = [[] for i in range(len(prjNames))]
   for i in range(len(prjNames)):
     myPrj[i] = prj()
-    myPrj[i].createCaldb = True
+    myPrj[i].createCaldb = False
     if samFiles:
       myPrj[i].setDb(prjNames[i],samFile=samFiles[i])
     else:
@@ -216,10 +216,10 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern=None,createTable=False):
       if os.path.getsize(dbName) == 0:
         createTable =  True
       elif os.path.exists(mySciFiles.smpFile):
-        print 'mtime for %s is %g and for %s is %g'%
-              (dbName,os.path.getmtime(dbName), os.path.getmtime(mySciFiles.smpFile))
-        if os.path.getmtime(dbName) <= \
-          os.path.getmtime(mySciFiles.smpFile):
+        mtDb  = os.path.getmtime(dbName)
+        mtSmp = os.path.getmtime(mySciFiles.smpFile)
+        print 'mtime for %s is %g and for %s is %g'%(dbName,mtDb,mySciFiles.smpFile,mtSmp)
+        if mtDb < mtSmp:
           createTable = True
     
   smpConn = sqlite3.connect(dbName)
@@ -294,6 +294,7 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern=None,createTable=False):
     if not mySciFiles.samFile:
       mySciFiles.samFile = raw_input('Enter name of samFile ')
     if len(mySciFiles.samFile) > 0:
+      fileinput.close()
       for line in fileinput.input( mySciFiles.samFile ):
         #print fileinput.lineno(),': ',line
         if fileinput.isfirstline():
@@ -514,8 +515,9 @@ if __name__ == '__main__':
   #opt.prjNames = '071599_vo3_lin_intel'
   #opt.prjNames = '070699_vo3'
   #opt.samFiles = '070699_all.sam'
-  opt.prjNames = 'PGRASS'
-  opt.samFiles = 'PGRASS.sam'
+  opt.prjNames = '072480'
+  opt.samFiles = '072480.sam'
+  fileinput.close()
   #opt.prjNames = 'bowline_ss'
   #opt.samFiles = 'bowline_ss.sam'
   #
@@ -525,7 +527,7 @@ if __name__ == '__main__':
     print 'Usage: smp2db.py [-p prjName1[:prjName2...] [-a prj1.sam[:prj2.sam...]]] [ -e senName]'
   elif opt.prjNames is not None:
     #os.chdir('d:\\EPRI\\SCICHEM-99\\runs\\070699')
-    os.chdir('D:\\Aermod\\v12345\\runs\\pgrass\\SCICHEM')
+    os.chdir('D:\\Aermod\\v12345\\runs\\kinsf6\\SCICHEM')
     #print os.getcwd()
     prjNames = opt.prjNames.split(':')
     if opt.samFiles:
