@@ -3,6 +3,7 @@
 Utilities for initializing and setting plot parameters. 
 Must use the utilPlot.plt command
 '''
+import os
 
 def initParams(fext='.pdf'):
   '''
@@ -73,13 +74,21 @@ def setLevels(clrlev,clrmin,clrmax,logScale=True,logBase=None):
 def joinPDF(flist,fname):
 
   import subprocess
+  import socket
 
-  command = [["gs","-dBATCH","-dNOPAUSE","-q","-sDEVICE=pdfwrite","-sOutputFile=%s" % fname],\
+  compName = socket.gethostname()
+  env      = os.environ.copy()
+
+  # Local modules
+  if compName == 'sm-bnc' or compName == 'sage-d600':
+    env["PATH"] = env["PATH"] + ';C:\\cygwin\\bin'
+
+  command = [["echo","-dBATCH","-dNOPAUSE","-q","-sDEVICE=pdfwrite","-sOutputFile=%s" % fname],\
              ["rm","-f"]]
   for cmd in command:
     cmd.extend(flist)
     (output, errmsg) = subprocess.Popen(cmd,stdout=subprocess.PIPE,
-                                            stderr=subprocess.PIPE).communicate()
+                                            stderr=subprocess.PIPE,env=env).communicate()
     if len(errmsg) > 0:
       print 'output = %s' % output
       print 'errmsg = %s' % errmsg
@@ -125,4 +134,13 @@ class Plot(object):
     print '  color range = ',self.vmin,',',self.vmax
     print '  levels = ',self.levels
     print '  lnorm = ',self.lnorm,'\n'
+
+if __name__ == '__main__':
+
+  os.chdir('D:\\Aermod\\v12345\\runs\\kinsf6')
+  fList = []
+  for fName in os.listdir('.'):
+    if fName.endswith('.pdf') or fName.endswith('.PDF'):
+      fList.append(fName)
+  joinPDF(fList,'test.pdf')
 
