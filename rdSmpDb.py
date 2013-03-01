@@ -12,7 +12,51 @@ import optparse
 import time
 import math
 # User Local modules
-from utilDb import *
+import utilDb
+    
+def getNOy(prjNames,tHr,zSmp):
+# Function reads multicomponent sampler db
+# and writes the value of NOy species at the
+# max SO2 location at given Time and Height 
+  for prjName in prjNames:
+    
+    print '\nProject :%s\n'%prjName
+    dbName = prjName + '.smp.db'
+    
+    if not os.path.exists(dbName):
+      utilDb.createSmpDb([prjName,]) 
+    smpConn = sqlite3.connect(dbName)
+    smpConn.row_factory = sqlite3.Row
+    dbCur = smpConn.cursor()
+    
+    # Find smpId for max SO2 value 
+    selectStr  = 'select smpId, max(Value) maxVal from samTable a,smpTable p where a.colNo=p.colNo '
+    selectStr += 'and varName in ( "SO2") and time = %10.3f and zSmp = %7.2f group by smpId '%(tHr,zSmp)
+    selectStr += 'order by maxVal desc limit 1'
+    smpId,maxSO2 = utilDb.db2List(dbCur,selectStr)[0]    
+    print 'Maximum SO2 value = %g at smpId = %d for project %s at time %10.3f hr and height %7.2f '%\
+           (maxSO2,int(smpId),prjName,tHr,zSmp)
+    
+    for varName in ['NO','NO2','NO3','N2O5','HNO3','HONO','PAN','NOx','NOy'] :
+
+      #print '\n',varName
+
+      # Prediction query
+      if varName == "NOx":
+        qryStr  = 'select Sum(Value) from samTable a,smpTable p where a.colNo=p.colNo '
+        qryStr += 'and varName in ( "NO","NO2" ) '
+        qryStr += 'and time=%10.3f and smpId=%d'%(tHr,smpId)
+      elif varName == 'NOy':
+        qryStr  = 'select Sum(Value) from samTable a,smpTable p where a.colNo=p.colNo '
+        qryStr += 'and varName in ( "NO","NO2","NO3","N2O5","HNO3","HONO","PAN" ) '
+        qryStr += 'and time=%10.3f and smpId=%d'%(tHr,smpId)
+      else:  
+        qryStr  = 'select Value from samTable a,smpTable p where a.colNo=p.colNo '
+        qryStr += 'and varName="%s" and time=%10.3f and smpId=%d'%(varName,tHr,smpId)
+      #print qryStr
+      maxVal = utilDb.db2Array(dbCur,qryStr,dim=0)
+      print '%s   %13.5e   %8.3f'%(varName,maxVal,maxVal*100./maxSO2) 
+      
     
 # function to create calculated db
 def readSmpDb(prjNames,cScale):
@@ -26,14 +70,14 @@ def readSmpDb(prjNames,cScale):
     print '\nProject :%s\n'%prjName
     dbName = prjName + '.smp.db'
     if not os.path.exists(dbName):
-      createSmpDb([prjName,]) 
+      utilDb.createSmpDb([prjName,]) 
     smpConn.append(sqlite3.connect(dbName))
     smpConn[prjNo].row_factory = sqlite3.Row
     sCur.append(smpConn[prjNo].cursor())
     dbCur = sCur[prjNo]
 
     # Get domain min max
-    xyArray = db2Array(dbCur,'SELECT DISTINCT xSmp,ySmp from samTable')
+    xyArray = utilDb.db2Array(dbCur,'SELECT DISTINCT xSmp,ySmp from samTable')
     nSmp = len(xyArray)
     print 'No. of samplers = ',nSmp
     (yMin,yMax) = (min(xyArray[:,0]),max(xyArray[:,0]))
@@ -42,7 +86,7 @@ def readSmpDb(prjNames,cScale):
     print 'xMin = ',xMin,', xMax = ',xMax
 
     # Get start and end times
-    timeArray = db2Array(dbCur,'SELECT DISTINCT time,EpTime from smpTable')
+    timeArray = utilDb.db2Array(dbCur,'SELECT DISTINCT time,EpTime from smpTable')
     (timeMin,timeMax) = (min(timeArray[:,0]),max(timeArray[:,0]))
     if len(timeArray) > 1:
       dtCol = np.diff(timeArray[:,1])
@@ -56,7 +100,7 @@ def readSmpDb(prjNames,cScale):
     print '\nSampler start %s(%d)'%(time.ctime(EpStartTime),EpStartTime)
     print 'Sampler end %s(%d)'%(time.ctime(EpEndTime),EpEndTime)
 
-    varNameList = db2List(dbCur,'SELECT DISTINCT varName from samTable')
+    varNameList = utilDb.db2List(dbCur,'SELECT DISTINCT varName from samTable')
     vNames = []
     for vName in varNameList:
       vName = str(vName[0])
@@ -114,7 +158,22 @@ if __name__ == '__main__':
   if not opt.prjNames:
     print 'Error: prjNames must be specified'
     print 'Usage: smp2db.py -p prjName1[:prjName2...]'
-    sys.exit()
+    #sys.exit()
+    # Inputs for getNOy
+    os.chdir('d:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\runs\\JAWMA_CMAS_2012\\tva\\tva_990706')
+    #
+    prjNames = ['SCICHEM-2012\\tva_990706',]
+    tHr  = 16.0
+    zSmp = 448.0
+    #
+    #prjNames = ['SCICHEM-ROME\\070699_vo3',]
+    #tHr  = 16.0
+    #zSmp = 500.0
+    #
+    #prjNames = ['SCICHEM-99\\negO3_1hr',]
+    #tHr  = 16.0
+    #zSmp = 500.0
   else:
     prjNames = opt.prjNames.split(':')
-  readSmpDb(prjNames,cScale=opt.cScale)
+  #readSmpDb(prjNames,cScale=opt.cScale)
+  getNOy(prjNames,tHr,zSmp)
