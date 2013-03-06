@@ -62,12 +62,34 @@ def readImc(fName):
 def getEqns(spNam,eqList):
   print spNam
   nEqn = 0
+  # Print if species is a reactant
+  print "species as reactant"
   for eqVal in eqList:
-    indx = eqVal.index(';')
-    eqn = eqVal[:indx]
+    try:
+      indx = eqVal.index(';')
+    except ValueError:
+      pass
+    aindx = eqVal.index('->')
+    eqn = eqVal[:aindx]
     if spNam in eqn:
       nEqn += 1
-      print nEqn,':',eqn
+      print nEqn,':',eqVal
+  # Print if species is produced
+  print "species is produced"
+  for eqVal in eqList:
+    try:
+      indx = eqVal.index(';')
+    except ValueError:
+      pass
+    aindx = eqVal.index('->')
+    eqn = eqVal[aindx:]
+    if spNam in eqn:
+      nEqn += 1
+      print nEqn,':',eqVal
+    #eqn = eqVal[aindx:]
+    #if spNam in eqn:
+    #  nEqn += 1
+    #  print nEqn,':',eqn
   return
 
 def getEqTypes(eqTyp,eqList):
@@ -80,15 +102,18 @@ def getEqTypes(eqTyp,eqList):
     
 if __name__ == "__main__":
   if sys.platform == 'win32':
-    os.chdir('d:\\EPRI\\git\\runs\\cumberland')
+    os.chdir('d:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\runs\\JAWMA_CMAS_2012\\tva\\tva_990706')
   #fName = '071599_vo3.imc'
-  fName = 'tva_990706_ae5.imc'
+  fName = 'SCICHEM-2012\\madrid_romebg.imc'
   #fName = raw_input('Enter imc file name :')
   #if len(fName) > 1:
   #  if not fName.endswith('.imc'):
   #    fName = fName + '.imc'
   spList,eqList = readImc(fName)
-  #print spList
+  print spList
+  for spNo,spVal in enumerate(spList):
+    print spNo, spVal[0]
+    
   '''
   ambList = []
   for spVal in spList:
@@ -111,10 +136,12 @@ if __name__ == "__main__":
     #  print spNo+1,ambList[spNo],line.strip()
     #if fileinput.lineno()/nsp == 2:
     #  break
-  #spNam = raw_input('Enter species name :')
-  #spNam = '['+spNam.strip()+']'
-  #getEqns(spNam,eqList)
   '''
-  eqTyp = raw_input('Enter equation type :')
-  eqTyp = eqTyp.strip()
-  getEqTypes(eqTyp,eqList)
+  spNam = raw_input('Enter species name :')
+  spNam = '['+spNam.strip()+']'
+  getEqns(spNam,eqList)
+
+  #eqTyp = raw_input('Enter equation type :')
+  #eqTyp = eqTyp.strip()
+  #getEqTypes(eqTyp,eqList)
+  print 'Done'
