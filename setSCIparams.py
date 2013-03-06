@@ -273,7 +273,7 @@ class Files(object):
               print 'Error: cannot find sam file ',self.samFile
               return
         else:
-           self.samFile = None
+          self.samFile = None
         break
     fileinput.close()
 
@@ -545,16 +545,16 @@ def runSci(prjName,myEnv=None,binDir=None,templateName='',inpList=None,KeyNml=No
     for fName in os.listdir('./'):
       if fName.startswith(prjName):
         for sfx in cleanList:
-           if fName.endswith(sfx):
-             print 'Deleting ',fName
-           elif pattDos.search(fName):
-             print 'Deleting ',fName
-           else:
-             continue
-           try:
-             os.remove(fName)
-           except OSError as errMsg:
-             print errMsg
+          if fName.endswith(sfx):
+            print 'Deleting ',fName
+          elif pattDos.search(fName):
+            print 'Deleting ',fName
+          else:
+            continue
+          try:
+            os.remove(fName)
+          except OSError as errMsg:
+            print errMsg
 
   # Copy input files from template files
   if len(templateName) > 0:
