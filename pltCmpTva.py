@@ -57,8 +57,8 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
 
   if "tva_990706" in prjName:
     distance = [11, 31, 65]#, 89]
-    times    = [12.5, 13.25, 16.25]#[12.0, 13.0, 16.0, 16.75]
-    zSmp     = [515, 509, 491]#[505, 491, 448, 533]
+    times    = [12.5, 13.25, 16.0]#[12.0, 13.0, 16.0, 16.75]
+    zSmp     = [515, 509, 448]#[505, 491, 448, 533]
     #times2    = [12.0, 13.5,16.25]#, 16.75]
     zSmp2     = [501, 505, 500]#, 533]
   
@@ -88,14 +88,12 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
       # Prediction query
       if varName == "NOx":
         preQry1 = 'select xSmp,Sum(Value) from samTable a,smpTable p where a.colNo=p.colNo'
-        preQry1 += " and varName = 'NO'"
-        #preQry1 += " and varName in ('NO2', 'NO' ) "
-        preQry1 += " and zSmp = %f and time = %3f group by xSmp"%(zSmp[idt],times[idt])
+        preQry1 += " and varName in ('NO2', 'NO' ) "
+        preQry1 += " and zSmp = %f and time = %3f group by smpId"%(zSmp[idt],times[idt])
       elif varName == 'NOy':
         preQry1 = "select xSmp,Sum(Value)from samTable a,smpTable p where a.colNo=p.colNo"
-        preQry1 += " and varName = 'PAN'"
-        #preQry1 += " and varName in ('NO2','NO','NO3','N2O5','HNO3','HONO','PAN'  ) "
-        preQry1 += " and zSmp = %f and time = %3f group by xSmp"%(zSmp[idt],times[idt])
+        preQry1 += " and varName in ('NO2','NO','NO3','N2O5','HNO3','HONO','PAN'  ) "
+        preQry1 += " and zSmp = %f and time = %3f group by smpId"%(zSmp[idt],times[idt])
       else:  
         preQry1  = "select xSmp,Value from samTable a,smpTable p where a.colNo=p.colNo and "
         preQry1 += "varName = '%s' and zSmp = %f and time = %3f order by smpId"%(varName,zSmp[idt],times[idt])      
@@ -114,17 +112,15 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
         #preQry2 = 'select dist, ' + varName + ' from dataTable'
         if varName == "NOx":
           preQry2 = 'select xSmp,Sum(Value) from samTable a,smpTable p where a.colNo=p.colNo'
-          preQry2 += " and varName = 'NO2'"
-          #preQry2 += " and varName in ('NO2', 'NO' ) "
-          preQry2 += " and zSmp = %f and time = %3f group by xSmp"%(zSmp2[idt],times[idt])
+          preQry2 += " and varName in ('NO2', 'NO' ) "
+          preQry2 += " and zSmp = %f and time = %3f group by smpId"%(zSmp2[idt],times[idt])
         elif varName == 'NOy':
           preQry2 = "select xSmp,Sum(Value)  from samTable a,smpTable p where a.colNo=p.colNo"
-          preQry2 += " and varName = 'PAN'"
-          #preQry2 += " and varName in ('NO2','NO','NO3','N2O5','HNO3','HONO','PAN'  ) "
-          preQry2 += " and zSmp = %f and time = %3f group by xSmp"%(zSmp2[idt],times[idt])
+          preQry2 += " and varName in ('NO2','NO','NO3','N2O5','HNO3','HONO','PAN'  ) "
+          preQry2 += " and zSmp = %f and time = %3f group by smpId"%(zSmp2[idt],times[idt])
         else:  
           preQry2  = "select xSmp,Value from samTable a,smpTable p where a.colNo=p.colNo and "
-          preQry2 += "varName = '%s' and zSmp = %f and time = %3f order by xSmp"%(varName,zSmp2[idt],times[idt])      
+          preQry2 += "varName = '%s' and zSmp = %f and time = %3f order by smpId"%(varName,zSmp2[idt],times[idt])      
         
         preArray2 = utilDb.db2Array(preCur2,preQry2)
       print preQry2  
@@ -407,14 +403,14 @@ def getSmpDb(prjName):
 if __name__ == '__main__':
 
   if compName == 'sm-bnc':
-    runDir = 'd:\\scipuff\\runs\EPRI'
+    runDir = 'D:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\runs\\JAWMA_CMAS_2012\\tva'
   if compName == 'pj-linux4':
     runDir = '/home/user/bnc/scipuff/EPRI_121001/runs/tva'
   if compName == 'sage-d600':
     runDir = 'D:\\SCICHEM-2012\\runs' 
 
-  prjName = 'tva_980825' #
-  #prjName = 'tva_990715'
+  #prjName = 'tva_980825'
+  prjName = 'tva_990706'
   runDir = os.path.join(runDir,prjName)
   os.chdir(runDir)
   print 'runDir = ',runDir
@@ -427,7 +423,10 @@ if __name__ == '__main__':
 
   # Observed data 
   if '980825' in prjName1:
-    obsPfx = os.path.join('OBS','tva_082598_')
+    if compName == 'sage-d600':
+      obsPfx = os.path.join('OBS','tva_082598_')
+    else:
+      obsPfx = os.path.join('OBS','cumb1_')    
   if '980826' in prjName1:
     if compName == 'sage-d600':
       obsPfx = os.path.join('OBS','cumb1_')
@@ -448,7 +447,11 @@ if __name__ == '__main__':
   
   # Use prePfx2 + '_' + str(dist) + 'km' + '.csv.db'
   if '980825' in prjName1:
-    prePfx2 = os.path.join('SCICHEM-01','TVA_082598')
+    #prePfx2 = os.path.join('SCICHEM-99','tva_082598')
+    prjName2 = os.path.join('SCICHEM-99','tva_082598')
+    print prjName2
+    preConn2,preCur2 = getSmpDb(prjName2)
+    prePfx2 = prjName2
   if '980826' in prjName1:
     prePfx2 = os.path.join('SCICHEM-01','082698')
   if '990715' in prjName1:
@@ -457,7 +460,8 @@ if __name__ == '__main__':
     preConn2,preCur2 = getSmpDb(prjName2)
     prePfx2 = prjName2
   if '990706' in prjName1:
-    prjName2 = os.path.join('SCICHEM-01','070699')
+    #prjName2 = os.path.join('SCICHEM-99','tva_990706')
+    prjName2 = os.path.join('SCICHEM-99','negO3_1hr')
     preConn2,preCur2 = getSmpDb(prjName2)
     prePfx2 = prjName2
 
