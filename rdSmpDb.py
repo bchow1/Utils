@@ -14,48 +14,45 @@ import math
 # User Local modules
 import utilDb
     
-def getNOy(prjNames,tHr,zSmp):
+def getNOy(prjName,tHr,zSmp):
 # Function reads multicomponent sampler db
 # and writes the value of NOy species at the
 # max SO2 location at given Time and Height 
-  for prjName in prjNames:
-    
-    print '\nProject :%s\n'%prjName
-    dbName = prjName + '.smp.db'
-    
-    if not os.path.exists(dbName):
-      utilDb.createSmpDb([prjName,]) 
-    smpConn = sqlite3.connect(dbName)
-    smpConn.row_factory = sqlite3.Row
-    dbCur = smpConn.cursor()
-    
-    # Find smpId for max SO2 value 
-    selectStr  = 'select smpId, max(Value) maxVal from samTable a,smpTable p where a.colNo=p.colNo '
-    selectStr += 'and varName in ( "SO2") and time = %10.3f and zSmp = %7.2f group by smpId '%(tHr,zSmp)
-    selectStr += 'order by maxVal desc limit 1'
-    smpId,maxSO2 = utilDb.db2List(dbCur,selectStr)[0]    
-    print 'Maximum SO2 value = %g at smpId = %d for project %s at time %10.3f hr and height %7.2f '%\
-           (maxSO2,int(smpId),prjName,tHr,zSmp)
-    
-    for varName in ['NO','NO2','NO3','N2O5','HNO3','HONO','PAN','NOx','NOy'] :
+  print '\nProject :%s\n'%prjName
+  dbName = prjName + '.smp.db'
+  
+  utilDb.createSmpDb([prjName,]) 
+  smpConn = sqlite3.connect(dbName)
+  smpConn.row_factory = sqlite3.Row
+  dbCur = smpConn.cursor()
+  
+  # Find smpId for max SO2 value 
+  selectStr  = 'select smpId, max(Value) maxVal from samTable a,smpTable p where a.colNo=p.colNo '
+  selectStr += 'and varName in ( "SO2") and time = %10.3f and zSmp = %7.2f group by smpId '%(tHr,zSmp)
+  selectStr += 'order by maxVal desc limit 1'
+  smpId,maxSO2 = utilDb.db2List(dbCur,selectStr)[0]    
+  print 'Maximum SO2 value = %g at smpId = %d for project %s at time %10.3f hr and height %7.2f '%\
+         (maxSO2,int(smpId),prjName,tHr,zSmp)
+  
+  for varName in ['C','NO','NO2','NO3','N2O5','HNO3','HONO','PAN','NOx','NOy','OH'] :
 
-      #print '\n',varName
+    #print '\n',varName
 
-      # Prediction query
-      if varName == "NOx":
-        qryStr  = 'select Sum(Value) from samTable a,smpTable p where a.colNo=p.colNo '
-        qryStr += 'and varName in ( "NO","NO2" ) '
-        qryStr += 'and time=%10.3f and smpId=%d'%(tHr,smpId)
-      elif varName == 'NOy':
-        qryStr  = 'select Sum(Value) from samTable a,smpTable p where a.colNo=p.colNo '
-        qryStr += 'and varName in ( "NO","NO2","NO3","N2O5","HNO3","HONO","PAN" ) '
-        qryStr += 'and time=%10.3f and smpId=%d'%(tHr,smpId)
-      else:  
-        qryStr  = 'select Value from samTable a,smpTable p where a.colNo=p.colNo '
-        qryStr += 'and varName="%s" and time=%10.3f and smpId=%d'%(varName,tHr,smpId)
-      #print qryStr
-      maxVal = utilDb.db2Array(dbCur,qryStr,dim=0)
-      print '%s   %13.5e   %8.3f'%(varName,maxVal,maxVal*100./maxSO2) 
+    # Prediction query
+    if varName == "NOx":
+      qryStr  = 'select Sum(Value) from samTable a,smpTable p where a.colNo=p.colNo '
+      qryStr += 'and varName in ( "NO","NO2" ) '
+      qryStr += 'and time=%10.3f and smpId=%d'%(tHr,smpId)
+    elif varName == 'NOy':
+      qryStr  = 'select Sum(Value) from samTable a,smpTable p where a.colNo=p.colNo '
+      qryStr += 'and varName in ( "NO","NO2","NO3","N2O5","HNO3","HONO","PAN" ) '
+      qryStr += 'and time=%10.3f and smpId=%d'%(tHr,smpId)
+    else:  
+      qryStr  = 'select Value from samTable a,smpTable p where a.colNo=p.colNo '
+      qryStr += 'and varName="%s" and time=%10.3f and smpId=%d'%(varName,tHr,smpId)
+    #print qryStr
+    maxVal = utilDb.db2Array(dbCur,qryStr,dim=0)
+    print '%s   %13.5e   %8.3f'%(varName,maxVal,maxVal*100./maxSO2) 
       
     
 # function to create calculated db
@@ -69,8 +66,7 @@ def readSmpDb(prjNames,cScale):
   for prjNo,prjName in enumerate(prjNames):
     print '\nProject :%s\n'%prjName
     dbName = prjName + '.smp.db'
-    if not os.path.exists(dbName):
-      utilDb.createSmpDb([prjName,]) 
+    utilDb.createSmpDb([prjName,]) 
     smpConn.append(sqlite3.connect(dbName))
     smpConn[prjNo].row_factory = sqlite3.Row
     sCur.append(smpConn[prjNo].cursor())
@@ -160,20 +156,29 @@ if __name__ == '__main__':
     print 'Usage: smp2db.py -p prjName1[:prjName2...]'
     #sys.exit()
     # Inputs for getNOy
-    os.chdir('d:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\runs\\JAWMA_CMAS_2012\\tva\\tva_990706')
+    runDir = 'v:\\scipuff\\Repository\\export\\EPRI\\archives\\runs\\JAWMA-2012\\tva\\tva_990706'
+    os.chdir(runDir)#('d:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\runs\\JAWMA_CMAS_2012\\tva\\tva_980826')
+    prjNames = []
+    tHrs     = []
+    zSmps    = []
     #
-    prjNames = ['SCICHEM-2012\\tva_990706',]
-    tHr  = 16.0
-    zSmp = 448.0
+    prjNames.append('SCICHEM-2012\\tva_990706')
+    tHrs.append(16.0)
+    zSmps.append(448.0)
     #
-    #prjNames = ['SCICHEM-ROME\\070699_vo3',]
-    #tHr  = 16.0
-    #zSmp = 500.0
+    '''
+    prjNames.append('SCICHEM-ROME\\070699_vo3')
+    tHrs.append(16.0)
+    zSmps.append(500.0)
     #
-    #prjNames = ['SCICHEM-99\\negO3_1hr',]
-    #tHr  = 16.0
-    #zSmp = 500.0
+    prjNames.append('SCICHEM-99\\tva_990706_romebg_fixed')
+    tHrs.append(16.0)
+    zSmps.append(500.0)
+    '''
+    #Loop
+    for prjNo,prjName in enumerate(prjNames):
+      getNOy(prjName,tHrs[prjNo],zSmps[prjNo])
   else:
     prjNames = opt.prjNames.split(':')
   #readSmpDb(prjNames,cScale=opt.cScale)
-  getNOy(prjNames,tHr,zSmp)
+ 
