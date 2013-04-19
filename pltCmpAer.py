@@ -22,17 +22,29 @@ def getObsArray(prjName,obsDir=None,obsName=None,iHr=1):
   if obsName is None:
     obsNameList = {'kinso2':'kinso2','kinsf6':'KINSF6.SUM','bowline':'bow','clifty':'CCR75'}
     obsNameList.update({'baldwin':'bal','martin':'MCR','tracy':'TRACY','pgrass':'PGRSF6.SUM'})
-    obsName = obsNameList[prjName]  
+    try:
+      obsName = obsNameList[prjName.lower()]
+    except KeyError:
+      if prjName.upper().startswith('KSF6'):
+        obsName = 'KINSF6.SUM'      
+  if obsName is None:
+    obsArray = []
+    return obsArray
   if obsDir is None:
     obsDir = os.path.join('..','Obs_Conc')
+    if not os.path.exists(obsDir):
+      obsDir = os.path.join('..','Observations')
+      if not os.path.exists(obsDir):
+        print 'Error: Cannot find obervation directory'
   # Read observations from obs directory from .obs files
   if prjName == 'pgrass':
     obsFile = os.path.join(obsDir,obsName)
     colList = (i for i in range(5,7))
     QCArray    = np.loadtxt(obsFile,skiprows=4,usecols=colList)
+    # Col(5) = Q g/s Col(6) = C/Q s/m^3 
     obsArray   = QCArray[:,0]*QCArray[:,1]*1.e6 # ug/m3
     print np.shape(obsArray)
-  elif prjName.startswith('KSF6'):
+  elif prjName.upper().startswith('KSF6'):
     obsFile = os.path.join(obsDir,obsName+'.db')
     YY = prjName[9:11]
     MM = prjName[5:6]
@@ -40,15 +52,23 @@ def getObsArray(prjName,obsDir=None,obsName=None,iHr=1):
     qryStr  = 'select max(CHI) from dataTable where YY = %s and MM = %s and DD = %s group by HH'%(YY,MM,DD)
     obsArray = utilDb.db2Array(obsFile,qryStr,dim=1)
     obsArray = obsArray/167.  # Convert from ppt to ug/m3 for SF6
+  elif prjName.upper().startswith('MARTIN'):
+    obsFile    = os.path.join(obsDir,obsName + '%02d.obs'%iHr).upper()
+    useCols = [i for i in range(11)]  # Extra sampler compared to AERMOD RE list !!
+    obsHrArray = np.loadtxt(obsFile,usecols=useCols)
+    nHr        = len(obsHrArray)
+    obsArray   = np.zeros(nHr) - 999.
+    for hr in range(nHr):
+      obsArray[hr] = max(obsHrArray[hr,3:])
   else:
-    obsFile    = os.path.join(obsDir,obsName + '%02d.obs'%iHr)
+    obsFile    = os.path.join(obsDir,obsName + '%02d.obs'%iHr).upper()
     obsHrArray = np.loadtxt(obsFile)
     nHr        = len(obsHrArray)
     obsArray   = np.zeros(nHr) - 999.
     for hr in range(nHr):
       obsArray[hr] = max(obsHrArray[hr,4:])
   obsArray  = np.sort(obsArray)[::-1]
-  print 'OBS max =', obsArray[0],obsArray[25]
+  print 'OBS max =', obsArray[0],obsArray[min(25,len(obsArray))-1],min(25,len(obsArray))
   #for iSmp in range(nSmp):
   #  obsArray[:,iSmp] = np.sort(obsArray[:,iSmp])[::-1]
   #  print 'OBS max =', obsArray[0,iSmp],obsArray[25,iSmp]
@@ -59,13 +79,17 @@ def getAerArray(prjName,aerDir=None,aerName=None,iHr=1):
   if aerName is None:
     aerNameList = {'kinso2':'KS2AER','kinsf6':None,'bowline':'BOWAER','clifty':'CCRAER'}
     aerNameList.update({'baldwin':'BALAER','martin':'MCRAT2','tracy':'TRAER','pgrass':'PGRASS'})
-    aerName = aerNameList[prjName]  
+    try:
+      aerName = aerNameList[prjName]
+    except KeyError:
+      if prjName.upper().startswith('KSF6'):
+        aerName = None
     
   if aerDir is None:
     aerDir = os.path.join('..','Aermod')
  
-  if prjName.startswith('KSF6'):
-    aerName = os.path.join(aerDir,prjName).replace('I','R').replace('_','.')
+  if prjName.upper().startswith('KSF6'):
+    aerName = os.path.join(aerDir,prjName.upper()).replace('I','R').replace('_','.')
     useCols = [i for i in range(8)]
     aerConc = np.loadtxt(aerName,skiprows=8,usecols=useCols)
     aerArray = aerConc[:,1]
@@ -79,10 +103,10 @@ def getAerArray(prjName,aerDir=None,aerName=None,iHr=1):
     # Remove duplicate data period similar to RANK-FILE
     aerQry = 'select max(Cavg) as cMax from datatable group by date order by cMax desc'
     aerArray = utilDb.db2Array(aerCur,aerQry,dim=1)
-    print 'AERMOD max =', aerArray[0],aerArray[25]
+    print 'AERMOD max =', aerArray[0],aerArray[min(25,len(aerArray))-1],min(25,len(aerArray))
     aerConn.close()
   
-  return aerArray
+  return aerName,aerArray
 
 def getSmpDb(prjName):
   mySciFiles = SCI.Files(prjName)
@@ -122,7 +146,7 @@ def smpDbMax(smpDbCur,iHr,smpFac,smpIds=None,nTimes=None):
     sciQry += "and varname='C' and (time -round(time)) = 0. group by time order by maxVal desc"
     sciArray = utilDb.db2Array(smpDbCur,sciQry,dim=1)
   sciArray = sciArray*smpFac
-  print 'SCICHEM max = 1:',sciArray[0],', ',len(sciArray),':',sciArray[-1]
+  print 'SCICHEM max = 1:',sciArray[0],', ',sciArray[min(25,len(sciArray))-1],':',min(25,len(sciArray))
   
   return sciArray
 
@@ -265,3 +289,4 @@ if __name__ == '__main__':
   
   for prjName in ['kinso2']: #['pgrass','baldwin','bowline','kinso2','CLIFTY','martin','tracy']:
     runProg(prjName)
+  print 'Done pltCmpAer'
