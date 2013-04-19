@@ -64,9 +64,11 @@ def rdMCScn(scnName):
 
   return scnList
 
-def wrtMCScn(spList,scnList,newRel=None):
+def wrtMCScn(spList,scnList,newRel=None,newSpList=None,fmt=None,spSkip=None):
+  
   # This function writes a scn file. If newRel is present
   # then the MC release mass is taken from newRel
+  # If fmt is New then the scn file is written with START_MC
    
   # Get names and ambient concentrations from new spList 
   if newRel is not None:
@@ -77,15 +79,23 @@ def wrtMCScn(spList,scnList,newRel=None):
     newSpNames = [spVal[0] for spVal in newSpList]
     newSpConcs = [spVal[2] for spVal in newSpList]
         
-
   scnFile = open('temp.scn','w')
   for scnNo,scnVal in enumerate(scnList):
     print '\n#START_MC ',scnNo+1
+    if fmt == 'New':
+      rel_mc = []
+      rel_mc.append('#START_MC\n')
     for line in scnVal[0]:
       scnFile.write('%s'%line)
     for spNo in range(len(spList)):
       if scnVal[1][spNo] != 0.:
         print '     ',spList[spNo][0],scnVal[1][spNo]
+        if fmt == 'New' and newRel is None:
+          if spSkip is not None:
+            if spList[spNo][0] in spSkip:
+              continue
+          rel_mc.append('     %s %s\n'%(spList[spNo][0],scnVal[1][spNo]))
+        
     if newRel is not None:
       print '#NEW_MC ',scnNo+1
     else:
@@ -101,14 +111,25 @@ def wrtMCScn(spList,scnList,newRel=None):
       for spNo in range(len(spList)):
         if scnVal[1][spNo] != 0.:
           print '     ',spList[spNo][0],scnVal[1][spNo]
+          if fmt == 'New':
+            if spSkip is not None:
+              if spList[spNo][0] in spSkip:
+                continue
+            rel_mc.append('     %s %s\n'%(spList[spNo][0],scnVal[1][spNo]))
       print '#END_MC ',scnNo+1
-               
-    scnFile.write(' REL_MC = ')
-    for spRel in scnVal[1]:
-      scnFile.write('%13.5e,'%spRel)
-    for i in range(len(scnVal[1]),MAX_MC):
-      scnFile.write('%13.5e,'%0.)
-    scnFile.write('\n/\n')
+    
+    if fmt == 'New':
+      scnFile.write('/\n')
+      for relmc in rel_mc:
+        scnFile.write(relmc)
+      scnFile.write('#END_MC\n')
+    else:           
+      scnFile.write(' REL_MC = ')
+      for spRel in scnVal[1]:
+        scnFile.write('%13.5e,'%spRel)
+      for i in range(len(scnVal[1]),MAX_MC):
+        scnFile.write('%13.5e,'%0.)
+      scnFile.write('\n/\n')
   return
 
 def wrtImcSpList(spList,newSpList):
@@ -178,28 +199,50 @@ if __name__ == '__main__':
   if True:
     curDir = os.getcwd()
     #Input directory
-    inpDir = 'D:\\SCIPUFF\\EPRI\\runs\\negativeO3'
-    imcName = 'scichem-2012\\negO3_1hr_fix.imc'
+    #
+    
+    #inpDir = 'D:\\SCIPUFF\\EPRI\\runs\\negativeO3'
+    #imcName = 'scichem-2012\\negO3_1hr_fix.imc'
+    
+    #inpDir = 'd:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\runs\\JAWMA_CMAS_2012\\tva\\tva_990706'
+    #imcName = 'SCICHEM-ROME\\070699_vo3.imc'
+    
+    inpDir = 'V:\\TestSCICHEM\\Outputs\\130327.HiISOPF\\Chemistry\\tva_990706\\'
+    imcName = 'FixEmis_CBL_ZMET_noLSV_hiVOC\\cumberland.imc'
+    
     os.chdir(inpDir)
     newSpList = rdImc(imcName)
     os.chdir(curDir)
   
   # Get new release list
-  newRel = {'NO2':3.21E+04,'NO':2.885E+05,'SO2':5.76E+02} 
-  
+  newRel = {'NO2':3.21E+02,'NO':2.885E+03,'SO2':5.76E+02} 
+  spSkip = ['HG0','HG2','SO4_1','HGP_1']
   
   # Output directory
-  runDir = 'D:\\SCIPUFF\\EPRI\\runs\\negativeO3'
-  imcName = 'scichem-99\\negO3_1hr_fix.imc'
-  scnName = 'scichem-99\\negO3_1hr_fix.scn'
+  #
+  
+  #runDir = 'D:\\SCIPUFF\\EPRI\\runs\\negativeO3'
+  #imcName = 'scichem-ROME\\negO3_1hr_fix.imc'
+  #scnName = 'scichem-ROME\\negO3_1hr_fix.scn'
+  #
+  #runDir = 'd:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\runs\\JAWMA_CMAS_2012\\tva\\tva_990706'
+  
+  #imcName = 'SCICHEM-2012\\ae5_rome.imc'
+  #imcName = 'SCICHEM-99\\tva_990706_romebg.imc'
+
   #runDir = 'D:\\negativeO3\\' 
+  
+  runDir = 'V:\\TestSCICHEM\\Outputs\\130327.HiISOPF\\Chemistry\\tva_990706'
+  imcName = 'FixEmis_CBL_ZMET_noLSV_hiVOC\\ae5_noamb.imc'
+  scnName = 'SCICHEM-v2100\\test01_v2100.scn'
+  
   os.chdir(runDir)
   spList = rdImc(imcName)
   #createDB(spList)
-  scnList = rdMCScn(scnName)
+  #scnList = rdMCScn(scnName)
   
   #
-  wrtMCScn(spList,scnList,newRel=newRel)
+  #wrtMCScn(spList,scnList,fmt='New',spSkip=spSkip)
   wrtImcSpList(spList,newSpList)
   
 
