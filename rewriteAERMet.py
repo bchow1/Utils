@@ -129,8 +129,8 @@ def mainProg(dataFile):
     if fileType == 'sfc':
       # (3(I2,1X), I3,1X, I2,1X, F6.1,1X, 2(F6.3,1X), F5.0,1X, F8.1,1X, F5.2,1X,
       # 2(F6.2,1X), F7.2,1X, F5.0, 3(1X,F6.1))
-      fmtList = ['2d','2d','2d','3d','2d','6.1f','6.3f','6.3f','5.0f','8.1f','5.2f','6.2f','6.2f',\
-                 '7.2f','6.1f','6.1f','6.1f','6.1f','6.1f','6.1f']
+      fmtList = ['2d','2d','2d','3d','2d','6.1f','6.3f','6.3f','6.3f','8.1f','7.2f','6.2f','6.3f',\
+                 '7.2f','6.2f','6.2f','6.1f','6.1f','6.1f','6.1f']
       metFile.write('%s'%sfcHead)
 
     if fileType == 'pfl':
@@ -154,14 +154,15 @@ if __name__ == '__main__':
 
   #runDir = 'D:\\SCIPUFF\\EPRI\\runs\\kos_090811'
   #runDir = '/home/user/bnc/scipuff/runs/EPRI/wwright'
-  runDir = 'D:\\Aermod\\v12345\\runs\\kinsf6\\SCICHEM'
+  #runDir = 'D:\\Aermod\\v12345\\runs\\kinsf6\\SCICHEM'
+  runDir  = 'd:\\TestSCICHEM\\Inputs\\AERMOD\\pgrass\\SCICHEM'
     
   #dataFile = raw_input('AERMOD datafile name? ')
   #dataFile = '2009-10.SFC'
   #dataFile = 'kosovo11-ww-scipuff.sfc'
   #dataFile = 'kinso2.sfc'
   #dataFile = 'kinso2.pfl'
-  dataFile = 'kinprof1.sf6'
+  dataFile = 'pgrprof_222.pfl'
 
   os.chdir(runDir)
   mainProg(dataFile)
