@@ -35,8 +35,9 @@ while x <= xmax:
 SenInp.close()
 '''
 # Create MC samFile
-samFile = open("d:\\SCIPUFF\\EPRI\\runs\\tva\\tva_990715\\temp.sam",'w')
+samFile = open("d:\\SCIPUFF\\EPRI\\runs\\negativeO3\\scichem-2012\\temp.sam",'w')
 samFile.write("SCIPUFF SENSOR\n")
-for x in xrange(-100,101,2):
-  samFile.write('%10.5f 0.2287       200.0  MC    TRAC:(NO,NO2,O3)\n'%(x*0.001))
+for y in xrange(1,151,5):
+  #samFile.write('%10.5f 0.2287       200.0  MC    TRAC:(NO,NO2,O3)\n'%(x*0.001))
+  samFile.write('0.0  %10.5f 500.0  MC    TRAC:(SO2,O3,OH,O,NO,NO2,NO3,N2O5,HNO3,HONO,PAN)\n'%(y*1.0))
 samFile.close()
