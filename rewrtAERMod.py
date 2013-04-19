@@ -35,6 +35,7 @@ def getSCIStr(aerInpFile,m2Km=None):
   domStr = '   DOMAIN %6.2f %6.2f '%(xy[ix][iMin]-xy[iDif][ix],xy[ix][iMax]+xy[iDif][ix])
   domStr = domStr + '%6.2f %6.2f %6.2f\n'%(xy[iy][iMin]-xy[iDif][iy],xy[iy][iMax]+xy[iDif][iy],4000.)
   coStr = '   DELPRJFI NO\n   MAXTSTEP 900.\n' #   DOMAIN RECEPTORS METERS\n'
+  coStr = coStr + '   AVERTIME  10 minutes\n'
   coStr = coStr + '   OUTPTINT 3600\n' + pjnStr + domStr 
   
   # MA
@@ -49,10 +50,11 @@ def getSCIStr(aerInpFile,m2Km=None):
   
   # ME
   meStr = None
+  meStr = '   CALCULBL  OFF\n'
   
   # OU
   ouStr = None
-  #ouStr = '   METOUTPT 3600. S\n   METFORMT ASCII\n'
+  ouStr = '   METOUTPT 3600. S\n   METFORMT ASCII\n'
   
   # Initialize addSCI
   addSCI = {'CO':coStr,'MA':maStr,'SO':soStr,'RE':reStr,'ME':meStr,'OU':ouStr}
@@ -107,7 +109,7 @@ def rdWrtInp(inpName,outName,addSCI,m2Km=None):
             lsplit.extend('\n')
             line       = "  ".join(lsplit)          
           if sName == 'RE':
-            if 'EVALCART' or 'DISCCART' in lData:
+            if 'EVALCART' in lData or 'DISCCART' in lData:
               lsplit  = line.split()
               indx = -1
               for indx in range(len(lsplit)):
@@ -143,14 +145,16 @@ if __name__ == '__main__':
   if compName == 'sm-bnc':
     #runDir = 'D:\\SCIPUFF\\EPRI\\runs\\kos_090811'
     #runDir = '/home/user/bnc/scipuff/runs/EPRI/wwright'
-    runDir          = 'D:\\Aermod\\v12345\\runs\\kinso2\\SCICHEM'
+    #runDir          = 'D:\\Aermod\\v12345\\runs\\kinso2\\SCICHEM'
+    runDir          = 'd:\\TestSCICHEM\\Inputs\\AERMOD\\pgrass\\SCICHEM'
     SCIPUFF_BASEDIR = "D:\\SCIPUFF\\EPRI\\workspace\\EPRI\\bin\\intel\\Win32\\Release"
     INIfile         = "D:\\SCIPUFF\\EPRI\\Workspace\\EPRI\\scipuff.ini"
     
   runSCI  = os.path.join(SCIPUFF_BASEDIR,'runSCI')
   INIfile = "-I:" + INIfile
-  runSCI  = [runSCI,INIfile,"-M:10000"]  
+  runSCI  = [runSCI,INIfile,"-M:10000"]
   
+  runDir = os.path.join(runDir,)
   os.chdir(runDir)
   
   if 'kinsf6' in runDir.upper():
@@ -170,16 +174,31 @@ if __name__ == '__main__':
     if fName.endswith('I'):
       inpNames.append(fName)
       
-  for inpName in ['KINSO2.INP']: #['KSF6-424.80I','KSF6-425.80I','KSF6-427.80I','KSF6-428.80I','KSF6-430.80I']:
+  for inpName in ['pgrass']: #,'bowline','CLIFTY','martin','tracy','pgrass']:
+    #['pgrass','baldwin','bowline','kinso2','CLIFTY','martin','tracy']
+    #['KSF6-424.80I','KSF6-425.80I','KSF6-427.80I','KSF6-428.80I','KSF6-430.80I']:
     
-    prjName = inpName.replace('.INP','').replace('.','_').lower()
+    #prjName = inpName.replace('.INP','').replace('.','_').lower()
+    if inpName == 'martin':
+      prjName = 'MCR_AER'
+    elif inpName == 'tracy':
+      prjName = 'TRACAER'
+    elif inpName == 'clifty':
+      prjName = 'CLIFTY75'
+    else:
+      prjName = inpName
     
     #
     # Get Observed concentration array
     #
-    obsArray = pltCmpAer.getObsArray(prjName)*cFac   
+    obsArray = pltCmpAer.getObsArray(inpName)*cFac   
     if len(obsArray) == 0:
       continue
+    #
+    # AERMOD predicted concentration array
+    #
+    aerName,aerArray = pltCmpAer.getAerArray(inpName)
+    aerArray = aerArray*cFac
     
     #
     # Create Aermod type input file for SCIPUFF
@@ -188,10 +207,10 @@ if __name__ == '__main__':
     os.chdir(os.path.join(runDir,'..','AERMOD'))
     aerDir = os.getcwd()
     os.chdir(runDir)
-    inpFile = os.path.join(aerDir,inpName)
+    inpFile = os.path.join(aerDir,prjName+'.INP')
     m2Km = 1.e-3
     addSCI = getSCIStr(inpFile,m2Km=m2Km)
-    #rdWrtInp(inpFile,outName,addSCI,m2Km=m2Km)
+    rdWrtInp(inpFile,outName,addSCI,m2Km=m2Km)
     
     #
     # Run SCICHEM
@@ -201,12 +220,7 @@ if __name__ == '__main__':
     #
     # Get maximum 1 hr avg SCIPUFF concentration
     #sciArray = getMaxConc('072480_new')*167. 
-    sciArray = getMaxConc(prjName)*cFac
-    
-    #
-    # AERMOD predicted concentration array
-    #
-    aerArray = pltCmpAer.getAerArray(prjName)*cFac
+    sciArray = getMaxConc(prjName)*cFac 
     
     #
     # Print top 10 values
@@ -219,5 +233,5 @@ if __name__ == '__main__':
     # 
     pltCmpAer.plotData(obsArray, aerArray, sciArray, inpName + '.png', inpName, cutoff=0.0,units=units)
     
-    print 'Done'
+    print 'Done rewrtAERMod'
     
