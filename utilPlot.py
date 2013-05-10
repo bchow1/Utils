@@ -81,20 +81,24 @@ def joinPDF(flist,fname):
 
   # Local modules
   if compName == 'sm-bnc' or compName == 'sage-d600':
-    env["PATH"] = env["PATH"] + ';C:\\cygwin\\bin'
+    GS = "C:\\cygwin\\bin\\gs"
+    RM = "C:\\cygwin\\bin\\rm"
+  else:
+    GS = 'gs'
+    RM = 'rm'
 
-  command = [["echo","-dBATCH","-dNOPAUSE","-q","-sDEVICE=pdfwrite","-sOutputFile=%s" % fname],\
-             ["rm","-f"]]
+  command = [[GS,"-dBATCH","-dNOPAUSE","-q","-sDEVICE=pdfwrite","-sOutputFile=%s" % fname],\
+             [RM,"-f"]]
   for cmd in command:
     cmd.extend(flist)
     (output, errmsg) = subprocess.Popen(cmd,stdout=subprocess.PIPE,
                                             stderr=subprocess.PIPE,env=env).communicate()
-    if len(errmsg) > 0:
-      print 'output = %s' % output
-      print 'errmsg = %s' % errmsg
-    else:
-      if cmd == command[0]:
-        print 'Combining output pdf files to create %s\n' % fname
+    #if len(errmsg) > 0:
+    print 'output = %s' % output
+    print 'errmsg = %s' % errmsg
+    #else:
+    #  if cmd == command[0]:
+    #    print 'Combining output pdf files to create %s\n' % fname
   flist = []
   return flist
 
