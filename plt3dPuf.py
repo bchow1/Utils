@@ -19,7 +19,6 @@ w.setWindowTitle('pyqtgraph example: GLScatterPlotItem')
 g = gl.GLGridItem()
 w.addItem(g)
 
-'''
 ##
 ##  First example is a set of points with pxMode=False
 ##  These demonstrate the ability to have points with real size down to a very small scale 
@@ -40,10 +39,12 @@ for i in range(3,53):
     z *= 0.5
     d *= 2.0
     
+phase = 0.
 sp1 = gl.GLScatterPlotItem(pos=pos, size=size, color=color, pxMode=False)
 sp1.translate(5,5,0)
 w.addItem(sp1)
 
+'''
 ##
 ##  Second example shows a volume of points with rapidly updating color
 ##  and pxMode=True
@@ -60,7 +61,6 @@ phase = 0.
 
 w.addItem(sp2)
 
-'''
 
 ##
 ##  Third example shows a grid of points with rapidly updating position
@@ -77,22 +77,8 @@ sp3 = gl.GLScatterPlotItem(pos=pos3, color=(1,1,1,.3), size=0.1, pxMode=False)
 
 w.addItem(sp3)
 
-
 def update():
   
-    '''
-    ## update volume colors
-    global phase, sp2, d2
-    s = -np.cos(d2*2+phase)
-    color = np.empty((len(d2),4), dtype=np.float32)
-    color[:,3] = np.clip(s * 0.1, 0, 1)
-    color[:,0] = np.clip(s * 3.0, 0, 1)
-    color[:,1] = np.clip(s * 1.0, 0, 1)
-    color[:,2] = np.clip(s ** 3, 0, 1)
-    sp2.setData(color=color)
-    phase -= 0.1
-    
-    '''
     ## update surface positions and colors
     global sp3, d3, pos3, phase
     z = -np.cos(d3*2+phase)
@@ -108,7 +94,7 @@ def update():
 t = QtCore.QTimer()
 t.timeout.connect(update)
 t.start(50)
-
+'''
 
 ## Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':
