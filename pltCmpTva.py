@@ -44,7 +44,8 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
     distance = [20, 55, 110]
     times    = [11.5, 12.75, 14.75]#
     times2    = [11.25, 13.0, 14.5]
-    zSmp     = [506, 488, 465]
+    #zSmp     = [506, 488, 465]
+    zSmp    = [520, 600, 620]
     #plot_1_6_9 [743, 778, 774]#
     zSmp2    = [520, 600, 620]
     
@@ -96,15 +97,21 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
         preQry1 += " and zSmp = %f and time = %3f group by smpId"%(zSmp[idt],times[idt])
       else:  
         preQry1  = "select xSmp,Value from samTable a,smpTable p where a.colNo=p.colNo and "
-        preQry1 += "varName = '%s' and zSmp = %f and time = %3f order by smpId"%(varName,zSmp[idt],times[idt])      
-      print preCur1, preQry1
+        preQry1 += "varName = '%s' and zSmp = %f and time = %3f order by smpId"%(varName,zSmp[idt],times[idt])
+       
+      #print preQry1
       
       # Predictions #1 (2012)
       preArray1 = utilDb.db2Array(preCur1,preQry1)
       if varName == 'SO2':
         # Set x index where SO2 is max. Same for all obs plumes
         iMax1 = np.where(preArray1[:,1] == preArray1[:,1].max())[0][0]
-          
+        # Get locations where Conc > 0.1*Cmax
+        preQry  = "select xSmp,ySmp,Value from samTable a,smpTable p where a.colNo=p.colNo and "
+        preQry += "varName = '%s' and zSmp = %f and time = %3f and Value > 0.1*%f order by smpId"%(varName,zSmp[idt],times[idt], preArray1[:,1].max()) 
+        preLocArray1 = utilDb.db2Array(preCur1,preQry)
+        preMaxLoc1   = np.where(preLocArray1[:,2] == preLocArray1[:,2].max())[0][0]
+     
       # Predictions #2 (v2100)
       if prePfx2 is None:
         preArray2 = utilDb.db2Array(preCur2,preQry1)
@@ -196,6 +203,43 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
           oMax[ipl] = np.where(obsArray[:,1] == obsArray[:,1].max())[0][0]
           print 'Max Obs SO2 at x index = ', oMax[ipl],' with x, value = ',obsArray[oMax[ipl],0],obsArray[oMax[ipl],1]
 
+          # Plot traverse and max location
+          if "tva_990706" in prjName:
+            obsQry = 'select sourceDist,sourceBearing,SO2/1000. from dataTable'
+          else:
+            obsQry = 'select sourceDist,sourceBearing,SO2 from dataTable'
+        
+          trvArray = utilDb.db2Array(obsCur,obsQry)
+          trvArray[:,1] = trvArray[:,1]*np.pi/180.
+          
+          plt.clf()
+          plt.hold(True)
+          xTrv = trvArray[:,0]*np.cos(trvArray[:,1])
+          yTrv = trvArray[:,0]*np.sin(trvArray[:,1])
+          obsMaxLoc = np.where(trvArray[:,2] == trvArray[:,2].max())[0][0]
+          # Observation location
+          plt.scatter(xTrv,yTrv,marker='+',color='g')
+          plt.plot([0.,xTrv[obsMaxLoc]],[0.,yTrv[obsMaxLoc]],color='green')
+          
+          # Prediction 1 (SCICHEM 3.0 location)
+          plt.scatter(preLocArray1[:,0],preLocArray1[:,1],marker='^',color='r')
+          plt.plot([0.,preLocArray1[preMaxLoc1,0]],[0.,preLocArray1[preMaxLoc1,1]],color='red')
+          
+          print 'Location of max conc. for Traverse %d at %s km =  %8.3f, %8.3f; %8.3f, %8.3f'%\
+                 (ipl,str(dist),xTrv[obsMaxLoc],yTrv[obsMaxLoc],preLocArray1[preMaxLoc1,0],preLocArray1[preMaxLoc1,1])
+                 
+          plt.title('Traverse %d at %s km'%(ipl,str(dist)))
+          
+          for domLim in [20.,50.,100.]:
+            if dist < domLim:
+              break
+          plt.xlim([-domLim,domLim])
+          plt.ylim([-domLim,domLim])
+          plt.hold(False)
+          #plt.show()
+          figName = 'Traverse_%d_%skm.png'%(ipl,str(dist))
+          plt.savefig(figName)
+        
         # Set x value to 0. where SO2 conc is maximum for plume ipl
         obsArray[:,0] = obsArray[:,0] - obsArray[oMax[ipl],0]
         statFile.write("%s, %02d, %d, %s,"%(prjName,dist,ipl,varName))
@@ -466,6 +510,6 @@ if __name__ == '__main__':
     prePfx2 = prjName2
 
   mainProg(prjName=prjName1,obsPfx=obsPfx,preCur1=preCur1,preCur2=preCur2,prePfx2=prePfx2)
-  createSubPlots()
+  #createSubPlots()
   #preConn1.close()
   #preConn2.close()
