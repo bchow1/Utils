@@ -44,7 +44,6 @@ sp1 = gl.GLScatterPlotItem(pos=pos, size=size, color=color, pxMode=False)
 sp1.translate(5,5,0)
 w.addItem(sp1)
 
-'''
 ##
 ##  Second example shows a volume of points with rapidly updating color
 ##  and pxMode=True
@@ -72,14 +71,16 @@ pos3 = np.zeros((100,100,3))
 pos3[:,:,:2] = np.mgrid[:100, :100].transpose(1,2,0) * [-0.1,0.1]
 pos3 = pos3.reshape(10000,3)
 d3 = (pos3**2).sum(axis=1)**0.5
+phase = 0.
 
 sp3 = gl.GLScatterPlotItem(pos=pos3, color=(1,1,1,.3), size=0.1, pxMode=False)
 
 w.addItem(sp3)
-'''
+
 
 def update():
   
+    '''
     ## update volume colors
     global phase, sp2, d2
     s = -np.cos(d2*2+phase)
@@ -93,7 +94,7 @@ def update():
     
     '''
     ## update surface positions and colors
-    global sp3, d3, pos3
+    global sp3, d3, pos3, phase
     z = -np.cos(d3*2+phase)
     pos3[:,2] = z
     color = np.empty((len(d3),4), dtype=np.float32)
@@ -102,7 +103,7 @@ def update():
     color[:,1] = np.clip(z * 1.0, 0, 1)
     color[:,2] = np.clip(z ** 3, 0, 1)
     sp3.setData(pos=pos3, color=color)
-    '''
+    phase -= 0.1
     
 t = QtCore.QTimer()
 t.timeout.connect(update)
