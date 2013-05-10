@@ -9,12 +9,14 @@ import utilDb
 # patterns
 hpacPatt  = re.compile('(.*)hpac(.*)',re.I)
 exts = ('.f','.f90','.F','.F90','.mak','.sh','.vfproj','.vcproj','.sln')
+#exts = ('.new')
 
-def getFnames(baseDir='./'):
+def getFnames(baseDir='.'):
   fList = []
   for root,dirs,files in os.walk(baseDir):
     for fName in files:
       if fName.endswith(exts):
+        print os.path.join(root,fName)
         fList.append(os.path.join(root,fName))
   return fList
 
@@ -35,7 +37,7 @@ if __name__ == '__main__':
 
   #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\workspace\\EPRI')
   #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\src\\sys\\windows')
-  #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719')
+  os.chdir('D:\\SCIPUFF\\Repository\\EPA')
   fList = getFnames()
   for fName in fList:
     print 'rename File:',fName
@@ -50,16 +52,24 @@ if __name__ == '__main__':
     fileinput.close()
     fNew.close()
     os.remove(fName)
+
+    '''
+    # Use following lines to rename .new files. Must create SCIP directories manually
+    newHName = fName[2:]
+    print newHName
+    newSName = replaceH(newHName.replace('.new',''))
+    print newSName
+    '''
     newSName = replaceH(fName)
     if newSName is not None:
       try:
         os.rename(newHName,newSName)
       except OSError:
         print 'Error: renaming ',newHName,' to ',newSName
-        continue
+        break
     else:
       try:
         os.rename(newHName,fName)
       except OSError:
         print 'Error: renaming ',newHName,' to ',fName
-        continue
+        break
