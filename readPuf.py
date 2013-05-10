@@ -152,10 +152,86 @@ def csv2Db(prjName):
   dbConn.commit()
   dbCur.close()
   dbConn.close()
+
+def getHrDat(prjName,hr,rmOut=False):
+  
+  pufFile = prjName + '.puf'
+  if not os.path.exists(pufFile):
+    print 'Error: cannot file puf file ',pufFile
+
+  outFile = prjName + '_%08.2f_puff.txt'%hr
+  if os.path.exists(outFile):
+    if rmOut:
+      os.remove(outFile)
+  else:
+    rmOut = True
+    
+  #
+  if rmOut:
+    Inputs = ('%s%s %s%s %s%s%s %s%s %s%s %s'% ('go ',pufFile,tail, 'time %8.2f'%hr,tail, 'file TXT:',outFile,tail, \
+                                                  'go ',tail, 'exit', tail))
+    print Inputs
+    run_cmd.Command(env,readpuf,Inputs,tail)
+  
+  vNames = {}
+  if os.path.exists(outFile):
+    hrDat = np.loadtxt(outFile,skiprows=3)
+    oFile = open(outFile)
+    lNo = 0
+    for line in oFile:
+      if lNo == 0:
+        nVar = int(line.strip())
+      if lNo == 1:
+        varNames = line.strip().split()
+        break
+      lNo += 1
+    oFile.close()
+
+    for vNo,vName in enumerate(varNames):
+      vNames.update({vName:vNo})
+    print vNames
+
+    zLt200 = hrDat[hrDat[:,vNames['Z']]< 200.]
+    C = zLt200[:,vNames['C']]
+    print len(C),np.sum(C)
+
+    zGt200 = hrDat[hrDat[:,vNames['Z']]> 200.]
+    C = zGt200[:,vNames['C']]
+    print len(C),np.sum(C)
+
+  else:
+    print 'Error: Cannot find %s'%outFile
+    hrDat = np.array([-9999.])
+  
+  return vNames,hrDat
+
+def pltHrDat(hrDats,hrLbls,vNames,vPltNms):
+  plt.figure()
+  plt.clf()
+  plt.hold(True)
+  xIndx = vNames[vPltNms[0]]
+  yIndx = vNames[vPltNms[1]]
+  mark = ['+','s','d']
+  clrs = ['red','blue','green']
+  lHdls  = []
+  for iHr,hrDat in enumerate(hrDats):
+    lHdl, = plt.semilogx(hrDat[:,xIndx],hrDat[:,yIndx],marker=mark[iHr],linestyle='None',color=clrs[iHr])
+    lHdls.append(lHdl)
+  plt.xlabel(vPltNms[0])
+  plt.ylabel(vPltNms[1])
+  plt.ylim([0,200])
+  plt.legend(lHdls,hrLbls)
+  plt.hold(False)
+  plt.show()
+  plt.savefig('Hr%s_%s_%s_vs_%s.png'%(hrLbls[0],hrLbls[1],vPltNms[0],vPltNms[1]))
+  
+  return
   
 if __name__ == '__main__':
 
-  runDir = './'
+  #runDir = './'
+  runDir = '/home/user/bnc/scipuff/EPRI_121001/runs/aermod/martin/case4'
+  sys.argv = ['','mc_ter']
   if len(sys.argv) > 1:
     prjNames = sys.argv[1]
   else:
@@ -193,7 +269,7 @@ if __name__ == '__main__':
       readpuf  = ["%s\\scipp.exe"%binDir,"-I:%s"%iniFile,"-R:RP"]
     tail = '\r\n'
   else:
-    SCIPUFF_BASEDIR = "/home/user/bnc/scipuff/EPRI_121001/UNIX/EPRI/bin/linux/ifort_debug"
+    SCIPUFF_BASEDIR = "/home/user/bnc/scipuff/EPRI_121001/UNIX/EPRI/bin/linux/lahey_debug"
     #SCIPUFF_BASEDIR = "/usr/pc/biswanath/hpac/gitEPRI/UNIX/EPRI/bin/linux/lahey"
     readpuf = ["%s/scipp" % SCIPUFF_BASEDIR,"-I:","-R:RP"]
     env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran/x86_32:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
@@ -207,32 +283,22 @@ if __name__ == '__main__':
 
   os.chdir(runDir)
   #
+  hrs = [21,12]
+  vPltNms = ['C','Z']
+  hrDats = []
+  hrLbls = []
+  for prjName in prjNames.split(':'):
+    for ihr,hr in enumerate(hrs):
+      vNames,hrDat = getHrDat(prjName,hr)
+      if len(vNames) > 1: 
+        hrDats.append(hrDat)
+        hrLbls.append('Hr %02d'%hr)
+    pltHrDat(hrDats,hrLbls,vNames,vPltNms)
+  
+  #
+  '''
   for prjName in prjNames.split(':'):
     createCSV(env,prjName,readpuf)
     csv2Db(prjName)
-  #
-  #select time,ipuf,value from pufftable p, masstable m where p.puffId==m.puffId and m.species='NO2';
+  '''
 
-'''
-fig = plt.figure()
-fig.hold()
-plt.scatter(sigDat[:,1],sigDat[:,2],c=sigDat[:,0])
-
-xmin = min(sigDat[:,1].min(),sigDat[:,2].min())
-xmax = max(sigDat[:,1].max(),sigDat[:,2].max())
-yp5 = np.array(([0.,0.],[xmax,xmax/2.]))
-y1 = np.array(([0.,0.],[xmax,xmax]))
-y2 = np.array(([0.,0.],[xmax,2.*xmax]))
-
-plt.plot(yp5[:,0],yp5[:,1])
-plt.plot(y1[:,0],y1[:,1])
-plt.plot(y2[:,0],y2[:,1])
-plt.xlabel('Sigmax')
-plt.ylabel('Si2')
-plt.xlim([0.,xmax])
-plt.ylim([0.,xmax])
-plt.colorbar(fraction=0.08)
-plt.savefig('temp.png')
-os.remove(outFile) 
-#print sigDat
-'''
