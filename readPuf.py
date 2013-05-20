@@ -153,7 +153,7 @@ def csv2Db(prjName):
   dbCur.close()
   dbConn.close()
 
-def getHrDat(prjName,hr,rmOut=False):
+def getHrDat(readpuf,env,prjName,hr,rmOut=False,tail='\n'):
   
   pufFile = prjName + '.puf'
   if not os.path.exists(pufFile):
@@ -168,8 +168,8 @@ def getHrDat(prjName,hr,rmOut=False):
     
   #
   if rmOut:
-    Inputs = ('%s%s %s%s %s%s%s %s%s %s%s %s'% ('go ',pufFile,tail, 'time %8.2f'%hr,tail, 'file TXT:',outFile,tail, \
-                                                  'go ',tail, 'exit', tail))
+    Inputs = ('%s%s %s%s %s%s%s %s%s %s%s %s'%('go ',pufFile,tail,'time %8.2f'%hr,\
+              tail, 'file TXT:',outFile,tail,'go ',tail, 'exit', tail))
     print Inputs
     run_cmd.Command(env,readpuf,Inputs,tail)
   
@@ -205,33 +205,39 @@ def getHrDat(prjName,hr,rmOut=False):
   
   return vNames,hrDat
 
-def pltHrDat(hrDats,hrLbls,vNames,vPltNms):
-  plt.figure()
+def pltHrDat(hrDat,hrLbl,vNames,vPltNms):
+  fig = plt.figure()
   plt.clf()
   plt.hold(True)
-  xIndx = vNames[vPltNms[0]]
-  yIndx = vNames[vPltNms[1]]
   mark = ['+','s','d']
   clrs = ['red','blue','green']
-  lHdls  = []
-  for iHr,hrDat in enumerate(hrDats):
-    lHdl, = plt.semilogx(hrDat[:,xIndx],hrDat[:,yIndx],marker=mark[iHr],linestyle='None',color=clrs[iHr])
-    lHdls.append(lHdl)
+  #
+  vPltNms = ['C','Z']
+  xIndx = vNames[vPltNms[0]]
+  yIndx = vNames[vPltNms[1]]
+  ax = fig.add_subplot(2,2,1)
+  ax.semilogx(hrDat[:,xIndx],hrDat[:,yIndx],marker='o',markersize=3,linestyle='None',color='red')
   plt.xlabel(vPltNms[0])
   plt.ylabel(vPltNms[1])
   plt.ylim([0,200])
-  plt.legend(lHdls,hrLbls)
+  title = 'Hr%s_%s_vs_%s'%(hrLbl,vPltNms[0],vPltNms[1])
+  plt.title(title)
   plt.hold(False)
   plt.show()
-  plt.savefig('Hr%s_%s_%s_vs_%s.png'%(hrLbls[0],hrLbls[1],vPltNms[0],vPltNms[1]))
+  #plt.savefig('Hr%s_%s_%s_vs_%s.png'%(hrLbls[0],hrLbls[1],vPltNms[0],vPltNms[1]))
   
   return
   
 if __name__ == '__main__':
 
   #runDir = './'
-  runDir = '/home/user/bnc/scipuff/EPRI_121001/runs/aermod/martin/case4'
-  sys.argv = ['','mc_ter']
+
+  #runDir = '/home/user/bnc/scipuff/EPRI_121001/runs/aermod/martin/case4'
+  #sys.argv = ['','mc_ter']
+
+  runDir = 'D:\\Aermod\\v12345\\runs\\martin\\SCICHEM'
+  sys.argv = ['','MCR_AER_TER']
+
   if len(sys.argv) > 1:
     prjNames = sys.argv[1]
   else:
@@ -280,21 +286,15 @@ if __name__ == '__main__':
   print readpuf
 
   # Set 
-
   os.chdir(runDir)
+  
   #
-  hrs = [21,12]
-  vPltNms = ['C','Z']
-  hrDats = []
-  hrLbls = []
+  hrs = [i for i in range(12,21)]
   for prjName in prjNames.split(':'):
     for ihr,hr in enumerate(hrs):
-      vNames,hrDat = getHrDat(prjName,hr)
-      if len(vNames) > 1: 
-        hrDats.append(hrDat)
-        hrLbls.append('Hr %02d'%hr)
-    pltHrDat(hrDats,hrLbls,vNames,vPltNms)
-  
+      vNames,hrDat = getHrDat(readpuf,env,prjName,hr,tail=tail)
+      hrLbl = 'Hr %02d'%hr
+      pltHrDat(hrDat,hrLbl,vNames)
   #
   '''
   for prjName in prjNames.split(':'):
