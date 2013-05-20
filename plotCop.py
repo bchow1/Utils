@@ -113,6 +113,8 @@ def pltWPDF():
     lH.append(lh)
     lT.append(r'$S$=%2.1f'%S)
   
+  w0 = np.array([[0.,0.],[0.,1.]])
+  plt.plot(w0[:,0],w0[:,1],color='black')
   plt.xlim([-1.5,1.5])
   plt.ylim([0.,1.])
   plt.xlabel(r'$w/w_*$')
@@ -123,8 +125,9 @@ def pltWPDF():
   #plt.show()
   plt.savefig('w-pdf.png')
    
-#pltWPDF()
+pltWPDF()
 
+'''
 statFile = open("COP_stat.csv","w")
 statFile.write("Case, Arc, upa, nmse_1, mfbe, fac2\n")
 
@@ -156,4 +159,4 @@ plt.legend([hskew,hstd],['Skew Model','Standard Model'],bbox_to_anchor=(0.4,0.97
 plt.hold(False)
 #plt.show()
 plt.savefig('cop_ord.png')
-
+'''
