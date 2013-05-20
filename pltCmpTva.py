@@ -205,9 +205,9 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
 
           # Plot traverse and max location
           if "tva_990706" in prjName:
-            obsQry = 'select sourceDist,sourceBearing,SO2/1000. from dataTable'
+            obsQry = 'select sourceDist,sourceBearing-90.,SO2/1000. from dataTable'
           else:
-            obsQry = 'select sourceDist,sourceBearing,SO2 from dataTable'
+            obsQry = 'select sourceDist,sourceBearing-90.,SO2 from dataTable'
         
           trvArray = utilDb.db2Array(obsCur,obsQry)
           trvArray[:,1] = trvArray[:,1]*np.pi/180.
