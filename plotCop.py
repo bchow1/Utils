@@ -66,10 +66,10 @@ if compName == 'sm-bnc':
   
 os.chdir(runDir)
 
-params1 = {'axes.labelsize': 16, 'text.fontsize': 16, 'xtick.labelsize': 16,
-           'ytick.labelsize': 16, 'legend.pad': 0.1,  # empty space around the legend box
-           'legend.fontsize': 14, 'lines.markersize': 6, 'lines.width': 2.0,
-           'font.size': 12}
+params1 = {'axes.labelsize': 8, 'text.fontsize':8 , 'xtick.labelsize': 8,
+           'ytick.labelsize': 8, 'legend.pad': 0.1,  # empty space around the legend box
+           'legend.fontsize': 8, 'lines.markersize': 6, 'lines.width': 2.0,
+           'font.size': 10}
 
 plt.rcParams.update(params1)
 
@@ -117,17 +117,22 @@ def pltWPDF():
   plt.plot(w0[:,0],w0[:,1],color='black')
   plt.xlim([-1.5,1.5])
   plt.ylim([0.,1.])
-  plt.xlabel(r'$w/w_*$')
-  plt.ylabel(r'P($w$)')
-  plt.title(r'$w-PDF$ as function of $S$')
+  #plt.xlabel(r'$w/w_*$')
+  plt.text(-0.1,-0.06,r'$w/w_*$',fontsize=10)
+  #plt.ylabel(r'P($w$)')
+  plt.text(-1.7,0.6,r'P($w$)',rotation='vertical',fontsize=10)
+  #plt.title(r'$w-PDF$ as function of $S$',fontsize=10)
+  figCaption1 = r'Figure 1:  The Probability Density Function of $w$ as function of Skewness'
+  plt.text(-1.5,-0.1,figCaption1,fontsize=10)#transform=ax.transAxes,
   plt.legend(lH,lT)
   plt.hold(False)
   #plt.show()
-  plt.savefig('w-pdf.png')
+  plt.savefig('w-pdf.eps',dpi=300)
+  print "Done plotting w-pdf"
    
 pltWPDF()
 
-'''
+
 statFile = open("COP_stat.csv","w")
 statFile.write("Case, Arc, upa, nmse_1, mfbe, fac2\n")
 
@@ -138,25 +143,30 @@ print 'cSkewOP',cSkewOP
 fileName = os.path.join(runDir,'SCICHEM-01','cop.all')
 cStdOP   = readcOP(fileName, "Standard")
 print 'cStdOP',cStdOP
-
+fig = plt.figure()
 plt.clf()
+fig.subplots_adjust(bottom=0.2)
+ax = fig.add_subplot(111)
 plt.hold(True)
-hskew = plt.scatter(cSkewOP[:,0],cSkewOP[:,1],color='black',marker='o',s=50)
-hstd  = plt.scatter(cStdOP[:,0],cStdOP[:,1],color='black',marker='^',s=50)
+hskew = plt.scatter(cSkewOP[:,0],cSkewOP[:,1],color='black',marker='o',s=30)
+hstd  = plt.scatter(cStdOP[:,0],cStdOP[:,1],color='black',marker='^',s=30)
 
 vmin = 0.
 vmax = max(cSkewOP.max(),cStdOP.max())
 print vmin,vmax
 plt.xlim([vmin,vmax])
 plt.ylim([vmin,vmax])
-plt.title('Comparison of Maximum Concentration')
+#plt.title('Comparison of Maximum Concentration', fontsize=10)
 plt.plot([vmin,vmax],[vmin,vmax],'k-')
 #plt.plot([vmin,vmax],[vmin*0.5,vmax*0.5],'r-')
 #plt.plot([vmin,vmax],[vmin*2,vmax*2],'r-')
-plt.xlabel(r'Observed ($\mu g/m^3$)')
-plt.ylabel(r'Predicted ($\mu g/m^3$)')
-plt.legend([hskew,hstd],['Skew Model','Standard Model'],bbox_to_anchor=(0.4,0.97))
+plt.xlabel(r'Observed ($\mu g/m^3$)', fontsize=10)
+plt.ylabel(r'Predicted ($\mu g/m^3$)', fontsize = 10)
+figCaption = 'Figure 2:  Quantile-Quantile plot of concentration for Copenhagen data'
+plt.text(-0.01,-1.3,figCaption,fontsize=10)
+plt.legend([hskew,hstd],['Skew Model','Standard Model'],bbox_to_anchor=(0.25,0.97))
 plt.hold(False)
 #plt.show()
-plt.savefig('cop_ord.png')
-'''
+plt.savefig('cop_ord.eps', dpi=300)
+print 'Done plotting in ',os.getcwd()
+
