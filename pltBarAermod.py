@@ -29,12 +29,12 @@ def getSmpDb(prjName):
 def mainProg():
 
   #prjName = 'baldwin'
-  prjName = 'bowline'
-  #prjName = 'kinso2'
+  #prjName = 'bowline'
+  prjName = 'kinso2'
   #prjName = 'CLIFTY'
   
   if compName == 'sm-bnc':
-    os.chdir('d:\\SCICHEM-2012\\' + prjName)
+    os.chdir('d:\\Aermod\\v12345\\runs\\' + prjName + '\\SCICHEM')
   if compName == 'sage-d600':
     os.chdir('D:\\SCICHEM-2012\\AermodTestCases\\' + prjName + '\\SCICHEM')
 
@@ -44,12 +44,17 @@ def mainProg():
   MaxPre1 = [0,0,0,0]  # SCICHEM-2012
   MaxPre2 = [0,0,0,0]  # AERMOD
   
+  print os.getcwd()
   if prjName == 'kinso2':
     #prePrj1 = os.path.join('..','fromSS','scipuff_prj')
     prePrj2 = 'kinso2'
     obs1HrFile  = 'kinso201.obs'
     obs3HrFile  = 'kinso203.obs'
     obs24HrFile = 'kinso224.obs'
+    pre2_1HrFile = 'KS2AER01.PST.db'
+    pre2_3HrFile = 'KS2AER03.PST.db'
+    pre2_24HrFile = 'KS2AER24.PST.db'
+    
     MaxPre2 = [1489.92, 1157.56, 241.85, 4.26] 
     MaxObs[3]= 14.54
     yMax = 2500
@@ -58,6 +63,7 @@ def mainProg():
     obs1HrFile  = 'bow01.obs'
     obs3HrFile  = 'bow03.obs'
     obs24HrFile = 'bow24.obs'
+     
     
     pre2_1HrFile  = 'BOWAER01.PST.db'
     pre2_3HrFile  = 'BOWAER03.PST.db'
@@ -88,7 +94,7 @@ def mainProg():
   preConn1,preCur1 = getSmpDb(prjName)
 
   # Predicted data set 2
-  #preConn2,preCur2 = getSmpDb(prePrj2)
+  preConn2,preCur2 = getSmpDb(prePrj2)
     
   smpIds = map(int,utilDb.db2Array(preCur1,'select distinct(smpid) from samTable'))
   nSmp   = len(smpIds)
@@ -140,11 +146,8 @@ def mainProg():
   
   if statFile is not None:
       statFile.write("%s, %s"%(prjName, '1 hr'))
-  calcStats(obsMax1Hr,pre1Max1Hr,statFile)
-  '''
+  #calcStats(obsMax1Hr,pre1Max1Hr,statFile)
   
-  '''
-  '''
   pre2Max1Hr = []
   for smpId in smpIds:
     preQry2 = preQry + str(smpId)
@@ -158,7 +161,7 @@ def mainProg():
   pltName = prjName + '_1hrMax.png'
   plotBarGraph(obsMax1Hr,pre1Max1Hr,pre2Max1Hr,title,pltName)
   
-  
+  '''
   ######## 3 Hour Max ###############
   print 'obsMax3Hr = ',obsMax3Hr
 
@@ -316,7 +319,15 @@ def calcStats(obsArray, preArray,statFile=None):
   if statFile is not None:
     statFile.write(",  %8.3f, %8.3f\n"%(fac2, upa))
 
-def plotBarGraph(obsArr, preArr1, preArr2, title, pltName,yMax=None, xTicLab=None):
+def plotBarGraph(obsArr, preArr1, preArr2, title, pltName,yMax=None, xTicLab=None, title2=None):
+  
+  params1 = {'axes.labelsize': 10, 'text.fontsize': 10,'text.family':'Helvetica' ,'xtick.labelsize': 8,
+            'ytick.labelsize': 8, 'legend.pad': 0.1,  
+            'legend.fontsize': 8, 'lines.markersize': 6, 'lines.width': 2.0,
+            'font.size': 8, 'text.usetex': False}
+  
+  plt.rcParams.update(params1)
+  
   print pltName
   N = len(preArr1)
 
@@ -325,23 +336,31 @@ def plotBarGraph(obsArr, preArr1, preArr2, title, pltName,yMax=None, xTicLab=Non
 
   fig = plt.figure()
   ax = fig.add_subplot(111)
+  
   """
   kwargs = {'hatch':'|'}
-rects2 = ax.bar(theta, day7, width,fill=False, align='edge', alpha=1, **kwargs)
+  rects2 = ax.bar(theta, day7, width,fill=False, align='edge', alpha=1, **kwargs)
 
-kwargs = {'hatch':'-'}
-rects1 = ax.bar(theta, day1, width,fill=False, align='edge', alpha=1, **kwargs)
+  kwargs = {'hatch':'-'}
+  rects1 = ax.bar(theta, day1, width,fill=False, align='edge', alpha=1, **kwargs)
   """
+  
   kwargs = {'hatch':'|'}
-  rectsO  = ax.bar(ind, obsArr, width, color='w' ,hatch='\\')
-  rects1  = ax.bar(ind+width, preArr1, width, color='w', hatch='O')  
-  rects2  = ax.bar(ind+width*2, preArr2, width, color='w', hatch='*')
+  rectsO  = ax.bar(ind, obsArr, width, color='black',)
+  rects1  = ax.bar(ind+width, preArr1, width, color='.75')  
+  rects2  = ax.bar(ind+width*2, preArr2, width, color='.25')
 
   # add some
   ax.set_ylabel('Concentration(ug/m3)')
   if yMax is not None:
     ax.set_ylim([0,yMax])
-  ax.set_title(title)
+  #ax.set_title(title)
+  #ax.text(0.9,0.9,title,fontsize=10)
+  #plt.text(50, -0.5, 'Cohort Size', horizontalalignment='center', size='small')
+  plt.text(-.01,-0.07,title,transform=ax.transAxes,fontsize=10)
+  if title2 is not None:
+    plt.text(.10,-0.11,title2,transform=ax.transAxes,fontsize=10)
+
   ax.set_xticks(ind+width)
   if xTicLab is None:
     xTicLab = []
@@ -356,9 +375,9 @@ rects1 = ax.bar(theta, day1, width,fill=False, align='edge', alpha=1, **kwargs)
       xTicPos.append(2.5*width + i*4.*width)
   plt.xticks(xTicPos,xTicLab)
  
-  ax.legend( (rectsO[0],rects1[0],rects2[0]),( 'OBS','SCICHEM-2012','AERMOD'),\
+  ax.legend( (rectsO[0],rects1[0],rects2[0]),( 'OBS','SCICHEM','AERMOD'),\
               loc=1)
-             #bbox_to_anchor=(0.02,0.98),loc=2)
+  #bbox_to_anchor=(0.02,0.98),loc=2)
   lgnd  = plt.gca().get_legend()
   ltext = lgnd.get_texts()
   plt.setp(ltext,fontsize=9)
@@ -374,7 +393,8 @@ rects1 = ax.bar(theta, day1, width,fill=False, align='edge', alpha=1, **kwargs)
   autolabel(rects1[3:])
   autolabel(rects2[3:])
 
-  plt.savefig(pltName)
+  plt.savefig(pltName,dpi=300)
+  print 'Plotted %s in '%pltName,os.getcwd()
   #plt.show()
               
 # Main program
