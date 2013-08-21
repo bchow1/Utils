@@ -595,5 +595,24 @@ def rhc( valData, n=26):
     valAvg   = numpy.mean(valArray[0:n-2])
     valRhc   = valMax + (valAvg -valMax)*math.log((3*n-1)/2)
     return valRhc
-    
+
+def nmaef(data1, data2):
+  #data1 = prearray,  data2 = obsarray
+  nmaef = 0
+  if data1.mean() > data2.mean():
+    nmaef = numpy.absolute(data1-data2).sum()/data2.sum()
+  else:
+    nmaef = numpy.absolute(data2-data1).sum()/data1.sum()
+  #print nmaef
+  return nmaef
+
+
+def nmbf(data1, data2):
+  nmbf = 0
+  if data1.mean() > data2.mean():
+    nmbf = data1.sum()/data2.sum() - 1.
+  else:
+    nmbf = 1. - data2.sum()/data1.sum()
+  #print nmbf
+  return nmbf
     
