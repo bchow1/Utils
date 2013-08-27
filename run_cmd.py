@@ -7,7 +7,7 @@ def find_key(dic, val):
   """return the key of dictionary dic given the value"""
   return [k for k, v in dic.iteritems() if v == val][0]
 
-def Command(env,cmd,Inputs,tail):
+def Command(env,cmd,Inputs,tail,errOut=True,outOut=False):
   ''' Function to run any system command with Inputs read on multiple lines. 
       Must set env and tail. If errors are generated, print error and return
       IOstat = -1 otherwise return the Outputs. '''
@@ -23,22 +23,27 @@ def Command(env,cmd,Inputs,tail):
                        stderr=subprocess.PIPE)
   (Outputs, Errors) = h.communicate(input=Inputs)
   h.wait()
-  lines=Errors.split(tail)
-  #if len(lines) > 1:
-  if True:
+  
+  lines = Errors.split(tail)
+  
+  if False: # len(lines) > 1:
+    IOstat = -1
+  else:
+    IOstat = 0
+    
+  if errOut:
     print ('   ****Errors from %s *****'%cmd)
     for line in lines:
       print line
     print ('   ***************')
-    lines=Outputs.split(tail)
-    if len(lines) > 1:
+  
+  lines = Outputs.split(tail)  
+  if outOut:
       print ('   ****Output from %s *****'%cmd)
       for line in lines:
         print line
       print ('   ***************')
-    IOstat = -1
-  else:
-    IOstat = 0
+  
   return(Outputs,IOstat)
 
 def hms2hr(HHMMSS):
