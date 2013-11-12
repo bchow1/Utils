@@ -13,8 +13,8 @@ ifElif  = re.compile("!DEC\$ ELSEIF\s+.+")
 ifElse  = re.compile("!DEC\$ ELSE.*")
 ifEnd   = re.compile("!DEC\$ ENDIF.*")
 
-#fName = sys.argv[1]
-fName = 'D:\\hpac\\gitEPRI\\src\\lib\\SCIPUFFlib\\SCIPUFF\\initial.f90'
+fName = sys.argv[1]
+#fName = 'D:\\hpac\\gitEPRI\\src\\lib\\SCIPUFFlib\\SCIPUFF\\initial.f90'
 
 nlev = 0
 spaces = ''

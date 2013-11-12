@@ -14,13 +14,15 @@ import optparse
 def printUsage():
   print 'Usage: plotTri -i inFile[.ntv] [-n t ] [-l skiplines ]'
 
-os.chdir('d:\\SCIPUFF\\runs\\EPRI\\wwright')
+#os.chdir('d:\\SCIPUFF\\runs\\EPRI\\wwright')
 arg = optparse.OptionParser()
 arg.add_option("-i",action="store",type="string",dest="inFile")
 arg.add_option("-n",action="store",type="string",dest="isLatLon")
 arg.add_option("-l",action="store",type="int",dest="nSkip")
 arg.set_defaults(inFile=None,nSkip=13,isLatLon='F')
 opt,args = arg.parse_args()
+
+print 'Current directory = ',os.getcwd()
 
 # Check arguments
 if opt.inFile:

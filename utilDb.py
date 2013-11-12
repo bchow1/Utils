@@ -128,6 +128,9 @@ def getEpTime(*args):
     timeString = args[0]
   else:
     (Yr,Mo,Day,tHr) = (args[0],args[1],args[2],args[3])
+    Yr = Yr + 2000
+    if tHr == 24.: 
+      tHr = 23.
     timeString = '%04d%02d%02d'%(Yr,Mo,Day)
     if len(args) == 4:
       hms = run_cmd.hr2hms(tHr).replace(':','')
@@ -135,6 +138,8 @@ def getEpTime(*args):
     elif len(args) == 6:
       (Mn,Sec) = (args[4],args[5])
       timeString += '%02d%02d%02d'%(int(tHr),Mn,Sec)
+  print args
+  print timeString
   timeTuple = time.strptime(timeString,"%Y%m%d%H%M%S")
   epTime = time.mktime(timeTuple)
   return epTime
@@ -515,9 +520,9 @@ if __name__ == '__main__':
   #opt.prjNames = '071599_vo3_lin_intel'
   #opt.prjNames = '070699_vo3'
   #opt.samFiles = '070699_all.sam'
-  opt.prjNames = '072480'
-  opt.samFiles = '072480.sam'
-  fileinput.close()
+  #opt.prjNames = '072480'
+  #opt.samFiles = '072480.sam'
+  #fileinput.close()
   #opt.prjNames = 'bowline_ss'
   #opt.samFiles = 'bowline_ss.sam'
   #
@@ -527,7 +532,7 @@ if __name__ == '__main__':
     print 'Usage: smp2db.py [-p prjName1[:prjName2...] [-a prj1.sam[:prj2.sam...]]] [ -e senName]'
   elif opt.prjNames is not None:
     #os.chdir('d:\\EPRI\\SCICHEM-99\\runs\\070699')
-    os.chdir('D:\\Aermod\\v12345\\runs\\kinsf6\\SCICHEM')
+    #os.chdir('D:\\Aermod\\v12345\\runs\\kinsf6\\SCICHEM')
     #print os.getcwd()
     prjNames = opt.prjNames.split(':')
     if opt.samFiles:
