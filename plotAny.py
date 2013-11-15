@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 from matplotlib import colors
 import matplotlib.cm as cm
-import measure
 
 # Local libs
+import measure
 import tab2db
 import utilDb
 import utilPlot
@@ -22,10 +22,33 @@ import utilPlot
 
 compName = socket.gethostname()
 
-# Prints available color maps in matplotlib.cm 
-maps = sorted(m for m in plt.cm.datad if not m.endswith("_r"))
-# Only non-reverse colormaps
-print maps
+# Rewrite SCICHEM sam file with z set to 0
+os.chdir('d:/SCIPUFF/runs/EPRI/IncrDose')
+oFile = open('temp.sam','w')
+for line in fileinput.input('tva_980825.sam'):
+  if fileinput.isfirstline():
+    oFile.write(line)
+  else:
+    x,y,z,mc,mn = line.split()
+    oFile.write('%8s %8s %8s %8s %s\n'%(x.strip(),y.strip(),'0.0',mc.strip(),mn.strip()))
+oFile.close()
+fileinput.close()
+
+'''
+# Find minimum and maximum ustar
+os.chdir('d:/SCIPUFF/runs/Validation/LSV')
+#ustar = np.loadtxt('fort.77', delimiter=',', usecols=(0, 2), unpack=False)
+ustar = np.loadtxt('fort.77',usecols=(1,), unpack=False)
+x = [i for i in range(len(ustar))]
+#plt.scatter(x,ustar)
+#plt.show()
+print ustar.min(), ustar.max()
+'''
+
+# Prints available only non-reverse color maps in matplotlib.cm 
+#maps = sorted(m for m in plt.cm.datad if not m.endswith("_r"))
+#print maps
+
 # Only reversed colormaps
 #maps = sorted(m for m in plt.cm.datad if m.endswith("_r"))
 #print maps
