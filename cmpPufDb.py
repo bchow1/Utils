@@ -25,7 +25,7 @@ def createCSV(env,prjName,readpuf,tail):
     os.remove(outFile)
     
   #
-  Inputs = ('%s%s %s%s %s%s%s %s%s %s%s %s'% ('go ',pufFile,tail, 'time -1',tail, 'file CSV:',outFile,tail, \
+  Inputs = ('%s%s %s%s %s%s%s %s%s %s%s %s%s %s'% ('go ',pufFile,tail, 'time -1',tail, 'var C',tail,'file CSV:',outFile,tail, \
                                                 'go ',tail, 'exit', tail))
   print Inputs  
   run_cmd.Command(env,readpuf,Inputs,tail)
@@ -185,8 +185,10 @@ if __name__ == '__main__':
       readpuf  = ["%s\\scipp.exe"%bindir,"-I:%s"%iniFile,"-R:RP"]
     tail = '\r\n'
   else:
-    SCIPUFF_BASEDIR = "/home/user/bnc/hpac/fromSCIPUFF/Repository/UNIX/FULL/bin/linux/lahey"
-    scipp = ["%s/postprocess" % SCIPUFF_BASEDIR,"-I:"]
+    SCIPUFF_BASEDIR = "/home/user/bnc/scipuff/Repository/UNIX/EPRI/bin/linux/ifort"
+    runDir = "./"
+    prjName = sys.argv[1]
+    readpuf = ["%s/scipp" % SCIPUFF_BASEDIR,"-I: ","-R:RP"]
     env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran/x86_32:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
     env["LD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH"] + ':' + SCIPUFF_BASEDIR
     tail = '\n'

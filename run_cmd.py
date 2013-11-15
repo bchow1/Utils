@@ -12,15 +12,23 @@ def Command(env,cmd,Inputs,tail,errOut=True,outOut=False):
       Must set env and tail. If errors are generated, print error and return
       IOstat = -1 otherwise return the Outputs. '''
   print 'Running ',cmd,'...'
+  
+  if env is None:
+    env = os.environ.copy()
+
    
-  if sys.platform != 'win32':
-    h = subprocess.Popen(cmd, env=env, bufsize=0, shell=False,
-                       stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE, close_fds=True)
-  else:
+  if sys.platform == 'win32':
+    if tail is None:
+      tail = '\r\n'
     h = subprocess.Popen(cmd, env=env, bufsize=0, shell=False,
                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE)
+  else:
+    if tail is None:
+      tail = '\n'
+    h = subprocess.Popen(cmd, env=env, bufsize=0, shell=False,
+                       stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE, close_fds=True)
   (Outputs, Errors) = h.communicate(input=Inputs)
   h.wait()
   

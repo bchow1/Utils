@@ -9,23 +9,25 @@ if len(sys.argv) != 2 :
 
 
 ifStart = re.compile("!DEC\$ IF DEFINED\s*\(.+")
+ifStarn = re.compile("!DEC\$ IF \.NOT\.\s*DEFINED\s*\(.+")
 ifElif  = re.compile("!DEC\$ ELSEIF\s+.+")
 ifElse  = re.compile("!DEC\$ ELSE.*")
 ifEnd   = re.compile("!DEC\$ ENDIF.*")
 
-#fName = sys.argv[1]
-fName = 'D:\\hpac\\gitEPRI\\src\\lib\\SCIPUFFlib\\SCIPUFF\\initial.f90'
+fName = sys.argv[1]
+#fName = 'D:\\hpac\\gitEPRI\\src\\lib\\SCIPUFFlib\\SCIPUFF\\initial.f90'
 
 nlev = 0
 spaces = ''
 for line in fileinput.input(fName):
   matchStart = ifStart.match(line)
+  matchStarn = ifStarn.match(line)
   matchElse  = ifElse.match(line)
   matchEnd   = ifEnd.match(line)
   #print fileinput.lineno(),':',line
   lNo = '%04d:'%fileinput.lineno()
-  if matchStart or matchElse:
-    if matchStart:
+  if matchStart or matchStarn or matchElse:
+    if matchStart or matchStarn:
       nlev += 1 
       heads = spaces + '|-'
       spaces = spaces + '| '

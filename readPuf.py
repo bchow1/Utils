@@ -235,8 +235,9 @@ if __name__ == '__main__':
   #runDir = '/home/user/bnc/scipuff/EPRI_121001/runs/aermod/martin/case4'
   #sys.argv = ['','mc_ter']
 
-  runDir = 'D:\\Aermod\\v12345\\runs\\martin\\SCICHEM'
-  sys.argv = ['','MCR_AER_TER']
+  #runDir = 'D:\\Aermod\\v12345\\runs\\martin\\SCICHEM'
+  runDir = '/home/user/bnc/scipuff/Repository/export/EPRI/EPRI_130620/test'
+  sys.argv = ['','lin']
 
   if len(sys.argv) > 1:
     prjNames = sys.argv[1]
@@ -247,7 +248,7 @@ if __name__ == '__main__':
   compName = socket.gethostname()
 
   env = os.environ.copy()
-  env["SCICHEM"] = "False"
+  env["SCICHEM"] = "True"
   if sys.platform == 'win32':
     compiler = "intel"
     version = "Debug"
@@ -275,7 +276,8 @@ if __name__ == '__main__':
       readpuf  = ["%s\\scipp.exe"%binDir,"-I:%s"%iniFile,"-R:RP"]
     tail = '\r\n'
   else:
-    SCIPUFF_BASEDIR = "/home/user/bnc/scipuff/EPRI_121001/UNIX/EPRI/bin/linux/lahey_debug"
+    SCIPUFF_BASEDIR = "/home/user/bnc/scipuff/Repository/UNIX/EPRI/bin/linux/ifort"
+    #SCIPUFF_BASEDIR = "/home/user/bnc/scipuff/EPRI_121001/UNIX/EPRI/bin/linux/lahey_debug"
     #SCIPUFF_BASEDIR = "/usr/pc/biswanath/hpac/gitEPRI/UNIX/EPRI/bin/linux/lahey"
     readpuf = ["%s/scipp" % SCIPUFF_BASEDIR,"-I:","-R:RP"]
     env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran/x86_32:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
@@ -289,12 +291,13 @@ if __name__ == '__main__':
   os.chdir(runDir)
   
   #
+  vPltNms = ['C','Z']
   hrs = [i for i in range(12,21)]
   for prjName in prjNames.split(':'):
     for ihr,hr in enumerate(hrs):
       vNames,hrDat = getHrDat(readpuf,env,prjName,hr,tail=tail)
       hrLbl = 'Hr %02d'%hr
-      pltHrDat(hrDat,hrLbl,vNames)
+      pltHrDat(hrDat,hrLbl,vNames,vPltNms)
   #
   '''
   for prjName in prjNames.split(':'):

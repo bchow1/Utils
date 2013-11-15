@@ -138,6 +138,9 @@ def getEpTime(*args):
     timeString = args[0]
   else:
     (Yr,Mo,Day,tHr) = (args[0],args[1],args[2],args[3])
+    Yr = Yr + 2000
+    if tHr == 24.: 
+      tHr = 23.
     timeString = '%04d%02d%02d'%(Yr,Mo,Day)
     if len(args) == 4:
       hms = run_cmd.hr2hms(tHr).replace(':','')
@@ -145,6 +148,8 @@ def getEpTime(*args):
     elif len(args) == 6:
       (Mn,Sec) = (args[4],args[5])
       timeString += '%02d%02d%02d'%(int(tHr),Mn,Sec)
+  print args
+  print timeString
   timeTuple = time.strptime(timeString,"%Y%m%d%H%M%S")
   epTime = time.mktime(timeTuple)
   return epTime
