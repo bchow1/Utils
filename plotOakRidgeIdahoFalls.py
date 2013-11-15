@@ -9,7 +9,7 @@ font0 = FontProperties()
 font_bold = font0.copy()
 font_bold.set_weight('bold')
 
-for fNo in ['2']:
+for fNo in ['1','2']:
   if fNo == '1':
     arry = np.loadtxt('SCIPUFF-CalcsVsObsLowWind_IF.prn',skiprows=2)
   elif fNo == '2':
@@ -37,8 +37,8 @@ for fNo in ['2']:
     plt.hold(True)
     vmax = 180.  #max(ObsData.max(),SCIdata.max(),Aer1Data.max(),Aer2Data.max())
     hsci  = plt.scatter(ObsData,SCIdata,marker='s',color='black',s=50)
-    haerb = plt.scatter(ObsData,AerbData,marker='o',color='black',s=50)
-    haera = plt.scatter(ObsData,AeraData,marker='^',color='black',s=50)
+    haerb = plt.scatter(ObsData,AerbData,marker='o',color='0.5',edgecolors='black',s=50)
+    haera = plt.scatter(ObsData,AeraData,marker='^',color='white',edgecolors='black',s=50)
     plt.xlim([vmin,vmax])
     ax.set_aspect('1')
     figCapNo    = r'Figure 1.'
@@ -76,7 +76,7 @@ for fNo in ['2']:
     vmin = 0.
     vmax = 1300 
     obsMax = 130
-    haerb = plt.scatter(Obs,Aer,marker='o',color='black',s=50)
+    haerb = plt.scatter(Obs,Aer,marker='o',color='.5',edgecolors='black',s=50)
     plt.xlim([vmin,obsMax])
     #ax.set_aspect('equal')
     aspect = 10
@@ -88,13 +88,14 @@ for fNo in ['2']:
     #plt.ylabel(r'Predicted Concentrations($\mu g/m^3$)')
     ax1.set_ylabel(r'Predicted Concentrations($\mu g/m^3$)')
     ax1.yaxis.set_label_coords(-0.15, 0.5)
-    ax1.legend([haerb,],['AERMOD (Base)',],loc=(0.4,0.88)) 
+    ax1.legend([haerb,],['AERMOD (Base)',],loc=(0.4,0.88))
+    
     # Subplot 2b
     ax2 = fig.add_subplot(122)  
     plt.text(0.5,1.02,'(b)',fontsize=13,transform=ax2.transAxes,fontproperties=font_bold)
     vmax = 120. 
     hsci  = plt.scatter(ObsData,SCIdata,marker='s',color='black',s=50)
-    haera = plt.scatter(ObsData,AeraData,marker='^',color='black',s=50)
+    haera = plt.scatter(ObsData,AeraData,marker='^',color='white',edgecolors='black',s=50)
     plt.xlim([vmin,vmax])
     ax2.set_aspect('1')
     plt.legend([hsci,haera],[r'SCICHEM',r'AERMOD (Beta 4)'],bbox_to_anchor=(0.99,0.2))    
