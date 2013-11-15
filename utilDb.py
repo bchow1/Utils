@@ -34,7 +34,8 @@ class prj():
     self.EpStartTime  = 0.
     self.EpEndTime    = 0.
     self.createCaldb  = False
-
+    self.smpVersion   = None
+    
   def setDb(self,prjName,samFile=None):
     self.prjName  = prjName
     self.sciFiles = SCI.Files(self.prjName)
@@ -46,7 +47,16 @@ class prj():
     (smpConn,self.sCur,self.createCaldb) = \
       Smp2Db(self.calDb,self.sciFiles,createTable=self.createCaldb)
     return
-
+  
+  def crtHdrDb(self,prjName):
+    self.prjName  = prjName
+    self.sciFiles = SCI.Files(self.prjName)
+    self.sciFiles.samFile = None
+    self.calDb = '%s.db'%(self.sciFiles.smpFile)
+    (smpConn,self.sCur,self.createCaldb) = \
+      SmpHdr2Db(self.calDb,self.sciFiles,createTable=self.createCaldb)
+    return    
+    
 global allPrj
 
 allPrj = prj()
@@ -177,6 +187,7 @@ def createSam(nDat,vnames,sCur,smpLoc):
     for vname in vnames:
       insertStr = "INSERT into samTable VALUES"
       smpID = (i-1)/nvar+1
+      print smpID-1
       (xSmp,ySmp,zSmp) = map(float,(smpLoc[smpID-1][0:3]))
       insertStr = insertStr + "(%d, '%s', '%03d',%15.5f,%15.5f,%15.5f,'%s')"%(i,vname,smpID,xSmp,ySmp,zSmp,smpLoc[smpID-1][3])
       sCur.execute(insertStr)
@@ -227,110 +238,167 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern=None,createTable=False):
   sCur = smpConn.cursor()
   
   if createTable:
-
+        
     print 'Create smp data table = ',createTable,' in database file ',dbName
-  
-    if mySCIpattern is None:
-      mySCIpattern = mySciFiles.SCIpattern
-    (nmlNames,nmlValues) = mySCIpattern.readNml(mySciFiles.inpFile)
-    i = nmlNames.index('time1')
-    startYr  = int(nmlValues[i]['year_start'])
-    if startYr < 0: startYr = 1970
-    startMon = int(nmlValues[i]['month_start'])
-    if startMon < 0: startMon = 1
-    startDay = int(nmlValues[i]['day_start'])
-    if startDay < 0: startDay = 1
-    startHr  = float(nmlValues[i]['tstart'])
-  
-    i = nmlNames.index('time2')
-    endYr  = int(nmlValues[i]['year_end'])
-    if endYr < 0: endYr = 1970
-    endMon = int(nmlValues[i]['month_end'])
-    if endMon < 0: endMon = 1
-    endDay = int(nmlValues[i]['day_end'])
-    if endDay < 0: endDay= 1
-    endHr  = float(nmlValues[i]['tend'])
-    runHr  = float(nmlValues[i]['tend_hr'])
-  
-    # Get run mode from inp file
-    i = nmlNames.index('flags')
-    runMode = int(nmlValues[i]['run_mode'])
-    if runMode == 128:
-      isReverse = -1
-    else:
-      isReverse = 1
-    print '\n run mode = ',isReverse
     
-    allPrj.EpStartTime = getEpTime(startYr,startMon,startDay,startHr)
-    print 'Sampler start %02d/%02d/%02d %13.3f hr(%s)'%(startYr,startMon,startDay,startHr,allPrj.EpStartTime)
-    
-    if int(endHr) > 0. :
-      allPrj.EpEndTime = getEpTime(endYr,endMon,endDay,endHr)
-      print 'Sampler end from inp file %02d/%02d/%02d %13.3f hr(%s)'%(endYr,endMon,endDay,endHr,allPrj.EpEndTime)
-      if abs((allPrj.EpEndTime - allPrj.EpStartTime)/3600. - runHr) > 1.e-6:
-        print 'Warning: Runtime ',(allPrj.EpEndTime - allPrj.EpStartTime)/3600.,' does not match tend_hr = ',runHr
-        allPrj.EpEndTime = allPrj.EpStartTime + isReverse*runHr*3600.
-      elif isReverse < 0:
-        allPrj.EpEndTime = 2.*allPrj.EpStartTime - allPrj.EpEndTime
-    else:
-      allPrj.EpEndTime = allPrj.EpStartTime + isReverse*runHr*3600.
-    (endYr,endMon,endDay,endHr,endMn,endSec)  = getYMD(allPrj.EpEndTime)
-    print 'Sampler end %s/%s/%s %s:%s:%s(%15.2f)'%(endYr,endMon,endDay,endHr,endMn,endSec,allPrj.EpEndTime)
-  
-    #
-    (nmlNames,nmlValues) = mySCIpattern.readNml(mySciFiles.scnFile)
-    i = nmlNames.index('scn')
-    xrel  = float(nmlValues[i]['xrel'])
-    yrel  = float(nmlValues[i]['yrel'])
-    sourceLoc = np.array([xrel,yrel],dtype=float)
-    if allPrj.sourceLoc[0] == -999. :
-      allPrj.sourceLoc = sourceLoc
-    print 'Source location = ',allPrj.sourceLoc
-    
- 
-    # Read and save sampler locations
-    smpLoc = []
-    print 'From inp file samFile = ',mySciFiles.samFile
-    if not mySciFiles.samFile:
-      mySciFiles.samFile = raw_input('Enter name of samFile ')
-    if len(mySciFiles.samFile) > 0:
-      fileinput.close()
-      for line in fileinput.input( mySciFiles.samFile ):
-        #print fileinput.lineno(),': ',line
-        if fileinput.isfirstline():
-          matchSen = mySCIpattern.pattSmpT.match(line)
-          if not matchSen:
-            matName = line.strip().split()[0]
+    # Check if SCICHEM 3.0 sampler format with headers
+    for line in fileinput.input( mySciFiles.smpFile ):
+      if fileinput.isfirstline():
+        if 'Version' not in line:
+          break
         else:
-          if len(line) < 3: break
-          if matchSen:
-            matName = line.split()[4].split(':')[0]
-            mcNames = None
-            if 'MC' in line:              
-              mcNames = line.split()[4].split(':')
-              if len(mcNames) > 1:
-                mcNames = mcNames[1].replace('(','').replace(')','').split(',')
-                #print matName,mcNames
-              else:
-                mcNames = None
-          tmpList = line.split()[0:3]
-          tmpList.extend([matName])
-          smpLoc.append(tmpList)
-      fileinput.close()
-      #print 'sampler locations and matName from samfile = ',smpLoc[0]
-    else:
-      print 'samFile must be defined. Try again'
-      sys.exit()
-
+          mySciFiles.samFile = 'Header'
+          smpVersion = line.split(':')[1].strip()
+          matchSen   = True
+          isReverse  = 1
+          continue  
+      if mySciFiles.samFile == 'Header':
+        if fileinput.lineno() == 2:
+          lsplit = line.strip().split()
+          nSmp    = int(lsplit[1])
+          dateStr = lsplit[2]
+          timeStr = lsplit[3]
+          timeAvg = lsplit[4]
+          timeStp = lsplit[5]
+          coord   = lsplit[6]
+          cref    = lsplit[7]
+          startYr,startMon,startDay = map(float,dateStr.split('-'))
+          Hr,min,sec = map(float,timeStr[:8].split(':'))
+          startHr = Hr + min/60. + sec/3600. - float(timeStr[10:12]) - float(timeStr[13:15])/60. 
+          allPrj.EpStartTime = getEpTime(startYr,startMon,startDay,startHr)
+          print 'Sampler start %02d/%02d/%02d %13.3f hr(%s)'%(startYr,startMon,startDay,startHr,allPrj.EpStartTime)
+          smpLoc = []          
+        elif fileinput.lineno() < nSmp+3:
+          matName = line.split()[6].split(':')[0]
+          mcNames = None
+          if 'MC' in line:              
+            mcNames = line.split()[6].split(':')
+            if len(mcNames) > 1:
+              mcNames = mcNames[1].replace('(','').replace(')','').split(',')
+              print matName,mcNames
+            else:
+              mcNames = None
+            xSmp,ySmp,eSmp,zSmp = line.split()[1:5]
+            tmpList = [xSmp,ySmp,zSmp]
+            tmpList.extend([matName])
+            smpLoc.append(tmpList)
+        else:
+          break
+    fileinput.close()
+    
+    if mySciFiles.samFile != 'Header':
+                  
+      if mySCIpattern is None:
+        mySCIpattern = mySciFiles.SCIpattern
+        
+      # Get run start and end time from inp file  
+      (nmlNames,nmlValues) = mySCIpattern.readNml(mySciFiles.inpFile)
+      
+      i = nmlNames.index('time1')
+      startYr  = int(nmlValues[i]['year_start'])
+      if startYr < 0: startYr = 1970
+      startMon = int(nmlValues[i]['month_start'])
+      if startMon < 0: startMon = 1
+      startDay = int(nmlValues[i]['day_start'])
+      if startDay < 0: startDay = 1
+      startHr  = float(nmlValues[i]['tstart'])
+    
+      i = nmlNames.index('time2')
+      endYr  = int(nmlValues[i]['year_end'])
+      if endYr < 0: endYr = 1970
+      endMon = int(nmlValues[i]['month_end'])
+      if endMon < 0: endMon = 1
+      endDay = int(nmlValues[i]['day_end'])
+      if endDay < 0: endDay= 1
+      endHr  = float(nmlValues[i]['tend'])
+      runHr  = float(nmlValues[i]['tend_hr'])
+    
+      # Get run mode from inp file
+      i = nmlNames.index('flags')
+      runMode = int(nmlValues[i]['run_mode'])
+      if runMode == 128:
+        isReverse = -1
+      else:
+        isReverse = 1
+      print '\n run mode = ',isReverse
+    
+      allPrj.EpStartTime = getEpTime(startYr,startMon,startDay,startHr)
+      print 'Sampler start %02d/%02d/%02d %13.3f hr(%s)'%(startYr,startMon,startDay,startHr,allPrj.EpStartTime)
+      
+      if int(endHr) > 0. :
+        allPrj.EpEndTime = getEpTime(endYr,endMon,endDay,endHr)
+        print 'Sampler end from inp file %02d/%02d/%02d %13.3f hr(%s)'%(endYr,endMon,endDay,endHr,allPrj.EpEndTime)
+        if abs((allPrj.EpEndTime - allPrj.EpStartTime)/3600. - runHr) > 1.e-6:
+          print 'Warning: Runtime ',(allPrj.EpEndTime - allPrj.EpStartTime)/3600.,' does not match tend_hr = ',runHr
+          allPrj.EpEndTime = allPrj.EpStartTime + isReverse*runHr*3600.
+        elif isReverse < 0:
+          allPrj.EpEndTime = 2.*allPrj.EpStartTime - allPrj.EpEndTime
+      else:
+        allPrj.EpEndTime = allPrj.EpStartTime + isReverse*runHr*3600.
+      (endYr,endMon,endDay,endHr,endMn,endSec)  = getYMD(allPrj.EpEndTime)
+      print 'Sampler end %s/%s/%s %s:%s:%s(%15.2f)'%(endYr,endMon,endDay,endHr,endMn,endSec,allPrj.EpEndTime)
+    
+      #
+      (nmlNames,nmlValues) = mySCIpattern.readNml(mySciFiles.scnFile)
+      i = nmlNames.index('scn')
+      xrel  = float(nmlValues[i]['xrel'])
+      yrel  = float(nmlValues[i]['yrel'])
+      sourceLoc = np.array([xrel,yrel],dtype=float)
+      if allPrj.sourceLoc[0] == -999. :
+        allPrj.sourceLoc = sourceLoc
+      print 'Source location = ',allPrj.sourceLoc
+    
+      # Read and save sampler locations
+      smpLoc = []
+      print 'From inp file samFile = ',mySciFiles.samFile
+      if not mySciFiles.samFile:
+        mySciFiles.samFile = raw_input('Enter name of samFile ')
+      if len(mySciFiles.samFile) > 0:
+        fileinput.close()
+        for line in fileinput.input( mySciFiles.samFile ):
+          #print fileinput.lineno(),': ',line
+          if fileinput.isfirstline():
+            matchSen = mySCIpattern.pattSmpT.match(line)
+            if not matchSen:
+              matName = line.strip().split()[0]
+          else:
+            if len(line) < 3: break
+            if matchSen:
+              matName = line.split()[4].split(':')[0]
+              mcNames = None
+              if 'MC' in line:              
+                mcNames = line.split()[4].split(':')
+                if len(mcNames) > 1:
+                  mcNames = mcNames[1].replace('(','').replace(')','').split(',')
+                  #print matName,mcNames
+                else:
+                  mcNames = None
+            tmpList = line.split()[0:3]
+            tmpList.extend([matName])
+            smpLoc.append(tmpList)
+        fileinput.close()
+        #print 'sampler locations and matName from samfile = ',smpLoc[0]      
+      else:
+        print 'samFile must be defined. Try again'
+        sys.exit()
+  
     # Read sampler output data
     sCur.execute('DROP table if exists samTable')
     sCur.execute('CREATE table samTable (colNo integer, varName string, smpID string, xSmp real, ySmp real, zSmp real, matName string)')
     nt = 0
     for line in fileinput.input( mySciFiles.smpFile ):
       #print fileinput.lineno(),': ',line
+      
+      rdHdr = False
+      if mySciFiles.samFile == 'Header':
+        if fileinput.lineno() <= nSmp+2:
+          continue
+        elif fileinput.lineno() == nSmp+3:
+          rdHdr = True
+
       # HPAC or SCIPUFF sensor type
       if matchSen:
-        if fileinput.isfirstline():
+        if fileinput.isfirstline() or rdHdr:
           (nDat,vnames) = hpacSenHead(line,sCur,mcNames)
           createSam(nDat,vnames,sCur,smpLoc)
         else:
@@ -512,12 +580,12 @@ if __name__ == '__main__':
   arg.add_option("-a",action="store",type="string",dest="samFiles")
   arg.set_defaults(prjNames=None,senName=None,samFiles=None)
   opt,args = arg.parse_args()
-  #opt.prjNames = '071599_vo3_lin_intel'
+  opt.prjNames = 'tva_990715'
   #opt.prjNames = '070699_vo3'
-  #opt.samFiles = '070699_all.sam'
-  opt.prjNames = '072480'
-  opt.samFiles = '072480.sam'
-  fileinput.close()
+  #opt.samFiles = 'baldwin_nocalcbl_month.sam'
+  #opt.prjNames = 'KSF6-724_80I'
+  #opt.samFiles = 'KSF6-724_80I_zfix.sam'
+  #fileinput.close()
   #opt.prjNames = 'bowline_ss'
   #opt.samFiles = 'bowline_ss.sam'
   #
@@ -527,7 +595,9 @@ if __name__ == '__main__':
     print 'Usage: smp2db.py [-p prjName1[:prjName2...] [-a prj1.sam[:prj2.sam...]]] [ -e senName]'
   elif opt.prjNames is not None:
     #os.chdir('d:\\EPRI\\SCICHEM-99\\runs\\070699')
-    os.chdir('D:\\Aermod\\v12345\\runs\\kinsf6\\SCICHEM')
+    #os.chdir('d:\\Aermod\\v12345\\runs\\kinsf6\\SCICHEM_SELECT')
+    #os.chdir('d:\\TestSCICHEM\\Outputs\\EPA\\AERMOD\\baldwin\\NoAreaFix')
+    os.chdir('d:\\SCIPUFF\\runs\\EPRI\\Vistas_West')
     #print os.getcwd()
     prjNames = opt.prjNames.split(':')
     if opt.samFiles:
