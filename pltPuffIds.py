@@ -19,7 +19,10 @@ def iter_loadtxt(filename, delimiter=',', skiprows=0, dtype=float):
   data = data.reshape((-1, iter_loadtxt.rowlength))
   return data
 
-os.chdir('d:\\SCIPUFF\\runs\\AFTAC\\newMexico')
+if sys.platform == 'win32':
+  os.chdir('d:\\SCIPUFF\\runs\\AFTAC\\newMexico')
+else:
+  os.chdir('/home/user/bnc/scipuff/runs/AFTAC/newMexico_puffIds')
 '''
 #pData = iter_loadtxt('puffTree_3hr.csv',skiprows=1)
 #tab2db.makeDb('puffTree_3hr.csv',separator=',',hdrlno=1)
@@ -37,7 +40,6 @@ for line in csvFile:
   lno += 1
   if lno == 1:
     colNames = line.strip(' \t\n\r').replace('#','').split(',')
-    
     colTypes = []
     colDtype = {}
     for colNo,colNm in enumerate(colNames):
