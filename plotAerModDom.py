@@ -57,10 +57,14 @@ def getAerDom(AerInpFile):
         srfFile = lsplit[indx+1]
   fileinput.close()
   
+  '''
   for line in fileinput.input(srfFile):
     if fileinput.isfirstline():
       lsplit    = line.strip().split()
-      (lat,lon) = (lsplit[0],lsplit[1])
+      try:
+        (lat,lon) = (lsplit[0],lsplit[1])
+      except ValueError:
+        break
       if lat.endswith('N'):
         lat = float(lat[:-1])
       else:
@@ -73,6 +77,8 @@ def getAerDom(AerInpFile):
       break
   latlon = (lat,lon)
   fileinput.close()
+  '''
+  latlon = (-99,-99)
          
   sxy = np.array(sxy)
   rxy = np.array(rxy)
@@ -90,8 +96,8 @@ if __name__ == '__main__':
   if compName == 'sm-bnc':
     #runDir = 'D:\\Aermod\\v12345\\runs\\pgrass\\SCICHEM'
     #AerInpFile = 'PGRASS.AERMOD'
-    runDir = 'D:\\Aermod\\v12345\\runs\\kinsf6\\SCICHEM'
-    AerInpFile = 'KSF6-424.80I'
+    runDir = 'd:\\SCIPUFF\\runs\\EPRI\\NO2_PVRM\\SCICHEM'
+    AerInpFile = 'nox.2005.st.sci'
     
   os.chdir(runDir)
   

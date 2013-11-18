@@ -14,7 +14,7 @@ import optparse
 def printUsage():
   print 'Usage: plotTri -i inFile[.ntv] [-n t ] [-l skiplines ]'
 
-#os.chdir('d:\\SCIPUFF\\runs\\EPRI\\wwright')
+os.chdir('d:\\SCIPUFF\\runs\\EPRI\\IncrDose')
 arg = optparse.OptionParser()
 arg.add_option("-i",action="store",type="string",dest="inFile")
 arg.add_option("-n",action="store",type="string",dest="isLatLon")

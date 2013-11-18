@@ -263,7 +263,7 @@ if __name__ == '__main__':
 
   #ver,subName = raw_input('Version [f|m], subroutine ? ').split(' ')
   ver = 'f'
-  subName = 'StepChem'
+  subName = 'ReadAmbFields'
   if ver == 'f':
     dbFile = 'SciEpri.db'
   elif ver == 'm':
@@ -275,7 +275,7 @@ if __name__ == '__main__':
     skipDirs = ['CVS']
     #
     if dbFile == 'SciEpri.db':
-      baseDir = 'd:\\hpac\\gitEPRI\\UNIX\\EPRI\\src\\lib\\SCIPUFFlib\\SCIPUFF'
+      baseDir = 'v:\\scipuff\\Repository\\UNIX\\EPRI\\src\\lib\\SCIPUFFlib\\SCIPUFF'
     if dbFile == 'scichem_v1900.db':
       baseDir = 'd:\\EPRI\\SCICHEM_MADRID\\V1900\\src'
       skipDirs = ['pcscipuf','contri','ncar','noDll','ntinc','util','CVS']

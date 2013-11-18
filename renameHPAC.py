@@ -37,10 +37,12 @@ if __name__ == '__main__':
 
   #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\workspace\\EPRI')
   #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\src\\sys\\windows')
-  #os.chdir('D:\\SCIPUFF\\Repository\\EPA')
-  #os.chdir('/usr/pc/biswanath/SCIPUFF/Repository/EPRI_Processed')
-  os.chdir('/home/user/bnc/scipuff/Repository/export/EPRI/SCICHEM_3.0/src')
-  fList = getFnames()
+  os.chdir('D:\\SCIPUFF\\Repository\\EPRI_STE\\')
+  ans = raw_input('Renaming directories and files in %s.\n Continue? '%os.getcwd())
+  if ans == 'n' or ans == 'N':
+    sys.exit()
+  
+  dList,fList = getFnames()
   for fName in fList:
     print 'rename File:',fName
     newHName = fName+'.new'

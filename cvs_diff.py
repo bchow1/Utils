@@ -22,7 +22,11 @@ opt,args = arg.parse_args()
 # Check arguments
 if opt.fileName is None:
   print 'Error: fileName must be specified'
-  print 'Usage: cvs_diff.py -f fileName [-s startRev] [ -e endRev]'
+  if sys.platform == 'win32':
+    print 'Usage: runpy.sh ~/python/cvs_diff.py -f fileName [-s startRev] [ -e endRev]'
+  else:
+    print 'Usage: cvs_diff.py -f fileName [-s startRev] [ -e endRev]'
+  print '       startRev can be -tive'
 else:
   env = os.environ.copy()
   if sys.platform == 'win32':
@@ -46,7 +50,7 @@ else:
       env['SSH_AGENT_PID'] = SSH_AGENT_PID
       env['SSH_AUTH_SOCK'] = SSH_AUTH_SOCK
     print env['SSH_AGENT_PID']
-    print 'SSH_AUTH_SOCK:',SSH_AUTH_SOCK
+    print env['SSH_AUTH_SOCK']
   else:
     tail = '\n'
   
@@ -55,6 +59,8 @@ else:
   fName    = os.path.basename(opt.fileName)
   startRev = opt.startRev
   endRev   = opt.endRev
+  cDir = os.getcwd()
+  dName = os.path.join(cDir,dName)
   os.chdir(dName)
   
   (Outputs,IOstat) = run_cmd.Command(env,['C:/cygwin/bin/cvs.exe','status','%s'%fName],(''),tail,errOut=False)
@@ -69,15 +75,21 @@ else:
 
   if endRev is None:
     endRev = repRev
-        
+
   if startRev is None:
-    printDiff(wrkRev,repRev)
+    if wrkRev < repRev:
+      printDiff(wrkRev,repRev)
+    else:
+      printDiff(repRev,wrkRev)
     startRev = 1
-  elif startRev < 0:
-    startRev = endRev + startRev
+  else:
+    startRev = int(startRev)
+    if startRev < 0:
+      startRev = endRev + startRev
   
+  print type(endRev),type(startRev)
   for iver in range(endRev,startRev,-1):
     print '\nVersion: ',iver
-    printDiff(iver,iver-1)
+    printDiff(iver-1,iver)
 
 

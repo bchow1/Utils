@@ -40,17 +40,17 @@ def Command(env,cmd,Inputs,tail,errOut=True,outOut=False):
     IOstat = 0
     
   if errOut:
-    print ('   ****Errors from %s *****'%cmd)
+    print '   ****Errors from %s *****'%cmd
     for line in lines:
       print line
-    print ('   ***************')
+    print '   ***************'
   
   lines = Outputs.split(tail)  
   if outOut:
-      print ('   ****Output from %s *****'%cmd)
+      print '   ****Output from %s *****'%cmd
       for line in lines:
         print line
-      print ('   ***************')
+      print '   ***************'
   
   return(Outputs,IOstat)
 
