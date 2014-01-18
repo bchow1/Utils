@@ -34,15 +34,17 @@ def replaceH(string):
 
 if __name__ == '__main__':
 
-
-  #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\workspace\\EPRI')
-  #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\src\\sys\\windows')
-  os.chdir('D:\\SCIPUFF\\Repository\\EPRI_STE\\')
+  if sys.argv.__len__() > 1:
+     os.chdir(sys.argv[1])
+  else:
+    #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\workspace\\EPRI')
+    #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\src\\sys\\windows')
+    os.chdir('D:\\SCIPUFF\\Repository\\EPRI_STE\\')
   ans = raw_input('Renaming directories and files in %s.\n Continue? '%os.getcwd())
   if ans == 'n' or ans == 'N':
     sys.exit()
   
-  dList,fList = getFnames()
+  fList = getFnames()
   for fName in fList:
     print 'rename File:',fName
     newHName = fName+'.new'
