@@ -1,5 +1,7 @@
 # Original from http:#www.uwgb.edu/dutchs/UsefulData/ConvertUTMNoOZ.HTM
+import os
 import math
+import numpy as np
     
 def DDtoDMS():
     #Input= xd(long) and yd(lat)
@@ -154,7 +156,8 @@ class convertUTM(object):
 if __name__ == '__main__':
   LLtoUTM = True
   myConvertUTM = convertUTM()
-  ll2utm = raw_input('Convert from Lat Lon to UTM (y/n)? :')
+  #ll2utm = raw_input('Convert from Lat Lon to UTM (y/n)? :')
+  ll2utm = 'n'
   if len(ll2utm) > 0:
     if ll2utm.strip()[0].lower() == 'n':
       LLtoUTM = False
@@ -163,9 +166,14 @@ if __name__ == '__main__':
     myConvertUTM.GeogToUTM()
     print myConvertUTM.x,myConvertUTM.y,myConvertUTM.utmz
   else:
-    utm = raw_input('Enter x, y, zone :').strip().split()
-    myConvertUTM.x,myConvertUTM.y = map(float,utm[:2])
-    myConvertUTM.utmz = float(utm[2])
-    myConvertUTM.UTMtoGeog()
-    print myConvertUTM.latd,myConvertUTM.lngd
+    #utm = raw_input('Enter x, y, zone :').strip().split()
+    os.chdir('d:\\SCIPUFF\\runs\\EPRI\\Vistas_West')
+    #np.loadtxt(fname, dtype, comments, delimiter, converters, skiprows, usecols, unpack, ndmin)
+    utmList = np.loadtxt('tva_980825_sfc_noLL.dsi',skiprows=1,usecols=[0,1],dtype={'names':('xSmp','ySmp'),'formats':('float','float')})
+    myConvertUTM.utmz = 16
+    for utm in utmList: 
+      myConvertUTM.x,myConvertUTM.y = 441500.203004 + utm[0]*1000., 4027404.13428 + utm[1]*1000.
+      myConvertUTM.UTMtoGeog()
+      print myConvertUTM.latd,myConvertUTM.lngd
+
     
