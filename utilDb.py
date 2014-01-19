@@ -138,7 +138,10 @@ def getEpTime(*args):
     timeString = args[0]
   else:
     (Yr,Mo,Day,tHr) = (args[0],args[1],args[2],args[3])
-    Yr = Yr + 2000
+    if Yr < 100 and Yr > 69:
+      Yr += 1900
+    elif Yr < 70:
+      Yr += 2000
     if tHr == 24.: 
       tHr = 23.
     timeString = '%04d%02d%02d'%(Yr,Mo,Day)
@@ -585,7 +588,7 @@ if __name__ == '__main__':
   arg.add_option("-a",action="store",type="string",dest="samFiles")
   arg.set_defaults(prjNames=None,senName=None,samFiles=None)
   opt,args = arg.parse_args()
-  opt.prjNames = 'tva_990715'
+  opt.prjNames = 'tva_980825_mamb'
   #opt.prjNames = '070699_vo3'
   #opt.samFiles = 'baldwin_nocalcbl_month.sam'
   #opt.prjNames = 'KSF6-724_80I'
