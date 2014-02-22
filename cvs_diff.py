@@ -6,7 +6,10 @@ import optparse
 import run_cmd
 
 def printDiff(rev1,rev2):
-  cmd = ['C:/cygwin/bin/cvs.exe','diff','-r1.%d'%rev1,'-r1.%d'%rev2,'%s'%fName]
+  if sys.platform == 'win32':
+    cmd = ['C:/cygwin/bin/cvs.exe','diff','-r1.%d'%rev1,'-r1.%d'%rev2,'%s'%fName]
+  else:
+    cmd = ['cvs','diff','-r1.%d'%rev1,'-r1.%d'%rev2,'%s'%fName]
   (Outputs,IOstat) = run_cmd.Command(env,cmd,(''),tail,errOut=False,outOut=True)
   lines = Outputs.split('\n')
   for line in lines:
@@ -15,9 +18,9 @@ def printDiff(rev1,rev2):
 # Parse arguments
 arg = optparse.OptionParser()
 arg.add_option("-f",action="store",type="string",dest="fileName")
-arg.add_option("-s",action="store",type="string",dest="startRev")
-arg.add_option("-e",action="store",type="string",dest="endRev")
-arg.set_defaults(fileName=None,startRev=None,endRev=None)
+arg.add_option("-s",action="store",type="int",dest="startRev")
+arg.add_option("-e",action="store",type="int",dest="endRev")
+arg.set_defaults(fileName=None,startRev=0,endRev=999)
 opt,args = arg.parse_args()
 # Check arguments
 if opt.fileName is None:
@@ -63,18 +66,21 @@ else:
   dName = os.path.join(cDir,dName)
   os.chdir(dName)
   
-  (Outputs,IOstat) = run_cmd.Command(env,['C:/cygwin/bin/cvs.exe','status','%s'%fName],(''),tail,errOut=False)
+  if sys.platform == 'win32':
+    (Outputs,IOstat) = run_cmd.Command(env,['C:/cygwin/bin/cvs.exe','status','%s'%fName],(''),tail,errOut=False)
+  else:
+    (Outputs,IOstat) = run_cmd.Command(env,['cvs','status','%s'%fName],(''),tail,errOut=False)
   lines = Outputs.split('\n')
   for line in lines:
     if line.strip().startswith('Working revision'):
-      wrkRev = int(line.strip().split(':')[1].strip().split('.')[1])
+      wrkRev = int(line.strip().split(':')[1].strip().split('.')[1].split()[0])
       print 'wrkRev:',wrkRev
     if line.strip().startswith('Repository revision'):
-      repRev = int(line.strip().split(':')[1].split()[0].strip().split('.')[1])
+      repRev = int(line.strip().split(':')[1].strip().split('.')[1].split()[0])
       print 'repRev:',repRev
 
-  if endRev is None:
-    endRev = repRev
+  if endRev == 99 :
+    endRev = int(repRev)
 
   if startRev is None:
     if wrkRev < repRev:
@@ -87,7 +93,7 @@ else:
     if startRev < 0:
       startRev = endRev + startRev
   
-  print type(endRev),type(startRev)
+  print endRev,startRev,repRev
   for iver in range(endRev,startRev,-1):
     print '\nVersion: ',iver
     printDiff(iver-1,iver)
