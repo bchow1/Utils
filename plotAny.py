@@ -22,6 +22,54 @@ import utilPlot
 
 compName = socket.gethostname()
 
+os.chdir('d:\\downloads\\ClassIData')
+fList = os.listdir('./')
+
+plt.clf()
+plt.hold(True)
+colors  = ['red','blue','green','red','blue','green']
+markers = ['o','*','+','d','s','^']
+xMin = -110.1
+xMax = -106.2
+yMin = 35.1
+yMax = 38.2
+
+#for f in fList:
+#  if f.endswith('.dat'):
+    
+for fNo,f in enumerate(['bandwild-recep.dat','laga2-recep.dat','meve-recep.dat',\
+                         'pefo2-recep.dat','sape-recep.dat','wemi2-recep.dat']): 
+    
+  xcount = 0
+  ycount = 0
+  fi = open(f,'r')
+  fo = open(f+'.1','w')
+  for line in fi:
+    x,y,z = map(float,line.split())
+    #if x >= -110.07155 and x <= -106.18867:
+    if x >= xMin and x <= xMax:
+      xcount += 1
+      #if y >= 34.67199 and y <= 38.66082:
+      if y >= yMin and y <= yMax:
+        ycount += 1
+        xsav,ysav,zsav = (x,y,z)
+        clr = colors[fNo]
+        mkr = markers[fNo]
+        plt.scatter(x,y,color=clr,marker=mkr,s=15)
+  fi.close()
+  if ycount > 1:
+    print f,ycount,xsav,ysav,zsav
+    fo.write('%g %g %g'%(xsav,ysav,zsav))
+  fo.close()
+
+sys.exit()
+
+plt.hold(True)
+plt.xlim([xMin,xMax])
+plt.ylim([yMin,yMax])
+plt.savefig('ClassI.png')
+
+
 # Rewrite SCICHEM sam file with z set to 0
 os.chdir('d:/SCIPUFF/runs/EPRI/IncrDose')
 oFile = open('temp.sam','w')

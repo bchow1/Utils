@@ -1,10 +1,8 @@
 import os
 import sys
+import shutil
 import re
 import fileinput
-
-# local modules
-import utilDb
 
 # patterns
 hpacPatt  = re.compile('(.*)hpac(.*)',re.I)
@@ -40,11 +38,13 @@ if __name__ == '__main__':
     #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\workspace\\EPRI')
     #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\src\\sys\\windows')
     os.chdir('D:\\SCIPUFF\\Repository\\EPRI_STE\\')
+
   ans = raw_input('Renaming directories and files in %s.\n Continue? '%os.getcwd())
   if ans == 'n' or ans == 'N':
     sys.exit()
   
-  fList = getFnames()
+  errList = []
+  fList   = getFnames()
   for fName in fList:
     print 'rename File:',fName
     newHName = fName+'.new'
@@ -69,13 +69,36 @@ if __name__ == '__main__':
     newSName = replaceH(fName)
     if newSName is not None:
       try:
-        os.rename(newHName,newSName)
+        #os.rename(newHName,newSName)
+        dName = os.path.dirname(newSName)
+        if not os.path.exists(dName):          
+          print 'Creating dir ',dName
+          os.makedirs(dName)
+        shutil.move(newHName,newSName)
+        #print 'Renaming %s to %s in %s'%(newHName,newSName,os.getcwd())        
       except OSError:
-        print 'Error: renaming ',newHName,' to ',newSName
-        break
+        print 'Failed renaming %s to %s in %s'%(newHName,newSName,os.getcwd())
+        errList.append('mv -v %s %s'%(newHName.replace('\\',r'/'),newSName.replace('\\',r'/')))
+        continue        
+        #print 'Error: renaming ',newHName,' to ',newSName
+        #break
     else:
       try:
-        os.rename(newHName,fName)
+        #os.rename(newHName,fName)
+        dName = os.path.dirname(fName)
+        if not os.path.exists(dName):
+          os.makedirs(dName)
+          print 'Creating dir ',dName
+        shutil.move(newHName,fName)
+        #print 'Moving %s to %s in %s'%(newHName,fName,os.getcwd())        
       except OSError:
-        print 'Error: renaming ',newHName,' to ',fName
-        break
+        #print 'Error: renaming ',newHName,' to ',fName
+        #break
+        print 'Failed moving %s to %s in %s'%(newHName,fName,os.getcwd())
+        errList.append('mv -v %s %s'%(newHName.replace('\\','/'),fName.replace('\\','/')))
+        continue
+  if len(errList) > 0:
+    reNameF = open('reName.sh','w')
+    for line in errList:
+      reNameF.write('%s\n'%line)
+    reNameF.close()      
