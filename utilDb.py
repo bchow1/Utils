@@ -188,7 +188,7 @@ def hpacSenHead(line,sCur,mcNames=None):
   return(len(tmpHead),vnames) 
  
 # insert sam data in samTable for nDat samplers and variables in vnames
-def createSam(nDat,vnames,sCur,smpLoc):
+def createSam(nDat,vnames,sCur,smpLoc,mcUnits='ppm'):
   nvar = len(vnames)
   i = 1
   while i < nDat: 
@@ -198,6 +198,7 @@ def createSam(nDat,vnames,sCur,smpLoc):
       print smpID-1
       (xSmp,ySmp,zSmp) = map(float,(smpLoc[smpID-1][0:3]))
       insertStr = insertStr + "(%d, '%s', '%03d',%15.5f,%15.5f,%15.5f,'%s')"%(i,vname,smpID,xSmp,ySmp,zSmp,smpLoc[smpID-1][3])
+      insertStr = insertStr[:-1] + ",'%s')"%mcUnits
       sCur.execute(insertStr)
       i += 1 
   
@@ -248,6 +249,7 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern=None,createTable=False):
   if createTable:
         
     print 'Create smp data table = ',createTable,' in database file ',dbName
+    mcUnits = 'ppm'
     
     # Check if SCICHEM 3.0 sampler format with headers
     for line in fileinput.input( mySciFiles.smpFile ):
@@ -281,15 +283,14 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern=None,createTable=False):
           mcNames = None
           if 'MC' in line:              
             mcNames = line.split()[6].split(':')
+            mcUnits = line.split()[8]
             if len(mcNames) > 1:
               mcNames = mcNames[1].replace('(','').replace(')','').split(',')
-              print matName,mcNames
-            else:
-              mcNames = None
-            xSmp,ySmp,eSmp,zSmp = line.split()[1:5]
-            tmpList = [xSmp,ySmp,zSmp]
-            tmpList.extend([matName])
-            smpLoc.append(tmpList)
+              print matName,mcNames,mcUnits
+          xSmp,ySmp,eSmp,zSmp = line.split()[1:5]
+          tmpList = [xSmp,ySmp,zSmp]
+          tmpList.extend([matName])
+          smpLoc.append(tmpList)
         else:
           break
     fileinput.close()
@@ -392,7 +393,7 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern=None,createTable=False):
   
     # Read sampler output data
     sCur.execute('DROP table if exists samTable')
-    sCur.execute('CREATE table samTable (colNo integer, varName string, smpID string, xSmp real, ySmp real, zSmp real, matName string)')
+    sCur.execute('CREATE table samTable (colNo integer, varName string, smpID string, xSmp real, ySmp real, zSmp real, matName string, mcUnits string)')
     nt = 0
     for line in fileinput.input( mySciFiles.smpFile ):
       #print fileinput.lineno(),': ',line
@@ -408,7 +409,7 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern=None,createTable=False):
       if matchSen:
         if fileinput.isfirstline() or rdHdr:
           (nDat,vnames) = hpacSenHead(line,sCur,mcNames)
-          createSam(nDat,vnames,sCur,smpLoc)
+          createSam(nDat,vnames,sCur,smpLoc,mcUnits=mcUnits)
         else:
           nt = addData(line,nDat,sCur,nt,isReverse=isReverse)          
       else:
@@ -588,7 +589,7 @@ if __name__ == '__main__':
   arg.add_option("-a",action="store",type="string",dest="samFiles")
   arg.set_defaults(prjNames=None,senName=None,samFiles=None)
   opt,args = arg.parse_args()
-  opt.prjNames = 'tva_980825_mamb'
+  opt.prjNames = 'x'
   #opt.prjNames = '070699_vo3'
   #opt.samFiles = 'baldwin_nocalcbl_month.sam'
   #opt.prjNames = 'KSF6-724_80I'
