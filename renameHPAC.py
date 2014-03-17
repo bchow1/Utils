@@ -87,7 +87,7 @@ if __name__ == '__main__':
           os.makedirs(dName)
           print 'Creating dir ',dName
         shutil.move(newHName,fName)
-        print 'Moving %s to %s in %s'%(newHName,fName,os.getcwd())        
+        #print 'Moving %s to %s in %s'%(newHName,fName,os.getcwd())        
       except OSError:
         #print 'Error: renaming ',newHName,' to ',fName
         #break
