@@ -449,7 +449,8 @@ class Env:
     self.runsci = 'runsci'
     self.scipp    = 'scipp'
 
-def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,iniFile=None,compiler=None,version=None):
+def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,iniFile=None,\
+           compiler=None,version=None,platform=None):
   if myEnv is None:
     myEnv = Env()
   if iniFile is not None:
@@ -470,10 +471,18 @@ def setEnv(myEnv=None,binDir=None,SCIPUFF_BASEDIR=None,iniFile=None,compiler=Non
         version = 'release'
     #OldPath = myEnv.env["PATH"]
     bindir = SCIPUFF_BASEDIR + "\\" + compiler + "\\" + version
-    urbdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\urban"  + "\\" + version
-    nurdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\nonurban"  + "\\" + version
-    vendir = SCIPUFF_BASEDIR + "\\vendor" 
-    myEnv.env["PATH"] = "%s;%s;%s;%s" % (bindir,nurdir,urbdir,vendir)
+    binDirLwr = bindir.lower()
+    if 'workspace' in binDirLwr:
+      baseDir =  binDirLwr[:binDirLwr.index('workspace')-1]
+      if platform is None:
+        platform = 'win32'
+      vendir = baseDir + "\\bin\\vendor\\" + platform
+      myEnv.env["PATH"] = "%s;%s" % (bindir,vendir)
+    else: 
+      urbdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\urban"  + "\\" + version
+      nurdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\nonurban"  + "\\" + version
+      vendir = SCIPUFF_BASEDIR + "\\vendor" 
+      myEnv.env["PATH"] = "%s;%s;%s;%s" % (bindir,nurdir,urbdir,vendir)
     myEnv.runsci = [bindir+"\\runsci.exe",iniFile,"-M:10000"]
     myEnv.scipp = [bindir+"\\scipp.exe",iniFile]
     myEnv.tail = '\r\n'
