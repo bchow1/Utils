@@ -5,6 +5,7 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import matplotlib.tri as tri
+import matplotlib.cm as cm
 from matplotlib import colors
 import numpy as np
 import os
@@ -12,14 +13,15 @@ import sys
 import optparse
 
 def printUsage():
-  print 'Usage: plotTri -i inFile[.ntv] [-n t ] [-l skiplines ]'
+  print 'Usage: plotTri -i inFile[.ntv] [-n t ] [-l skiplines ] [-s log/linear ]'
 
-os.chdir('d:\\SCIPUFF\\runs\\EPRI\\IncrDose')
+#os.chdir('d:\\SCIPUFF\\runs\\EPRI\\IncrDose')
 arg = optparse.OptionParser()
 arg.add_option("-i",action="store",type="string",dest="inFile")
 arg.add_option("-n",action="store",type="string",dest="isLatLon")
 arg.add_option("-l",action="store",type="int",dest="nSkip")
-arg.set_defaults(inFile=None,nSkip=13,isLatLon='F')
+arg.add_option("-s",action="store",type="string",dest="isLog")
+arg.set_defaults(inFile=None,nSkip=13,isLatLon='F',isLog='linear')
 opt,args = arg.parse_args()
 
 print 'Current directory = ',os.getcwd()
@@ -39,6 +41,11 @@ if opt.isLatLon[0].lower() == 't':
   isLatLon = True
 else:
   isLatLon = False
+
+if opt.isLog.lower().strip() == 'log':
+  isLog = True
+else:
+  isLog = False
   
 if inFile.endswith('.ntv'):
   inFile = inFile.replace('.ntv','')
@@ -78,9 +85,23 @@ print 'No. of points = ',npts
 
 c = c/maxc
 
-levels = np.linspace(0.,1.,num=11)
+if isLog:
+  logBase = 10.
+  clrmin = -6
+  clrmax = 0
+  clrlev = (clrmax - clrmin + 1)
+  levels = np.logspace(clrmin,clrmax,num=clrlev,base=logBase)
+  clrmap = cm.get_cmap('jet',clrlev-1)
+  lnorm  = colors.LogNorm(levels,clip=False)
+else:
+  clrmin = 0.
+  clrmax = 1.
+  clrlev = 11 
+  levels = np.linspace(clrmin,clrmax,num=clrlev)
+  clrmap = cm.get_cmap('jet',clrlev-1)
+  lnorm  = colors.Normalize(levels,clip=False)
+
 print levels
-lnorm  = colors.Normalize(levels,clip=False)
 
 #outFile = open(inFile+'_out.dat','w',0)
 #for i in range(len(c)):
@@ -92,10 +113,10 @@ lnorm  = colors.Normalize(levels,clip=False)
 fig = plt.figure()
 plt.clf()
 plt.hold(True)
-plt.tricontourf(x,y,c, triangles=triangles, norm= lnorm, levels = levels, cmap=plt.cm.jet)
+plt.tricontourf(x,y,c, triangles=triangles, norm=lnorm, levels=levels, cmap=plt.cm.jet)
 cbar = plt.colorbar(ticks=levels,format="%4.2f")
 cbar.ax.set_yticklabels(levels)
-plt.tricontour(x,y,c, triangles=triangles, norm= lnorm, levels = levels, colors='k')
+plt.tricontour(x,y,c, triangles=triangles, norm=lnorm, levels=levels, colors='k')
 
 if isLatLon:
   plt.xlabel('Longitude')

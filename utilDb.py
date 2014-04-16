@@ -38,9 +38,7 @@ class prj():
     
   def setDb(self,prjName,samFile=None):
     self.prjName  = prjName
-    self.sciFiles = SCI.Files(self.prjName)
-    if samFile:
-      self.sciFiles.samFile = samFile
+    self.sciFiles = SCI.Files(self.prjName,samFile=samFile)
     self.calDb = '%s.db'%(self.sciFiles.smpFile)
     # Create database for calculated data 
     print 'Create smpDb ',self.calDb
@@ -589,7 +587,7 @@ if __name__ == '__main__':
   arg.add_option("-a",action="store",type="string",dest="samFiles")
   arg.set_defaults(prjNames=None,senName=None,samFiles=None)
   opt,args = arg.parse_args()
-  opt.prjNames = 'x'
+  #opt.prjNames = 'tva_990715'
   #opt.prjNames = '070699_vo3'
   #opt.samFiles = 'baldwin_nocalcbl_month.sam'
   #opt.prjNames = 'KSF6-724_80I'
@@ -606,8 +604,8 @@ if __name__ == '__main__':
     #os.chdir('d:\\EPRI\\SCICHEM-99\\runs\\070699')
     #os.chdir('d:\\Aermod\\v12345\\runs\\kinsf6\\SCICHEM_SELECT')
     #os.chdir('d:\\TestSCICHEM\\Outputs\\EPA\\AERMOD\\baldwin\\NoAreaFix')
-    os.chdir('d:\\SCIPUFF\\runs\\EPRI\\Vistas_West')
-    #print os.getcwd()
+    #os.chdir('d:\\SCIPUFF\\runs\\EPRI\\Vistas_West')
+    print os.getcwd()
     prjNames = opt.prjNames.split(':')
     if opt.samFiles:
       samFiles = opt.samFiles.split(':')
