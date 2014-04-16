@@ -525,7 +525,7 @@ def sen2Db(startTimeString,senFile,samList=None):
     samList.createSam(matList=matList)
   senConn.close()
 
-def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.):
+def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.,tblName=None):
 
   senOut = open(senFile,"w",0)
   #
@@ -533,16 +533,29 @@ def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.):
   obsConn.row_factory = sqlite3.Row
   obsCur = obsConn.cursor()
 
-  obsCur.execute('SELECT min(xStn),max(xStn),min(yStn),max(yStn) from obsTable')
+  if tblName is None:
+    tblName = ''
+    selectMnMx = 'SELECT min(xStn),max(xStn),min(yStn),max(yStn) from obsTable'
+    selectDtxy = 'SELECT distinct xstn,ystn from obsTable where conc >= 0. order by xstn,ystn'
+    selectThr  = 'SELECT distinct tHr from obsTable where conc >= 0.'
+    selectConc = 'SELECT xStn,yStn,stnId,tHr,conc from obsTable where conc >= 0. order by tHr,xStn,yStn'
+  else:
+    selectMnMx = 'SELECT min(xSmp),max(xSmp),min(ySmp),max(ySmp) from samTable'  
+    selectDtxy = 'SELECT distinct xSmp,ySmp from samTable a, smpTable p where a.colno=p.colno \
+                  and value >= 0. and varName = "C" order by xSmp,ySmp'
+    selectThr  = 'SELECT distinct time from samTable a, smpTable p where a.colno=p.colno \
+                  and value >= 0. and varName = "C"'
+    selectConc = 'SELECT xSmp,ySmp,smpID,time,value from samTable a, smpTable p where a.colno=p.colno \
+                  and value >= 0. and varName = "C" order by time,xSmp,ySmp'  
+
+  obsCur.execute(selectMnMx)
   print 'db2sen:minmax x,y = ',obsCur.fetchall()[0]
 
-  obsXy = db2Array(obsCur,'SELECT distinct xstn,ystn from obsTable where \
-                             conc >= 0. order by xstn,ystn')
-  obsThr = db2Array(obsCur,'SELECT distinct tHr from obsTable where conc >= 0.')
+  obsXy  = db2Array(obsCur,selectDtxy)
+  obsThr = db2Array(obsCur,selectThr)
   obsThr = obsThr.tolist()
 
-  obsConc = db2Array(obsCur,'SELECT xStn,yStn,stnId,tHr,conc from obsTable where \
-                             conc >= 0. order by tHr,xStn,yStn')
+  obsConc = db2Array(obsCur,selectConc)
 
   (startYr,startMo,startDay,startHr,startMin,startSec) = str2ymdhms(startTimeString)
   startEpTime = getEpTime(startYr,startMo,startDay,startHr,startMin,startSec)
@@ -574,8 +587,8 @@ def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.):
     
     senOut.write('mil.dtra.hpac.models.sensor.CAcomp.data.Type2Sensor\n')
     senOut.write('%s%03d.%03d;%8.4f;%8.4f;%8.4f;%s%s%s%s%s%s;%s;%13.5e;%13.5e;%8.4f;%s;%13.5f\n'%(\
-           mType[0],cO[2],hrId,cO[0],cO[1],10.,Yr,Mo,DD,HH,mm,ss,mType, 1.e-19, cO[4], 1.,'NS',10800))
-    #T011.024;      2.65000;     51.08330;     10.00000;19941024113000; T;  1.25700E-19;  1.00000E-02;     10.00000; NS;  10800.00000
+           mType[0],cO[2],hrId,cO[0],cO[1],10.,Yr,Mo,DD,HH,mm,ss,mType, 1.e-19, cO[4], 1.,'NS',float(obsThr[0][0])))
+    #T011.024; 2.65000; 51.08330; 10.00000; 19941024113000; T; 1.25700E-19; 1.00000E-02; 10.00000; NS; 10800.00000
   senOut.close()
   obsConn.close()
 
