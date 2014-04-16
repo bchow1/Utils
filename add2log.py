@@ -3,6 +3,7 @@ import os
 import sys
 import optparse
 import fileinput
+import shutil
 
 # This program adds sampler locations in samfile to the logfile
 def readSam(samFile):
@@ -19,33 +20,44 @@ def readSam(samFile):
 def wrtLog(logName,xySam):
   
   logFile = open(logName,"r")
-  tmpFile = open(logName + '.tmp',"w")
   isAdded = False
-  
   for line in logFile:
-    # look for nzBL
-    #if ($line =~ /^Computational domain/i && $Added eq "NOTSET"  ){
-    tmpFile.write('%s'%line)
-    if 'nzBL' in line and not isAdded:
-      print "Adding after line: ",line
-      # Add the additional lines 
-      tmpFile.write("**************\n")
-      tmpFile.write("***Samplers***\n")
-      tmpFile.write("**************\n")   
-      tmpFile.write("&wxsloc\n")
-      tmpFile.write('wx = "SFC"\n')
-      tmpFile.write('nwx = %d\n'%len(xySam))
-      for nSam,xy in enumerate(xySam):
-        tmpFile.write('xwx(%d)  = %12.4f, ywx(%d) = %12.4f\n'%(nSam+1,xy[0],nSam+1,xy[1]))
-      tmpFile.write('/\n')
+    if '*Samplers*' in line:
       isAdded = True
-  tmpFile.close()
-  logFile.close()
+      break
+  logFile.seek(0)
+  
+  if not isAdded:
+    
+    tmpFile = open(logName + '.tmp',"w")
+    
+    for line in logFile:
+      # look for nzBL
+      #if ($line =~ /^Computational domain/i && $Added eq "NOTSET"  ){
+      tmpFile.write('%s'%line)
+      if 'nzBL' in line and not isAdded:
+        print "Adding after line: ",line
+        # Add the additional lines 
+        tmpFile.write("**************\n")
+        tmpFile.write("***Samplers***\n")
+        tmpFile.write("**************\n")   
+        tmpFile.write("&wxsloc\n")
+        tmpFile.write('wx = "SFC"\n')
+        tmpFile.write('nwx = %d\n'%len(xySam))
+        for nSam,xy in enumerate(xySam):
+          tmpFile.write('xwx(%d)  = %12.4f, ywx(%d) = %12.4f\n'%(nSam+1,xy[0],nSam+1,xy[1]))
+        tmpFile.write('/\n')
+        isAdded = True
+        
+    tmpFile.close()
+    logFile.close()
+    
+    shutil.move(logName + '.tmp', logName)
   
 # Call main program
 if __name__ == '__main__':
   #os.chdir('D:\\Aermod\\v12345\\runs\\kinsf6\\SCICHEM_Select')
-  os.chdir('D:\\SCIPUFF\\runs\\kincaid\\072480')
+  os.chdir('d:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\simplei')
   # Parse arguments
   arg = optparse.OptionParser()
   arg.add_option("-l",action="store",type="string",dest="logFile")
