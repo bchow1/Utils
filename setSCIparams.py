@@ -222,7 +222,7 @@ class RelList(object):
         
 class Files(object):
 
-  def __init__(self,prjName,mySCIpattern=None):
+  def __init__(self,prjName,mySCIpattern=None,samFile=None):
 
     self.prjName = prjName
     if mySCIpattern is None:
@@ -243,14 +243,17 @@ class Files(object):
     self.prjFile = self.prjName + '.prj'
     self.logFile = self.prjName + '.log'
     self.pufFile = self.prjName + '.puf'
+    self.smpFile = self.prjName + '.smp'
  
-    # Read sam file from inpfile
-    #print 'call getSamFile'
-    self.getSamFile()
+    if samFile is None:
+      # Read sam file from inpfile
+      #print 'call getSamFile'
+      self.getSamFile()
+    else:
+      self.samFile = samFile
 
   def getSamFile(self):
     self.samFile = None
-    self.smpFile = self.prjName + '.smp'
     if not os.path.exists(self.inpFile):
       print 'Error: cannot open inp file ',self.inpFile
       return
@@ -271,7 +274,7 @@ class Files(object):
             print 'Checking for file ',self.samFile
             if not os.path.exists(self.samFile):
               print 'Error: cannot find sam file ',self.samFile
-              return
+              break
         else:
           self.samFile = None
         break
