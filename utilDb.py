@@ -271,7 +271,8 @@ def Smp2Db(dbName,mySciFiles,mySCIpattern=None,createTable=False):
           timeAvg = lsplit[4]
           timeStp = lsplit[5]
           coord   = lsplit[6]
-          cref    = lsplit[7]
+          if coord.upper() != 'LATLON':
+            cref    = lsplit[7]
           startYr,startMon,startDay = map(float,dateStr.split('-'))
           Hr,min,sec = map(float,timeStr[:8].split(':'))
           startHr = Hr + min/60. + sec/3600. - float(timeStr[10:12]) - float(timeStr[13:15])/60. 
@@ -542,11 +543,11 @@ def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.,tblName=None):
   else:
     selectMnMx = 'SELECT min(xSmp),max(xSmp),min(ySmp),max(ySmp) from samTable'  
     selectDtxy = 'SELECT distinct xSmp,ySmp from samTable a, smpTable p where a.colno=p.colno \
-                  and value >= 0. and varName = "C" order by xSmp,ySmp'
+                  and value >= 0. and varName = "C" order by smpId'
     selectThr  = 'SELECT distinct time from samTable a, smpTable p where a.colno=p.colno \
-                  and value >= 0. and varName = "C"'
+                  and value >= 0. and varName = "C" order by time'
     selectConc = 'SELECT xSmp,ySmp,smpID,time,value from samTable a, smpTable p where a.colno=p.colno \
-                  and value >= 0. and varName = "C" order by time,xSmp,ySmp'  
+                  and value >= 0. and varName = "C" order by time,smpId'  
 
   obsCur.execute(selectMnMx)
   print 'db2sen:minmax x,y = ',obsCur.fetchall()[0]
@@ -576,7 +577,7 @@ def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.,tblName=None):
       cO[4] = cO[4]/cFactor       # convert to kg/m3
       mType = 'T'
     else:
-      cO[4] = 0. #cCut
+      cO[4] = 1.e-19 #cCut
       mType = 'NT'
 
     try:
@@ -587,7 +588,7 @@ def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.,tblName=None):
     
     senOut.write('mil.dtra.hpac.models.sensor.CAcomp.data.Type2Sensor\n')
     senOut.write('%s%03d.%03d;%8.4f;%8.4f;%8.4f;%s%s%s%s%s%s;%s;%13.5e;%13.5e;%8.4f;%s;%13.5f\n'%(\
-           mType[0],cO[2],hrId,cO[0],cO[1],10.,Yr,Mo,DD,HH,mm,ss,mType, 1.e-19, cO[4], 1.,'NS',float(obsThr[0][0])))
+           mType[0],cO[2],hrId,cO[0],cO[1],10.,Yr,Mo,DD,HH,mm,ss,mType, cCut, cO[4], 1.,'NS',float(obsThr[0][0])*3600.))
     #T011.024; 2.65000; 51.08330; 10.00000; 19941024113000; T; 1.25700E-19; 1.00000E-02; 10.00000; NS; 10800.00000
   senOut.close()
   obsConn.close()
@@ -602,7 +603,8 @@ if __name__ == '__main__':
   arg.add_option("-a",action="store",type="string",dest="samFiles")
   arg.set_defaults(prjNames=None,senName=None,samFiles=None)
   opt,args = arg.parse_args()
-  opt.prjNames = 'x'
+  opt.prjNames = 'rev_simplei'
+  #opt.prjNames = 'dolethills'
   #opt.prjNames = '070699_vo3'
   #opt.samFiles = 'baldwin_nocalcbl_month.sam'
   #opt.prjNames = 'KSF6-724_80I'
@@ -616,11 +618,13 @@ if __name__ == '__main__':
     print 'Error: prjNames or senName must be specified'
     print 'Usage: smp2db.py [-p prjName1[:prjName2...] [-a prj1.sam[:prj2.sam...]]] [ -e senName]'
   elif opt.prjNames is not None:
+    os.chdir('d:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\simplei')
     #os.chdir('d:\\EPRI\\SCICHEM-99\\runs\\070699')
     #os.chdir('d:\\Aermod\\v12345\\runs\\kinsf6\\SCICHEM_SELECT')
     #os.chdir('d:\\TestSCICHEM\\Outputs\\EPA\\AERMOD\\baldwin\\NoAreaFix')
-    os.chdir('d:\\SCIPUFF\\runs\\EPRI\\Vistas_West')
-    #print os.getcwd()
+    #os.chdir('d:\\SCIPUFF\\runs\\EPRI\\Vistas_West')
+    #os.chdir('d:\\SCIPUFF\\runs\\EPRI\\DoletHills')
+    print os.getcwd()
     prjNames = opt.prjNames.split(':')
     if opt.samFiles:
       samFiles = opt.samFiles.split(':')
