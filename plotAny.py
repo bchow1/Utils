@@ -34,6 +34,17 @@ xMax = -106.2
 yMin = 35.1
 yMax = 38.2
 
+# Testing list to named numpy array
+a = range(100)
+A = np.array(zip(*[iter(a)]*2),dtype=[('C1','int32'),('C2','int64')])
+print(A['C1'])
+print(A['C2'])
+
+#x = np.array([(1,2),(3,4)],dtype=[('a','<i4'),('b','<i4')])
+srcxy = np.array(tuple([0.,0.]),dtype=[('x','float'),('y','float')])
+print srcxy
+sys.exit()
+
 #for f in fList:
 #  if f.endswith('.dat'):
     
@@ -53,13 +64,16 @@ for fNo,f in enumerate(['bandwild-recep.dat','laga2-recep.dat','meve-recep.dat',
       if y >= yMin and y <= yMax:
         ycount += 1
         xsav,ysav,zsav = (x,y,z)
+        lsave = line
         clr = colors[fNo]
         mkr = markers[fNo]
         plt.scatter(x,y,color=clr,marker=mkr,s=15)
   fi.close()
   if ycount > 1:
     print f,ycount,xsav,ysav,zsav
-    fo.write('%g %g %g'%(xsav,ysav,zsav))
+    fo.write('%s'%lsave)
+    #fo.write('%g %g %g'%(xsav,ysav,zsav))
+    
   fo.close()
 
 sys.exit()

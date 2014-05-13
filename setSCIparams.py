@@ -526,7 +526,7 @@ def readKeyNml(nmlFile):
     print 'Error: Cannot find namelist value file'
   return KeyNml
 
-def runSci(prjName,myEnv=None,binDir=None,templateName='',inpList=None,KeyNml=None,nFlt=30,rType='INST',createPrj=''):
+def runSci(prjName,myEnv=None,binDir=None,templateName='',inpList=None,KeyNml=None,nFlt=30,rType='INST',createPrj='',outOut=False):
 
   mySCIpattern = Pattern()
 
@@ -536,7 +536,7 @@ def runSci(prjName,myEnv=None,binDir=None,templateName='',inpList=None,KeyNml=No
   if binDir is not None or myEnv.tail is None:
     setEnv(myEnv,binDir=binDir)
 
-  tail = myEnv.tail
+  tail = '\r\n' #myEnv.tail
 
   print '\nPATH = ',myEnv.env["PATH"],'\n'
 
@@ -600,15 +600,18 @@ def runSci(prjName,myEnv=None,binDir=None,templateName='',inpList=None,KeyNml=No
     else:
       isCont = 'n' + tail 
     # Setup Inputs for reverse run
-    Inputs = ('%s%s%d%s'% (prjName+tail,isCont,nFlt,tail))
+    #Inputs = ('%s%s%d%s'% (prjName+tail,isCont,nFlt,tail))
+    Inputs = os.linesep.join(["prjName","n",str(nFlt),""]).encode("utf-8")
   else:
     # Setup Inputs for forward run
     Inputs = ('%s%s'% (prjName+tail,tail))
 
   # Run runsci
-  print 'Inputs = ',Inputs
   
-  run_cmd.Command(myEnv.env,myEnv.runsci,Inputs,tail)
+  print 'Inputs = ',Inputs
+  #myEnv.runsci.append(' >run.log')
+  #myEnv.runsci = ['c:\\cygwin\\bin\\echo','testing']
+  run_cmd.Command(myEnv.env,myEnv.runsci,Inputs,tail,outOut=outOut)
 
 # Main Program
 

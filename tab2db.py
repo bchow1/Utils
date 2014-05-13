@@ -92,6 +92,11 @@ def initDb(fName,colNames,colTypes):
   return (dbCur,dbConn)
 
 def insertDb(dbCur,nCol,colTypes,colValues):
+  nv = len(colValues)
+  nt = len(colTypes)
+  if nv < nt :
+    for i in range(nv+1,nt+1):
+      colValues.extend(['-9999'])
   insertStr = 'INSERT into dataTable VALUES('
   for i in range(nCol):
     if colTypes[i] == 'string':
@@ -209,6 +214,7 @@ def makeDb(fName,separator=None,comment=None,hdrlno=0,colname=None,coltype=None,
         nCol = checkNcol(colNames,colValues=colValues,lWarn=lWarn)
         lWarn = False        
       colValues = colValues[:nCol]
+      print colValues
       # set col types from colValues if not set earlier
       if colTypes is None:
         colTypes = setColTypes(colValues)
@@ -231,6 +237,10 @@ if __name__ == '__main__':
   # local modules
   import utilDb
   
+  os.chdir("d:\\SCIPUFF\\runs\\EPRI\\DoletHills")
+  #['date','time','lat','lon','alt_ft','o3','no','no2','noy','SO2','co']
+  sys.argv = ["","-s,","-t","ssrrrrrrrrr","aztec_20050908_some.csv"]
+  
   '''
   os.chdir("D:\\SCIPUFF\\EPRI\\runs\\tva\\tva_990715")
   sys.argv = ["","-s,","negO3_puff.dat"]
@@ -245,6 +255,7 @@ if __name__ == '__main__':
     sys.argv.extend([fName])
   '''
   
+  '''
   # Args for KINSF6 files
   os.chdir("D:\\Aermod\\v12345\\runs\\KINSF6\\Obs_Conc")
   #args    = ["","-m","*","-n","YY,MM,DD,HH,ARC,RECNAM,RECX,RECY,RECZ     DIST  DIR     Q     CHI      CHI/Q","-t","rrrrrrsss","-c","1-9"]
@@ -253,6 +264,7 @@ if __name__ == '__main__':
   args    = ["","-m","*","-d","3"]
   sys.argv = args
   sys.argv.extend([obsName])
+  '''
      
   if sys.argv.__len__() < 2:
     print 'Usage: tab2db.py [-s separator] [-m comment ] [-d headerlineno ] [-n colname] [-t coltype] [-c collist] table1.txt [table2.txt ... ]'

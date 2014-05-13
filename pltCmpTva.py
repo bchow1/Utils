@@ -37,13 +37,11 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
     distance = [16, 62, 106]
     times    = [11.5, 12.25, 16.5]#[11.75, 12.5, 17]#
     zSmp     = [411, 727, 438]#[445, 589, 587]#
-    #times2    = [12.0, 12.5, 16.5]
     zSmp2     = [415, 584, 582]
 
   if "tva_980825" in prjName:
     distance = [20, 55, 110]
     times    = [11.5, 12.75, 14.75]#
-    times2    = [11.25, 13.0, 14.5]
     #zSmp     = [506, 488, 465]
     zSmp    = [520, 600, 620]
     #plot_1_6_9 [743, 778, 774]#
@@ -53,14 +51,12 @@ def mainProg(prjName=None,obsPfx=None,preCur1=None,preCur2=None,prePfx2=None):
     distance = [18, 27, 86, 59, 93, 141]
     times    = [10.25, 10.75, 12.25, 12.5, 12.75, 13.25]
     zSmp     = [454, 480, 659, 868, 819, 644]   
-    times2   = [10.25, 10.5, 12, 12.5, 12.75, 13]
     zSmp2    = [465, 500, 659, 910, 819, 662]   
 
   if "tva_990706" in prjName:
     distance = [11, 31, 65]#, 89]
     times    = [12.5, 13.25, 16.0]#[12.0, 13.0, 16.0, 16.75]
     zSmp     = [515, 509, 448]#[505, 491, 448, 533]
-    #times2    = [12.0, 13.5,16.25]#, 16.75]
     zSmp2     = [501, 505, 500]#, 533]
   
   statFile = open(prjName+"_stat.csv","w")
