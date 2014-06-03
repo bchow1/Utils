@@ -13,6 +13,7 @@ import time
 # modules from $HOME/python 
 import run_cmd
 import setSCIparams as SCI
+import probSrc
 
 class dbClass(object):
 
@@ -95,8 +96,8 @@ def createSmpDb(prjNames,samFiles=None):
   print 'epTMin = ',epTimeMin,', epTMax = ',epTimeMax
   allPrj.EpStartTime = epTimeMin - timeMin
   allPrj.EpEndTime   = epTimeMax
-  print '\nSampler start %s(%d)'%(time.ctime(allPrj.EpStartTime),allPrj.EpStartTime)
-  print 'Sampler end %s(%d)'%(time.ctime(allPrj.EpEndTime),allPrj.EpEndTime)
+  print '\nSampler minimum time %s(%d)'%(time.ctime(allPrj.EpStartTime),allPrj.EpStartTime)
+  print 'Sampler maximum time %s(%d)'%(time.ctime(allPrj.EpEndTime),allPrj.EpEndTime)
 
   return
 
@@ -526,7 +527,7 @@ def sen2Db(startTimeString,senFile,samList=None):
     samList.createSam(matList=matList)
   senConn.close()
 
-def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.,tblName=None):
+def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.,tblName=None,pCut=0.01):
 
   senOut = open(senFile,"w",0)
   #
@@ -535,19 +536,27 @@ def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.,tblName=None):
   obsCur = obsConn.cursor()
 
   if tblName is None:
-    tblName = ''
-    selectMnMx = 'SELECT min(xStn),max(xStn),min(yStn),max(yStn) from obsTable'
-    selectDtxy = 'SELECT distinct xstn,ystn from obsTable where conc >= 0. order by xstn,ystn'
-    selectThr  = 'SELECT distinct tHr from obsTable where conc >= 0.'
-    selectConc = 'SELECT xStn,yStn,stnId,tHr,conc from obsTable where conc >= 0. order by tHr,xStn,yStn'
+    fromObs = False
   else:
+    fromObs = True
+
+  if fromObs:
     selectMnMx = 'SELECT min(xSmp),max(xSmp),min(ySmp),max(ySmp) from samTable'  
     selectDtxy = 'SELECT distinct xSmp,ySmp from samTable a, smpTable p where a.colno=p.colno \
                   and value >= 0. and varName = "C" order by smpId'
     selectThr  = 'SELECT distinct time from samTable a, smpTable p where a.colno=p.colno \
                   and value >= 0. and varName = "C" order by time'
-    selectConc = 'SELECT xSmp,ySmp,smpID,time,value from samTable a, smpTable p where a.colno=p.colno \
-                  and value >= 0. and varName = "C" order by time,smpId'  
+    #selectConc = 'SELECT xSmp,ySmp,smpID,time,value from samTable a, smpTable p where a.colno=p.colno \
+    #              and value >= 0. and varName = "C" order by time,smpId'                  
+    selectConc = 'SELECT xSmp,ySmp,smpID,p.time,p.value,q.value from samtable a, smptable p, smpTable q \
+                  where a.colno=p.colno and p.value > 0. and a.varname="C" and q.colNo = p.colNo + 1 \
+                  and q.time=p.time order by p.time,smpId'
+  else:
+    tblName = ''
+    selectMnMx = 'SELECT min(xStn),max(xStn),min(yStn),max(yStn) from obsTable'
+    selectDtxy = 'SELECT distinct xstn,ystn from obsTable where conc >= 0. order by xstn,ystn'
+    selectThr  = 'SELECT distinct tHr from obsTable where conc >= 0.'
+    selectConc = 'SELECT xStn,yStn,stnId,tHr,conc from obsTable where conc >= 0. order by tHr,xStn,yStn'
 
   obsCur.execute(selectMnMx)
   print 'db2sen:minmax x,y = ',obsCur.fetchall()[0]
@@ -574,8 +583,13 @@ def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.,tblName=None):
     (Yr,Mo,DD,HH,mm,ss) = getYMD(epTime)
     # 
     if cO[4] > cCut:
+      prb0 = probSrc.prbGtC(cO[4],np.sqrt(cO[5]),0.)
+      print 'Mean, var, prb0 = ', cO[4],np.sqrt(cO[5]),prb0,prb0 < pCut
+      if prb0 < pCut:
+        continue 
       cO[4] = cO[4]/cFactor       # convert to kg/m3
       mType = 'T'
+       
     else:
       cO[4] = 1.e-19 #cCut
       mType = 'NT'
@@ -603,7 +617,7 @@ if __name__ == '__main__':
   arg.add_option("-a",action="store",type="string",dest="samFiles")
   arg.set_defaults(prjNames=None,senName=None,samFiles=None)
   opt,args = arg.parse_args()
-  opt.prjNames = 'rev_simplei'
+  opt.prjNames = 'Rev_simplei'
   #opt.prjNames = 'dolethills'
   #opt.prjNames = '070699_vo3'
   #opt.samFiles = 'baldwin_nocalcbl_month.sam'
@@ -618,7 +632,7 @@ if __name__ == '__main__':
     print 'Error: prjNames or senName must be specified'
     print 'Usage: smp2db.py [-p prjName1[:prjName2...] [-a prj1.sam[:prj2.sam...]]] [ -e senName]'
   elif opt.prjNames is not None:
-    os.chdir('d:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\simplei')
+    os.chdir('d:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\simple1')
     #os.chdir('d:\\EPRI\\SCICHEM-99\\runs\\070699')
     #os.chdir('d:\\Aermod\\v12345\\runs\\kinsf6\\SCICHEM_SELECT')
     #os.chdir('d:\\TestSCICHEM\\Outputs\\EPA\\AERMOD\\baldwin\\NoAreaFix')

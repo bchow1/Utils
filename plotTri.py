@@ -14,7 +14,7 @@ import optparse
 def printUsage():
   print 'Usage: plotTri -i inFile[.ntv] [-n t ] [-l skiplines ]'
 
-os.chdir('d:\\SCIPUFF\\runs\\EPRI\\IncrDose')
+os.chdir('d:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\simplei')
 arg = optparse.OptionParser()
 arg.add_option("-i",action="store",type="string",dest="inFile")
 arg.add_option("-n",action="store",type="string",dest="isLatLon")
@@ -78,7 +78,7 @@ print 'No. of points = ',npts
 
 c = c/maxc
 
-levels = np.linspace(0.,1.,num=11)
+levels = np.linspace(0.01,1.01,num=6)
 print levels
 lnorm  = colors.Normalize(levels,clip=False)
 
@@ -92,9 +92,12 @@ lnorm  = colors.Normalize(levels,clip=False)
 fig = plt.figure()
 plt.clf()
 plt.hold(True)
-plt.tricontourf(x,y,c, triangles=triangles, norm= lnorm, levels = levels, cmap=plt.cm.jet)
-cbar = plt.colorbar(ticks=levels,format="%4.2f")
-cbar.ax.set_yticklabels(levels)
+
+cax = plt.tricontourf(x,y,c, triangles=triangles, norm= lnorm, levels = levels, cmap=plt.cm.jet, vmin=0.01,extend='both')
+cax.cmap.set_under('white')
+cax.set_clim(0.01,1.01)
+cbar = plt.colorbar(ticks=levels,format="%3.1f")
+cbar.ax.set_yticklabels(levels-0.01)
 plt.tricontour(x,y,c, triangles=triangles, norm= lnorm, levels = levels, colors='k')
 
 if isLatLon:
