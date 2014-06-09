@@ -536,11 +536,11 @@ def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.,tblName=None,pCut=0.
   obsCur = obsConn.cursor()
 
   if tblName is None:
-    fromObs = False
+    fromSmp = False
   else:
-    fromObs = True
+    fromSmp = True
 
-  if fromObs:
+  if fromSmp:
     selectMnMx = 'SELECT min(xSmp),max(xSmp),min(ySmp),max(ySmp) from samTable'  
     selectDtxy = 'SELECT distinct xSmp,ySmp from samTable a, smpTable p where a.colno=p.colno \
                   and value >= 0. and varName = "C" order by smpId'
@@ -583,13 +583,12 @@ def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.,tblName=None,pCut=0.
     (Yr,Mo,DD,HH,mm,ss) = getYMD(epTime)
     # 
     if cO[4] > cCut:
-      prb0 = probSrc.prbGtC(cO[4],np.sqrt(cO[5]),0.)
-      print 'Mean, var, prb0 = ', cO[4],np.sqrt(cO[5]),prb0,prb0 < pCut
-      if prb0 < pCut:
-        continue 
+      if fromSmp:
+        prb0 = probSrc.prbGtC(cO[4],np.sqrt(cO[5]),0.)
+        if prb0 < pCut:
+          continue 
       cO[4] = cO[4]/cFactor       # convert to kg/m3
       mType = 'T'
-       
     else:
       cO[4] = 1.e-19 #cCut
       mType = 'NT'
@@ -600,6 +599,11 @@ def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.,tblName=None,pCut=0.
       print 'Error: cannot find hr = ',cO[3]
       sys.exit()
     
+    #print 'Skip Nulls'
+    #if mType == 'NT':
+    #  continue
+    print 'Mean, var, prb0 = ', cO[4],np.sqrt(cO[5]),prb0,'%s%03d.%03d'%(mType[0],cO[2],hrId)
+
     senOut.write('mil.dtra.hpac.models.sensor.CAcomp.data.Type2Sensor\n')
     senOut.write('%s%03d.%03d;%8.4f;%8.4f;%8.4f;%s%s%s%s%s%s;%s;%13.5e;%13.5e;%8.4f;%s;%13.5f\n'%(\
            mType[0],cO[2],hrId,cO[0],cO[1],10.,Yr,Mo,DD,HH,mm,ss,mType, cCut, cO[4], 1.,'NS',float(obsThr[0][0])*3600.))
