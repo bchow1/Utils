@@ -56,12 +56,16 @@ fList = []
 for fName in fileList:
   if fName.startswith('flag_') and fName.endswith('.pst'):
     fList.append(fName)
+    
+ycv = 4250200.    
 
-for pstFile in fList:
+for iz,pstFile in enumerate(fList):
+
   cnc   = np.loadtxt(pstFile,skiprows=8,usecols=(0,1,2,3,8))
   print cnc.shape
   nCol  = cnc.shape[1]
   zVal  = int(pstFile.replace('flag_','').replace('.pst',''))
+  
   for hr in range(9042323,9042324):
     hflag = np.repeat(cnc[:,4]==hr,nCol).reshape(cnc.shape)
     cxy   = np.extract(hflag,cnc).reshape(-1,nCol)
@@ -88,7 +92,45 @@ for pstFile in fList:
     plt.title('z = %dm, Hr = %d'%(zVal,int(hr)-9042300))
     plt.hold(False)
     plt.savefig('Flag_%03dm_%dhr.png'%(zVal,int(hr)-9042300)) 
-  
+    
+    # Get Cx at ycv
+    yflag = np.repeat(cxy[:,1]==ycv,nCol).reshape(cxy.shape)
+    cx    = np.extract(yflag,cxy).reshape(-1,nCol)
+    if pstFile == fList[0]:
+      print cx.shape
+      nx = cx.shape[0]
+      nz = len(fList)
+      cxz = np.zeros((nx*nz,nCol))
+      print cxz.shape
+    print iz*nx,(iz+1)*nx
+    cxz[iz*nx:(iz+1)*nx,:] = cx
+ 
+  print cxz[:,2].max()
+  x = cxz[:,0]/1000.
+  z = cxz[:,3]
+  C = cxz[:,2]
+  print x.shape,z.shape
+  plt.clf()
+  plt.hold(True)
+  #
+  triangles = tri.Triangulation(x, z)
+  CS = plt.tricontour(x, z, C, 15, norm = lnorm, levels=levels,linewidths=0.5, colors='k')
+
+  if isLinear:
+    CS = plt.tricontourf(x, z, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=vmin)
+    CS.set_clim(vmin,vmax)
+  else:
+    CS = plt.tricontourf(x, z, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=10.**vmin)
+    CS.set_clim(10.**vmin,10.**vmax)
+
+  CS.cmap.set_under('white')  
+  cbar = plt.colorbar(ticks=levels,format='%5.1e') # draw colorbar    
+  plt.title('Conc (ug/m3) for Hr = %d'%(int(hr)-9042300))
+  plt.xlabel('X(km)')
+  plt.ylabel('Z(m)')
+  plt.hold(False)
+  plt.savefig('flag_cslice_%dhr.png'%(int(hr)-9042300))
+
 '''
 #
 # Single PST file
