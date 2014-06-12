@@ -1,5 +1,6 @@
 #!/bin/python
 
+import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,7 +10,8 @@ import matplotlib.colors as colors
 
 #pstFile  = 'GIBSON01.PST'
 pstFile   = 'vertCross.pst'
-addSrcLoc = False
+
+addSrcLoc = True
 
 if addSrcLoc:
   srcList = []
@@ -24,17 +26,10 @@ if addSrcLoc:
   srcList.append([434791.6,4246296.0,119.00]) # Gibson
 
   srcA = np.array(srcList)
+  srcA[:,0:2] = srcA[:,0:2]/1000.
   print srcA
 
-# Load PST file
-cnc   = np.loadtxt(pstFile,skiprows=8,usecols=(0,1,2,3,8))
-nCol  = cnc.shape[1]
-zList = np.unique(cnc[:,3])
-hList = np.unique(cnc[:,4])
-cMax  = cnc[:,2].max()
-print np.shape(cnc),zList,cMax,cnc[:,2].min()
-
-# set Levels
+# Set concentration/color Levels
 isLinear = True
 if isLinear:
     num   = 11
@@ -50,11 +45,74 @@ else:
     lnorm  = colors.LogNorm(levels,clip=False)
 clrmap = plt.cm.get_cmap('jet',len(levels)-1)
 print levels
+  
+#
+# Multiple PST file
+#
+  
+# List flag*.pst files
+fileList = os.listdir('./')
+fList = []
+for fName in fileList:
+  if fName.startswith('flag_') and fName.endswith('.pst'):
+    fList.append(fName)
 
+for pstFile in fList:
+  cnc   = np.loadtxt(pstFile,skiprows=8,usecols=(0,1,2,3,8))
+  print cnc.shape
+  nCol  = cnc.shape[1]
+  zVal  = int(pstFile.replace('flag_','').replace('.pst',''))
+  for hr in range(9042323,9042324):
+    hflag = np.repeat(cnc[:,4]==hr,nCol).reshape(cnc.shape)
+    cxy   = np.extract(hflag,cnc).reshape(-1,nCol)
+    print np.shape(hflag) #,hflag
+    x = cxy[:,0]/1000.
+    y = cxy[:,1]/1000.
+    C = cxy[:,2]
+    plt.clf()
+    plt.hold(True)
+    triangles = tri.Triangulation(x, y)
+    CS   = plt.tricontour(x, y, C, 15, norm = lnorm, levels=levels,linewidths=0.5, colors='k')
+    if isLinear:
+      CS = plt.tricontourf(x, y, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=vmin)
+      CS.set_clim(vmin,vmax)
+    else:
+      CS = plt.tricontourf(x, y, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=10.**vmin)
+      CS.set_clim(10.**vmin,10.**vmax)    
+    CS.cmap.set_under('white')
+    cbar = plt.colorbar(ticks=levels,format='%5.1e') # draw colorbar    
+    
+    if addSrcLoc:
+      plt.scatter(srcA[:,0],srcA[:,1],marker='*')
+    
+    plt.title('z = %dm, Hr = %d'%(zVal,int(hr)-9042300))
+    plt.hold(False)
+    plt.savefig('Flag_%03dm_%dhr.png'%(zVal,int(hr)-9042300)) 
+  
 '''
+#
+# Single PST file
+#
+  
+# Load PST file
+# X(0) Y(1) AVERAGE CONC(2)  ZELEV(3)  DATE(8)
+cnc   = np.loadtxt(pstFile,skiprows=8,usecols=(0,1,2,3,8))
+nCol  = cnc.shape[1]
+zList = np.unique(cnc[:,3]) # zelev
+hList = np.unique(cnc[:,4]) # Hrs
+cMax  = cnc[:,2].max()
+print np.shape(cnc),zList,cMax,cnc[:,2].min()
+
+#
+# Horizontal slices 
+#
+
+# Loop over different heights
 for z in zList: # [0,200]: 
   zflag = np.repeat(cnc[:,3]==z,nCol).reshape(np.shape(cnc))
   cxy = np.extract(zflag,cnc).reshape(-1,nCol)
+  
+  # Loop over hours 
   for hr in range(9042323,9042324): #hList:
     hflag = np.repeat(cxy[:,4]==hr,nCol).reshape(np.shape(cxy))
     #print np.shape(hflag),hflag
@@ -95,8 +153,12 @@ for z in zList: # [0,200]:
     plt.hold(False)
     plt.savefig('C_%dm_%dhr.png'%(z,int(hr)-9042300))
     #plt.show()
-'''
 
+#
+# Crosswind Vertical slice
+#
+
+# Loop over hr
 for hr in range(9042323,9042324):
   hflag = np.repeat(cnc[:,4]==hr,nCol).reshape(cnc.shape)
   cxz   = np.extract(hflag,cnc).reshape(-1,nCol)
@@ -125,3 +187,5 @@ for hr in range(9042323,9042324):
   plt.hold(False)
   plt.savefig('AER_cslice_%dhr.png'%(int(hr)-9042300))
   #plt.show()
+  
+'''
