@@ -35,9 +35,12 @@ cMax  = cnc[:,2].max()
 print np.shape(cnc),zList,cMax,cnc[:,2].min()
 
 # set Levels
-isLinear = False
+isLinear = True
 if isLinear:
-    levels = np.linspace(0.01,1.01,num=6)
+    num   = 11
+    vmin  = 0.0
+    vmax  = 1000.0
+    levels = np.linspace(vmin,vmax,num=num)
     lnorm  = colors.Normalize(levels,clip=False)
 else:
     num  = 7
@@ -48,6 +51,7 @@ else:
 clrmap = plt.cm.get_cmap('jet',len(levels)-1)
 print levels
 
+'''
 for z in zList: # [0,200]: 
   zflag = np.repeat(cnc[:,3]==z,nCol).reshape(np.shape(cnc))
   cxy = np.extract(zflag,cnc).reshape(-1,nCol)
@@ -91,3 +95,33 @@ for z in zList: # [0,200]:
     plt.hold(False)
     plt.savefig('C_%dm_%dhr.png'%(z,int(hr)-9042300))
     #plt.show()
+'''
+
+for hr in range(9042323,9042324):
+  hflag = np.repeat(cnc[:,4]==hr,nCol).reshape(cnc.shape)
+  cxz   = np.extract(hflag,cnc).reshape(-1,nCol)
+  print np.shape(hflag),hflag
+  x = cxz[:,0]/1000.
+  z = cxz[:,3]
+  C = cxz[:,2] + 10**(vmin-1)
+  plt.clf()
+  plt.hold(True)
+  #
+  triangles = tri.Triangulation(x, z)
+  CS = plt.tricontour(x, z, C, 15, norm = lnorm, levels=levels,linewidths=0.5, colors='k')
+  
+  if isLinear:
+    CS = plt.tricontourf(x, z, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=vmin)
+    CS.set_clim(vmin,vmax)
+  else:
+    CS = plt.tricontourf(x, z, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=10.**vmin)
+    CS.set_clim(10.**vmin,10.**vmax)
+
+  CS.cmap.set_under('white')  
+  cbar = plt.colorbar(ticks=levels,format='%5.1e') # draw colorbar    
+  plt.title('Conc (ug/m3) for Hr = %d'%(int(hr)-9042300))
+  plt.xlabel('X(km)')
+  plt.ylabel('Z(m)')
+  plt.hold(False)
+  plt.savefig('AER_cslice_%dhr.png'%(int(hr)-9042300))
+  #plt.show()
