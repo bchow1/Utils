@@ -8,8 +8,7 @@ import matplotlib.tri as tri
 import matplotlib.cm as cm
 import matplotlib.colors as colors
 
-#pstFile  = 'GIBSON01.PST'
-pstFile   = 'vertCross.pst'
+os.chdir('D:\\SCIPUFF\\runs\\EPRI\\AECOM\\Gibson\\SCICHEM\\Gibson_090423')
 
 addSrcLoc = True
 
@@ -32,9 +31,9 @@ if addSrcLoc:
 # Set concentration/color Levels
 isLinear = True
 if isLinear:
-    num   = 11
+    num   = 8
     vmin  = 0.0
-    vmax  = 1000.0
+    vmax  = 700.0
     levels = np.linspace(vmin,vmax,num=num)
     lnorm  = colors.Normalize(levels,clip=False)
 else:
@@ -46,6 +45,7 @@ else:
 clrmap = plt.cm.get_cmap('jet',len(levels)-1)
 print levels
   
+'''  
 #
 # Multiple PST file
 #
@@ -57,7 +57,7 @@ for fName in fileList:
   if fName.startswith('flag_') and fName.endswith('.pst'):
     fList.append(fName)
     
-ycv = 4250200.    
+ycv = 4250200.
 
 for iz,pstFile in enumerate(fList):
 
@@ -103,39 +103,47 @@ for iz,pstFile in enumerate(fList):
       cxz = np.zeros((nx*nz,nCol))
       print cxz.shape
     print iz*nx,(iz+1)*nx
+    cx[:,3] = float(zVal)
     cxz[iz*nx:(iz+1)*nx,:] = cx
  
-  print cxz[:,2].max()
-  x = cxz[:,0]/1000.
-  z = cxz[:,3]
-  C = cxz[:,2]
-  print x.shape,z.shape
-  plt.clf()
-  plt.hold(True)
-  #
-  triangles = tri.Triangulation(x, z)
-  CS = plt.tricontour(x, z, C, 15, norm = lnorm, levels=levels,linewidths=0.5, colors='k')
+# Plot vertical cross wind section at y=ycv
+print cxz[:,2].max()
+x = cxz[:,0]/1000.
+z = cxz[:,3]
+C = cxz[:,2]
+print x.shape,z.shape
+plt.clf()
+plt.hold(True)
+#
+triangles = tri.Triangulation(x, z)
+CS = plt.tricontour(x, z, C, 15, norm = lnorm, levels=levels,linewidths=0.5, colors='k')
 
-  if isLinear:
-    CS = plt.tricontourf(x, z, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=vmin)
-    CS.set_clim(vmin,vmax)
-  else:
-    CS = plt.tricontourf(x, z, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=10.**vmin)
-    CS.set_clim(10.**vmin,10.**vmax)
+if isLinear:
+  CS = plt.tricontourf(x, z, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=vmin)
+  CS.set_clim(vmin,vmax)
+else:
+  CS = plt.tricontourf(x, z, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=10.**vmin)
+  CS.set_clim(10.**vmin,10.**vmax)
 
-  CS.cmap.set_under('white')  
-  cbar = plt.colorbar(ticks=levels,format='%5.1e') # draw colorbar    
-  plt.title('Conc (ug/m3) for Hr = %d'%(int(hr)-9042300))
-  plt.xlabel('X(km)')
-  plt.ylabel('Z(m)')
-  plt.hold(False)
-  plt.savefig('flag_cslice_%dhr.png'%(int(hr)-9042300))
+CS.cmap.set_under('white')  
+cbar = plt.colorbar(ticks=levels,format='%5.1e') # draw colorbar    
+plt.title('Conc (ug/m3) for Hr = %d'%(int(hr)-9042300))
+plt.xlabel('X(km)')
+plt.ylabel('Z(m)')
+plt.hold(False)
+plt.savefig('flag_cslice_%dhr.png'%(int(hr)-9042300))
 
 '''
+
 #
 # Single PST file
 #
-  
+
+#
+# Horizontal slices 
+#
+pstFile  = 'GIBSON01.PST'
+
 # Load PST file
 # X(0) Y(1) AVERAGE CONC(2)  ZELEV(3)  DATE(8)
 cnc   = np.loadtxt(pstFile,skiprows=8,usecols=(0,1,2,3,8))
@@ -162,10 +170,14 @@ for z in zList: # [0,200]:
     print 'Hour: ',hr,z,np.shape(chr),chr[:,2].max(),chr[:,2].min()
     if chr[:,2].max() < 0.1:
       continue
-    x = chr[:,0]
-    y = chr[:,1]
-    C = chr[:,2] + 10**(vmin-1)
-    cm = np.ma.array(chr, mask=np.repeat(chr[:,2] < 10**vmin, chr.shape[1])).compressed().reshape(-1,chr.shape[1])
+    x = chr[:,0]/1000.
+    y = chr[:,1]/1000.
+    if isLinear:
+      C = chr[:,2]
+      cm = np.ma.array(chr, mask=np.repeat(chr[:,2] < 0., chr.shape[1])).compressed().reshape(-1,chr.shape[1])
+    else:  
+      C = chr[:,2] + 10**(vmin-1)
+      cm = np.ma.array(chr, mask=np.repeat(chr[:,2] < 10**vmin, chr.shape[1])).compressed().reshape(-1,chr.shape[1])
     #print cm
     #print hr,z,np.shape(cm),cm[:,2].max(),cm[:,2].min(),10**vmin,10**vmax
     plt.clf()
@@ -173,8 +185,13 @@ for z in zList: # [0,200]:
     #
     triangles = tri.Triangulation(x, y)
     CS   = plt.tricontour(x, y, C, 15, norm = lnorm, levels=levels,linewidths=0.5, colors='k')
-    CS   = plt.tricontourf(x, y, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=10.**vmin)
-    CS.set_clim(10.**vmin,10.**vmax)
+    if isLinear:
+      CS = plt.tricontourf(x, y, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=vmin)
+      CS.set_clim(vmin,vmax)
+    else:
+      CS = plt.tricontourf(x, y, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=10.**vmin)
+      CS.set_clim(10.**vmin,10.**vmax)
+        
     CS.cmap.set_under('white')
 
     #for ip in range(0,len(chr)):
@@ -192,13 +209,26 @@ for z in zList: # [0,200]:
       plt.scatter(srcA[:,0],srcA[:,1],marker='*')
     
     plt.title('z = %dm, Hr = %d'%(z,int(hr)-9042300))
+    plt.xlabel('X(km)')
+    plt.ylabel('Y(km)')    
     plt.hold(False)
-    plt.savefig('C_%dm_%dhr.png'%(z,int(hr)-9042300))
+    plt.savefig('C_%04dm_%dhr.png'%(z,int(hr)-9042300))
     #plt.show()
 
 #
 # Crosswind Vertical slice
 #
+
+pstFile   = 'vertCross.pst'
+
+# Load PST file
+# X(0) Y(1) AVERAGE CONC(2)  ZELEV(3)  DATE(8)
+cnc   = np.loadtxt(pstFile,skiprows=8,usecols=(0,1,2,3,8))
+nCol  = cnc.shape[1]
+zList = np.unique(cnc[:,3]) # zelev
+hList = np.unique(cnc[:,4]) # Hrs
+cMax  = cnc[:,2].max()
+print np.shape(cnc),zList,cMax,cnc[:,2].min()
 
 # Loop over hr
 for hr in range(9042323,9042324):
@@ -207,7 +237,10 @@ for hr in range(9042323,9042324):
   print np.shape(hflag),hflag
   x = cxz[:,0]/1000.
   z = cxz[:,3]
-  C = cxz[:,2] + 10**(vmin-1)
+  if isLinear:
+    C = cxz[:,2]
+  else:
+    C = cxz[:,2] + 10**(vmin-1)
   plt.clf()
   plt.hold(True)
   #
@@ -229,5 +262,3 @@ for hr in range(9042323,9042324):
   plt.hold(False)
   plt.savefig('AER_cslice_%dhr.png'%(int(hr)-9042300))
   #plt.show()
-  
-'''
