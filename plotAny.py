@@ -24,6 +24,23 @@ compName = socket.gethostname()
 colors  = ['red','blue','green','yellow','cyan','magenta','violet','orange','lavender']
 markers = ['o','*','+','d','s','^','<','>','v']
 
+# Plot sam file
+
+os.chdir('D:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\Case016')
+print os.getcwd()
+
+smp = np.loadtxt('Trials.sam',skiprows=1,usecols=[0,1,2])
+src = [1.79364,0.957519472]
+plt.clf()
+plt.hold(True)
+plt.scatter(smp[:,0],smp[:,1])
+plt.scatter(src[0],src[1],marker='*',color='red')
+plt.hold(False)
+plt.show()
+
+sys.exit()
+
+#
 mdates.strpdate2num()
 # Plot traverses for Dolet Hills study
 os.chdir('d:\\SCIPUFF\\runs\\EPRI\\DoletHills')
