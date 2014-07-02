@@ -24,6 +24,16 @@ compName = socket.gethostname()
 colors  = ['red','blue','green','yellow','cyan','magenta','violet','orange','lavender']
 markers = ['o','*','+','d','s','^','<','>','v']
 
+'''
+# Test eval
+a = [1.,16.,3.]
+estr = 'a[0] + a[1]**a[2]'
+print eval(estr)
+estr = 'a[0] + math.sqrt(a[1])'
+print eval(estr)
+sys.exit()
+'''
+
 # Plot sam file
 
 os.chdir('D:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\Case016')
