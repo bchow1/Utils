@@ -527,7 +527,7 @@ def sen2Db(startTimeString,senFile,samList=None):
     samList.createSam(matList=matList)
   senConn.close()
 
-def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.,tblName=None,pCut=0.01):
+def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.,sigS=1.0,tblName=None,pCut=0.01):
 
   senOut = open(senFile,"w",0)
   #
@@ -571,7 +571,7 @@ def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.,tblName=None,pCut=0.
   startEpTime = getEpTime(startYr,startMo,startDay,startHr,startMin,startSec)
   print 'db2sen: startEpTime = ',startEpTime,'(',startYr,startMo,startDay,startHr,startMin,startSec,')'
  
-  cCut     = max(obsConc[:,4])*cCut
+  cCut = max(obsConc[:,4])*cCut
   print 'db2sen:Max Obs and cCut Conc = ',max(obsConc[:,4]), cCut
 
   for cO in obsConc:
@@ -599,15 +599,16 @@ def db2sen(startTimeString,dbName,senFile,cFactor=1,cCut=1.,tblName=None,pCut=0.
       print 'Error: cannot find hr = ',cO[3]
       sys.exit()
     
-    #print 'Skip Nulls'
-    #if mType == 'NT':
-    #  continue
+    print 'Skip Nulls'
+    if mType == 'NT':
+      continue
     print 'Mean, var, prb0 = ', cO[4],np.sqrt(cO[5]),prb0,'%s%03d.%03d'%(mType[0],cO[2],hrId)
 
     senOut.write('mil.dtra.hpac.models.sensor.CAcomp.data.Type2Sensor\n')
     senOut.write('%s%03d.%03d;%8.4f;%8.4f;%8.4f;%s%s%s%s%s%s;%s;%13.5e;%13.5e;%8.4f;%s;%13.5f\n'%(\
-           mType[0],cO[2],hrId,cO[0],cO[1],10.,Yr,Mo,DD,HH,mm,ss,mType, cCut, cO[4], 1.,'NS',float(obsThr[0][0])*3600.))
+           mType[0],cO[2],hrId,cO[0],cO[1],0.,Yr,Mo,DD,HH,mm,ss,mType, cCut, cO[4], sigS,'NS',float(obsThr[0][0])*3600.))
     #T011.024; 2.65000; 51.08330; 10.00000; 19941024113000; T; 1.25700E-19; 1.00000E-02; 10.00000; NS; 10800.00000
+    #smp time   x        y          z       YYYYMMDDHHMMSS      Cmin        Obs. conc    sigS    SSAT  TSMP_AVG
   senOut.close()
   obsConn.close()
 
@@ -621,7 +622,8 @@ if __name__ == '__main__':
   arg.add_option("-a",action="store",type="string",dest="samFiles")
   arg.set_defaults(prjNames=None,senName=None,samFiles=None)
   opt,args = arg.parse_args()
-  opt.prjNames = 'Rev_simplei'
+  opt.prjNames = 'Gibson1hr_4_dom_fix_met'
+  #opt.prjNames = 'Rev_simplei'
   #opt.prjNames = 'dolethills'
   #opt.prjNames = '070699_vo3'
   #opt.samFiles = 'baldwin_nocalcbl_month.sam'
@@ -636,7 +638,8 @@ if __name__ == '__main__':
     print 'Error: prjNames or senName must be specified'
     print 'Usage: smp2db.py [-p prjName1[:prjName2...] [-a prj1.sam[:prj2.sam...]]] [ -e senName]'
   elif opt.prjNames is not None:
-    os.chdir('d:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\simple1')
+    os.chdir('D:\\SCIPUFF\\runs\\EPRI\\AECOM\\Gibson\\SCICHEM\\Gibson_090423')
+    #os.chdir('d:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\simple1')
     #os.chdir('d:\\EPRI\\SCICHEM-99\\runs\\070699')
     #os.chdir('d:\\Aermod\\v12345\\runs\\kinsf6\\SCICHEM_SELECT')
     #os.chdir('d:\\TestSCICHEM\\Outputs\\EPA\\AERMOD\\baldwin\\NoAreaFix')
