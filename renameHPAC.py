@@ -37,7 +37,10 @@ if __name__ == '__main__':
   else:
     #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\workspace\\EPRI')
     #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\src\\sys\\windows')
-    os.chdir('D:\\SCIPUFF\\Repository\\EPRI_STE\\')
+    #os.chdir('D:\\SCIPUFF\\Repository\\EPRI_STE\\')
+    #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\workspace\\EPRI')
+    #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\src\\sys\\windows')
+    os.chdir('D:\\SCIPUFF\\EPRI_WIP\\Processed_Tmp\\src')
 
   ans = raw_input('Renaming directories and files in %s.\n Continue? '%os.getcwd())
   if ans == 'n' or ans == 'N':

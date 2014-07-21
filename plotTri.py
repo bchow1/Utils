@@ -16,7 +16,8 @@ def printUsage():
   print 'Usage: plotTri -i inFile[.ntv] [-n t ] [-l skiplines ] [-s log/linear ]'
 
 #os.chdir('d:\\SCIPUFF\\runs\\EPRI\\IncrDose')
-os.chdir('d:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\simplei')
+os.chdir('d:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\ETEX')
+
 arg = optparse.OptionParser()
 arg.add_option("-i",action="store",type="string",dest="inFile")
 arg.add_option("-n",action="store",type="string",dest="isLatLon")
@@ -31,9 +32,10 @@ print 'Current directory = ',os.getcwd()
 if opt.inFile:
   inFile = opt.inFile
 else:
-  print 'Error: inFile must be specified'
-  printUsage()
-  sys.exit()
+  inFile = 'rev_etex_mle.ntv'
+  #print 'Error: inFile must be specified'
+  #printUsage()
+  #sys.exit()
     
 if opt.nSkip:
   nSkip = opt.nSkip

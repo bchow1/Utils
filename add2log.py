@@ -57,7 +57,9 @@ def wrtLog(logName,xySam):
 # Call main program
 if __name__ == '__main__':
   #os.chdir('D:\\Aermod\\v12345\\runs\\kinsf6\\SCICHEM_Select')
-  os.chdir('d:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\simplei')
+  #os.chdir('d:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\Trial071')
+  os.chdir('D:\\SCIPUFF\\runs\\EPRI\\DoletHills')
+  #os.chdir('d:\\SCIPUFF\\runs\\EPRI\\AECOM\\Gibson\\SCICHEM\\Gibson_090423')
   # Parse arguments
   arg = optparse.OptionParser()
   arg.add_option("-l",action="store",type="string",dest="logFile")

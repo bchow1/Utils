@@ -4,8 +4,8 @@ import sys
 import re
 import fileinput
 
-if len(sys.argv) != 2 :
-  print('Usage: matchFpp file')
+#if len(sys.argv) != 2 :
+#  print('Usage: matchFpp file')
 
 isFlush = True
 #isFlush = False
@@ -23,8 +23,9 @@ ifElif  = re.compile(bChar+"!DEC\$ ELSEIF\s+.+")
 ifElse  = re.compile(bChar+"!DEC\$ ELSE.*")
 ifEnd   = re.compile(bChar+"!DEC\$ ENDIF.*")
 
-fName = sys.argv[1]
-#fName = 'D:\\hpac\\gitEPRI\\src\\lib\\SCIPUFFlib\\SCIPUFF\\initial.f90'
+#fName = sys.argv[1]
+#fName = 'D:\\SCIPUFF\\OMP_WIP\\src\\dll\\SCIPUFFlib\\SCIPUFF\\step.f90'
+fName  = 'D:\\SCIPUFF\\OMP_WIP\\src\\lib\\SCIPUFFlib\\SCIPUFF\\util_puff.f90'
 
 nlev = 0
 spaces = ''
