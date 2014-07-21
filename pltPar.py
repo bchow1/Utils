@@ -24,7 +24,7 @@ fig = plt.figure(1)
 plt.clf()
 plt.hold(True)
 plt.setp(plt.gca(), frame_on=False, xticks=(), yticks=())
-plt.title('CPU Load for ETEX using different number of CPUs')
+plt.title('CPU Load for ANATEX using different number of CPUs')
 
 for sp,ncpu in enumerate([1,2,4,8,16]):
   cpu,time = np.loadtxt('cpuload_%d.txt'%ncpu,usecols=(6,0),converters={0:ms},unpack=True)
@@ -51,14 +51,15 @@ for sp,ncpu in enumerate([1,2,4,8,16]):
   ax.yaxis.set_major_locator(MaxNLocator(4))
 plt.hold(False)
 #plt.show()
-plt.savefig('cpuLoad.png')
+plt.savefig('ANATEX_cpuLoad.png')
 
+'''
 speedup = np.loadtxt('speedup.txt')
 speedup[:,1] = speedup[0,1]/speedup[:,1]
 fig = plt.figure(1)
 plt.clf()
 plt.hold(True)
-plt.title('Speedup for ETEX using different number of CPUs')
+plt.title('Speedup for ANATEX using different number of CPUs')
 plt.plot(speedup[:,0],speedup[:,1],marker='o')
 plt.xlabel('# CPUs')
 plt.xlim([1,16])
@@ -67,3 +68,4 @@ plt.ylim([0,6])
 plt.hold(False)
 #plt.show()
 plt.savefig('speedup.png')
+'''
