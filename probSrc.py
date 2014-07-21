@@ -84,7 +84,7 @@ def clnpar(rat,gbar,sigg): # Determines the Gaussian mean and sigma
 
   return clnpar 
  
-def probSrc(cbar,csig,cmin):
+def prbGtC(cbar,csig,cmin):
 
   import scipy
   import scipy.special
@@ -95,21 +95,21 @@ def probSrc(cbar,csig,cmin):
   [gbar, sigg] = clnpar(rat,gbar,sigg)
   arg = (cmin/cbar - gbar)/sigg
   if arg > 5. :
-    PSrc = 0.
+    pgtc = 0.
   elif arg < -5. :
-    PSrc = 1.
+    pgtc = 1.
   else :
-    PSrc = 0.5*scipy.special.erfc( arg/sqrt(2.) )
+    pgtc = 0.5*scipy.special.erfc( arg/sqrt(2.) )
 
-  return PSrc 
+  return pgtc 
 
 # Main program for testing
 
 if __name__ == '__main__':
   cbar = 1.
   cmin = 0.
-  for csig in [ .001,1., 1.35,.65,1.,1.94,1.999999,7.5,10.1,55.6,100.3]:
+  for csig in [1e-10]: # [ 1e-10,.001,1., 1.35,.65,1.,1.94,1.999999,7.5,10.1,55.6,100.3,1e+10]:
     print csig
-    print ProbSrc(cbar,csig,cmin)
+    print prbGtC(cbar,csig,cmin)
     print
 

@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 from matplotlib import colors
 import matplotlib.cm as cm
+import matplotlib.dates as mdates
 
 # Local libs
 import measure
@@ -19,16 +20,92 @@ import tab2db
 import utilDb
 import utilPlot
 
-
 compName = socket.gethostname()
+colors  = ['red','blue','green','yellow','cyan','magenta','violet','orange','lavender']
+markers = ['o','*','+','d','s','^','<','>','v']
+
+'''
+# Test eval
+a = [1.,16.,3.]
+estr = 'a[0] + a[1]**a[2]'
+print eval(estr)
+estr = 'a[0] + math.sqrt(a[1])'
+print eval(estr)
+sys.exit()
+'''
+
+# Plot sam file
+
+os.chdir('D:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\Case016')
+print os.getcwd()
+
+smp = np.loadtxt('Trials.sam',skiprows=1,usecols=[0,1,2])
+src = [1.79364,0.957519472]
+plt.clf()
+plt.hold(True)
+plt.scatter(smp[:,0],smp[:,1])
+plt.scatter(src[0],src[1],marker='*',color='red')
+plt.hold(False)
+plt.show()
+
+sys.exit()
+
+#
+mdates.strpdate2num()
+# Plot traverses for Dolet Hills study
+os.chdir('d:\\SCIPUFF\\runs\\EPRI\\DoletHills')
+
+plt.clf()
+plt.hold(True)
+colNames = ['date','time','lat','lon','alt_ft','o3','no','no2','noy','SO2','co']
+colFmt = []
+for colNo,colName in enumerate(colNames):
+  if colName == 'date' or colName == 'time':
+    colFmt.extend(['S8'])
+  else:
+    colFmt.extend(['float'])
+  #print colName
+  #print colFmt
+dType = {'names':colNames,'formats':colFmt}
+print dType
+
+csvFile = 'aztec_20050908_some.csv'
+cncDat = np.genfromtxt(csvFile,skiprows=1,delimiter=',',dtype=dType, usemask=True)
+
+#np.genfromtxt(fname, dtype, comments, delimiter, skiprows, skip_header, skip_footer, 
+#              converters, missing, missing_values, filling_values, usecols, names, 
+#              excludelist, deletechars, replace_space, autostrip, case_sensitive, 
+#              defaultfmt, unpack, usemask, loose, invalid_raise)
+
+cncDat['lon'] = cncDat['lon']*-1.
+print cncDat['lon'].min(),cncDat['lat'].min()
+print cncDat['lon'].max(),cncDat['lat'].max()
+print len(cncDat['lon'])
+
+fig = plt.figure(1)
+plt.clf()
+plt.hold(True)
+plt.scatter(cncDat['lon'],cncDat['lat'],marker='+',c='k')
+
+for sNo in [1,3,4,5,6,7,8]:
+  smpList = np.loadtxt('Alltraverse%d.sam'%sNo,skiprows=1,dtype={'names':['x','y','z'],'formats':['float','float','float']})
+  print sNo,colors[sNo],len(smpList)
+  #print smpList['x'],smpList['y']
+  plt.scatter(smpList['x'],smpList['y'],marker='o',color=colors[sNo])
+
+plt.show()
+
+sys.exit()
+
+'''
+# Plot Class I area receptors  
 
 os.chdir('d:\\downloads\\ClassIData')
 fList = os.listdir('./')
 
 plt.clf()
 plt.hold(True)
-colors  = ['red','blue','green','red','blue','green']
-markers = ['o','*','+','d','s','^']
+
 xMin = -110.1
 xMax = -106.2
 yMin = 35.1
@@ -95,6 +172,7 @@ for line in fileinput.input('tva_980825.sam'):
     oFile.write('%8s %8s %8s %8s %s\n'%(x.strip(),y.strip(),'0.0',mc.strip(),mn.strip()))
 oFile.close()
 fileinput.close()
+'''
 
 '''
 # Find minimum and maximum ustar
