@@ -8,7 +8,14 @@ import matplotlib.tri as tri
 import matplotlib.cm as cm
 import matplotlib.colors as colors
 
-os.chdir('D:\\SCIPUFF\\runs\\EPRI\\AECOM\\Gibson\\SCICHEM\\Gibson_090423')
+#os.chdir('D:\\SCIPUFF\\runs\\EPRI\\AECOM\\Gibson\\SCICHEM\\Gibson_090423')
+#prjStr = 'flag_'
+
+#os.chdir('D:\\SCIPUFF\\runs\\EPRI\\AECOM\\Gibson\\SCICHEM\\Gibson_090423\\AERMOD_PRM')
+#prjStr = 'blr5_'
+
+os.chdir('D:\\SCIPUFF\\runs\\EPRI\\AECOM\\Gibson\\SCICHEM\\Gibson_090423\\AERMOD_NOPRM')
+prjStr = 'bldg5_'
 
 addSrcLoc = True
 
@@ -45,96 +52,160 @@ else:
 clrmap = plt.cm.get_cmap('jet',len(levels)-1)
 print levels
   
-'''  
 #
 # Multiple PST file
 #
   
 # List flag*.pst files
+
 fileList = os.listdir('./')
 fList = []
 for fName in fileList:
-  if fName.startswith('flag_') and fName.endswith('.pst'):
+  if fName.startswith(prjStr) and fName.endswith('.pst'):
     fList.append(fName)
+
+fileList = os.listdir('./')
+fList = []
+vList = []
+for fName in fileList:
+  print fName
+  if fName.startswith(prjStr) and fName.endswith('.pst'):
+    print 'Checking ',fName
+    if '_vslice_' in fName:
+      print 'vList'
+      vList.append(fName)
+    else:
+      print 'fList'
+      fList.append(fName)
+
+# Vertical slice
     
+if len(vList) > 0:
+  vSlice = None
+  for iz,pstFile in enumerate(vList):
+    cnc   = np.loadtxt(pstFile,skiprows=8,usecols=(0,1,2,5,8))
+    print cnc.shape
+    nCol   = cnc.shape[1]
+    zVal   = int(pstFile.replace(prjStr+'vslice_','').replace('.pst',''))
+    for hr in range(9042323,9042324):
+      hflag = np.repeat(cnc[:,4]==hr,nCol).reshape(cnc.shape)
+      cxy   = np.extract(hflag,cnc).reshape(-1,nCol)
+      if iz == 0 and vSlice is None:
+        vSlice = np.zeros((len(vList),cxy.shape[0],nCol),float) 
+      vSlice[iz,:,:] = cxy
+  
+  vSlice = vSlice.reshape(-1,nCol)
+  
+  print vSlice[0,:]
+  print vSlice[-1,:]
+  print np.shape(vSlice)
+  
+  y = vSlice[:,1]/1000.
+  z = vSlice[:,3]
+  C = vSlice[:,2]
+  
+  plt.clf()
+  plt.hold(True)
+  #
+  triangles = tri.Triangulation(y, z)
+  CS = plt.tricontour(y, z, C, 15, norm = lnorm, levels=levels,linewidths=0.5, colors='k')
+  
+  if isLinear:
+    CS = plt.tricontourf(y, z, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=vmin)
+    CS.set_clim(vmin,vmax)
+  else:
+    CS = plt.tricontourf(y, z, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=10.**vmin)
+    CS.set_clim(10.**vmin,10.**vmax)
+  
+  #CS.cmap.set_under('white')  
+  cbar = plt.colorbar(ticks=levels,format='%5.1e') # draw colorbar    
+  plt.title('Conc (ug/m3) for Hr = %d'%(int(hr)-9042300))
+  plt.xlabel('Y(km)')
+  plt.ylabel('Z(m)')
+  plt.hold(False)
+  plt.savefig(prjStr+'_vslice_%dhr.png'%(int(hr)-9042300))
+
+# Horizontal slices
+
 ycv = 4250200.
 
-for iz,pstFile in enumerate(fList):
-
-  cnc   = np.loadtxt(pstFile,skiprows=8,usecols=(0,1,2,3,8))
-  print cnc.shape
-  nCol  = cnc.shape[1]
-  zVal  = int(pstFile.replace('flag_','').replace('.pst',''))
+if len(fList) > 0:
   
-  for hr in range(9042323,9042324):
-    hflag = np.repeat(cnc[:,4]==hr,nCol).reshape(cnc.shape)
-    cxy   = np.extract(hflag,cnc).reshape(-1,nCol)
-    print np.shape(hflag) #,hflag
-    x = cxy[:,0]/1000.
-    y = cxy[:,1]/1000.
-    C = cxy[:,2]
-    plt.clf()
-    plt.hold(True)
-    triangles = tri.Triangulation(x, y)
-    CS   = plt.tricontour(x, y, C, 15, norm = lnorm, levels=levels,linewidths=0.5, colors='k')
-    if isLinear:
-      CS = plt.tricontourf(x, y, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=vmin)
-      CS.set_clim(vmin,vmax)
-    else:
-      CS = plt.tricontourf(x, y, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=10.**vmin)
-      CS.set_clim(10.**vmin,10.**vmax)    
-    CS.cmap.set_under('white')
-    cbar = plt.colorbar(ticks=levels,format='%5.1e') # draw colorbar    
+  for iz,pstFile in enumerate(fList):
+  
+    cnc   = np.loadtxt(pstFile,skiprows=8,usecols=(0,1,2,3,8))
+    print cnc.shape
+    nCol  = cnc.shape[1]
+    zVal  = int(pstFile.replace(prjStr,'').replace('.pst',''))
     
-    if addSrcLoc:
-      plt.scatter(srcA[:,0],srcA[:,1],marker='*')
-    
-    plt.title('z = %dm, Hr = %d'%(zVal,int(hr)-9042300))
-    plt.hold(False)
-    plt.savefig('Flag_%03dm_%dhr.png'%(zVal,int(hr)-9042300)) 
-    
-    # Get Cx at ycv
-    yflag = np.repeat(cxy[:,1]==ycv,nCol).reshape(cxy.shape)
-    cx    = np.extract(yflag,cxy).reshape(-1,nCol)
-    if pstFile == fList[0]:
-      print cx.shape
-      nx = cx.shape[0]
-      nz = len(fList)
-      cxz = np.zeros((nx*nz,nCol))
-      print cxz.shape
-    print iz*nx,(iz+1)*nx
-    cx[:,3] = float(zVal)
-    cxz[iz*nx:(iz+1)*nx,:] = cx
- 
-# Plot vertical cross wind section at y=ycv
-print cxz[:,2].max()
-x = cxz[:,0]/1000.
-z = cxz[:,3]
-C = cxz[:,2]
-print x.shape,z.shape
-plt.clf()
-plt.hold(True)
-#
-triangles = tri.Triangulation(x, z)
-CS = plt.tricontour(x, z, C, 15, norm = lnorm, levels=levels,linewidths=0.5, colors='k')
-
-if isLinear:
-  CS = plt.tricontourf(x, z, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=vmin)
-  CS.set_clim(vmin,vmax)
-else:
-  CS = plt.tricontourf(x, z, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=10.**vmin)
-  CS.set_clim(10.**vmin,10.**vmax)
-
-CS.cmap.set_under('white')  
-cbar = plt.colorbar(ticks=levels,format='%5.1e') # draw colorbar    
-plt.title('Conc (ug/m3) for Hr = %d'%(int(hr)-9042300))
-plt.xlabel('X(km)')
-plt.ylabel('Z(m)')
-plt.hold(False)
-plt.savefig('flag_cslice_%dhr.png'%(int(hr)-9042300))
+    for hr in range(9042323,9042324):
+      hflag = np.repeat(cnc[:,4]==hr,nCol).reshape(cnc.shape)
+      cxy   = np.extract(hflag,cnc).reshape(-1,nCol)
+      print np.shape(hflag) #,hflag
+      x = cxy[:,0]/1000.
+      y = cxy[:,1]/1000.
+      C = cxy[:,2]
+      plt.clf()
+      plt.hold(True)
+      triangles = tri.Triangulation(x, y)
+      CS   = plt.tricontour(x, y, C, 15, norm = lnorm, levels=levels,linewidths=0.5, colors='k')
+      if isLinear:
+        CS = plt.tricontourf(x, y, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=vmin)
+        CS.set_clim(vmin,vmax)
+      else:
+        CS = plt.tricontourf(x, y, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=10.**vmin)
+        CS.set_clim(10.**vmin,10.**vmax)    
+      CS.cmap.set_under('white')
+      cbar = plt.colorbar(ticks=levels,format='%5.1e') # draw colorbar    
+      
+      if addSrcLoc:
+        plt.scatter(srcA[:,0],srcA[:,1],marker='*')
+      
+      plt.title('z = %dm, Hr = %d'%(zVal,int(hr)-9042300))
+      plt.hold(False)
+      plt.savefig('%s%03dm_%dhr.png'%(prjStr,zVal,int(hr)-9042300)) 
+      
+      # Get Cx at ycv
+      yflag = np.repeat(cxy[:,1]==ycv,nCol).reshape(cxy.shape)
+      cx    = np.extract(yflag,cxy).reshape(-1,nCol)
+      if pstFile == fList[0]:
+        print cx.shape
+        nx = cx.shape[0]
+        nz = len(fList)
+        cxz = np.zeros((nx*nz,nCol))
+        print cxz.shape
+      print iz*nx,(iz+1)*nx
+      cx[:,3] = float(zVal)
+      cxz[iz*nx:(iz+1)*nx,:] = cx
+   
+  # Plot vertical cross wind section at y=ycv
+  print cxz[:,2].max()
+  x = cxz[:,0]/1000.
+  z = cxz[:,3]
+  C = cxz[:,2]
+  print x.shape,z.shape
+  plt.clf()
+  plt.hold(True)
+  #
+  triangles = tri.Triangulation(x, z)
+  CS = plt.tricontour(x, z, C, 15, norm = lnorm, levels=levels,linewidths=0.5, colors='k')
+  
+  if isLinear:
+    CS = plt.tricontourf(x, z, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=vmin)
+    CS.set_clim(vmin,vmax)
+  else:
+    CS = plt.tricontourf(x, z, C, 15, norm= lnorm, levels=levels, cmap=clrmap, vmin=10.**vmin)
+    CS.set_clim(10.**vmin,10.**vmax)
+  
+  CS.cmap.set_under('white')  
+  cbar = plt.colorbar(ticks=levels,format='%5.1e') # draw colorbar    
+  plt.title('Conc (ug/m3) for Hr = %d'%(int(hr)-9042300))
+  plt.xlabel('X(km)')
+  plt.ylabel('Z(m)')
+  plt.hold(False)
+  plt.savefig(prjStr+'cslice_%dhr.png'%(int(hr)-9042300))
 
 '''
-
 #
 # Single PST file
 #
@@ -262,3 +333,4 @@ for hr in range(9042323,9042324):
   plt.hold(False)
   plt.savefig('AER_cslice_%dhr.png'%(int(hr)-9042300))
   #plt.show()
+'''
