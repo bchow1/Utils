@@ -15,7 +15,7 @@ def cmpCol(file1,file2):
   lineNo   = 0
   maxLine  = 0
   diffCols = []
-  maxCols  = 6
+  maxCols  = 100
   maxLines = 5
   
   for line1,line2 in zip(f1,f2):
@@ -46,6 +46,7 @@ def cmpCol(file1,file2):
     nlist2 = map(float,list2[:-1])
 
     print '\nReading: Time, ipuf, LineNo = ',nlist1[1],nlist1[0],lineNo
+    print '\n    indx        Name        V1           V2          dVal         dVal/(V1+V2)'
     for n1,n2 in zip(nlist1,nlist2):
       denom = max(1.e-30,abs(n1+n2))
       if abs(n1-n2) > absTol or abs(n2-n1)/denom > relTol:
@@ -56,8 +57,8 @@ def cmpCol(file1,file2):
           if len(diffCols) > maxCols:
             break          
         if puffCSV:
-          print '  %4d %12s %13.4e %13.4e %13.4e %13.4e'%\
-                (indx1,colHead1[indx1],n1,n2,abs(n1-n2),abs(n2-n1)/denom)
+          print '  %4d %12s %13.4e %13.4e %13.4e %8.3f'%\
+                (indx1,colHead1[indx1],n1,n2,abs(n1-n2),abs(n2-n1)/denom*100)
         else:
           print indx1,indx2
         isDiff = True
@@ -129,11 +130,12 @@ if __name__ == '__main__':
   if sys.platform == 'win32':
     #runDir = "D:\hpac\\gitEPRI\\runs\\stepAmbwFlx"
     runDir = "J:\BNC\EPRI\\runs\\stepAmbwFlx"
+    os.chdir(runDir)
 
-  os.chdir(runDir)
-
-  f1 = 'x0.csv'
-  for f2 in ['x1.csv','x4.csv','x8.csv']:
+  #f1 = 'x0.csv'
+  #for f2 in ['x1.csv','x4.csv','x8.csv']:
+  f1 = 'Gibson1hr_4_dom_hr23_puf.csv'
+  for f2 in ['Gibson1hr_4_dom_hr23_nopr_puf.csv']:
     print '\nComparing ',f1,' and ',f2
     cmpCol(f1,f2)
 
