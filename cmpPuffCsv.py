@@ -27,9 +27,9 @@ def eqn_split(strng, seps, vnames):
       res += str
   return res
 
-#os.chdir('d:\\SCIPUFF\\runs\\HPAC\\omp\\simple\\lomp')
-
-<<<<<<< HEAD
+os.chdir('d:\\SCIPUFF\\runs\\EPRI\\AECOM\\Gibson\\SCICHEM\\Gibson_090423')
+ 
+'''
 csvFiles = []
 nFiles   = sys.argv.__len__()
 if nFiles < 2:
@@ -44,142 +44,26 @@ elif nFiles == 1:
   print
   print 'Skipping Plotting'
   print
+'''
+csvFiles = ['blr5_fix_nosplit_puf.csv','blr5_fix_puf.csv']
+nFiles   = len(csvFiles)
 
-for i in range(1,nFiles):
-  csvFiles.append(sys.argv[i])
+#for i in range(1,nFiles):
+#  csvFiles.append(sys.argv[i])
 
-pDat = [[] for i in range(1,nFiles)]
+pDat = [[] for i in range(nFiles)]
 #print 'csvFiles = ',csvFiles
-  
+
 #nameList = sys.argv[2].split(',')
-nameList = 'ipuf,x,y,z,sxx,sxy,sxz,syy,syz,szz,c'.split(',')
+#nameList = 'ipuf,x,y,z,sxx,sxy,sxz,syy,syz,szz,c'.split(',')
+nameList = 'y,szz,zwc,c,z,wc'.split(',')
+
 
 #print 'nameList = ',nameList
 
-for fNo,csvFile in enumerate(csvFiles):
+opers   = [ '+','-','*','/']
 
-  if not os.path.exists(csvFile):
-    print 'Error: cannot find csvFile = ',csvFile
-  print 'csvFile = ',csvFile
-
-  for line in fileinput.input(csvFile):
-
-    if fileinput.lineno() == 1:
-      title,tvalue = line.split(',')
-      npuf = int(tvalue.split('=')[-1].split('"')[0])
-      #print 'npuf = ',npuf
-
-    if fileinput.lineno() == 2:
-      nvar = int(line.split(',')[1])
-      #print 'nvar = ',nvar
-
-    if fileinput.lineno() == 3:
-      varNames = line.split(',')
-      for vNo, varName in enumerate(varNames):
-        varNames[vNo] = varName.replace('"','').upper()
-      #print varNames
-      
-      colNos = []
-      for varName in nameList:
-        colNo = varNames.index(varName.upper())
-        colNos.append(colNo)
-        #print colNo,varName
-      
-      #for colno in colNos:
-      #  sys.stdout.write('%14s'%varNames[colno])
-      #sys.stdout.write('\n')
-
-
-    if fileinput.lineno() < 4:
-      continue
-
-    colVals = map(float,line.strip().split(',')[0:-1])
-
-    nameVals = {}
-    for varNo,colNo in enumerate(colNos):
-      nameVals.update({nameList[varNo]:colVals[colNo]})
-   
-    '''
-    if fileinput.lineno() == 4:
-      for varName in ['ipuf','x','y','z','c','sxz','szz','sxx','syz','syy']:
-        colNo = varNames.index(varName.upper())
-        sys.stdout.write('%7s(%2d) '%(varName,colNo))
-      sys.stdout.write('\n')
-    #colVals = [int(nameVals['ipuf']),nameVals['x'],nameVals['y'],nameVals['z'],nameVals['c'],\
-    #             nameVals['sxz']/np.sqrt(nameVals['szz']*nameVals['sxx']), nameVals['syz']/np.sqrt(nameVals['szz']*nameVals['syy'])]
-    '''
-
-    colVals  = []
-    # Variables names required for printing or plotting
-    varNames = ['ipuf','x','y','z','c','sxx','sxy','sxz','syy','syz','szz']
-    for varName in varNames 
-      if varName == 'ipuf':
-        colVals.append(int(nameVals[varName]))
-      else:
-        colVals.append(nameVals[varName])
-      if fileinput.lineno() == 4:
-        sys.stdout.write('%7s(%2d) '%(varName,colNo))
-    if fileinput.lineno() == 4:
-      sys.stdout.write('\n')
-      print colVals
-
-    pDat[fNo].append(tuple(colVals))
-  
-    # ipuf 
-    maxLine = 100
-    if  fileinput.lineno() < maxLine:
-      for colVal in colVals:
-        sys.stdout.write(' %10.3e '%colVal)
-      sys.stdout.write('\n')
-    elif fileinput.lineno() == maxLine: 
-      sys.stdout.write('\n')
-      break
-
-  fileinput.close()
-  print pDat[fNo][0],pDat[fNo][-1]
-
-if nFiles < 2:
-  p1 = np.array(pDat[0])
-  print p1.shape
-
-  p2 = np.array(pDat[1])
-  print p2.shape
-
-  fig = plt.figure(1)
-  plt.clf()
-  plt.hold(True)
-  plt.setp(plt.gca(),frame_on=False,xticks=(),yticks=())
-
-  sub1 = fig.add_subplot(2,1,1)
-  sub1.scatter(p1[:,4],p1[:,5],marker='+',color='g')
-  sub1.scatter(p2[:,4],p2[:,5],marker='x',color='b')
-  sub1.set_xlim([1e-6,1.])
-  sub1.set_xscale('log')
-  sub1.set_xlabel('C')
-  #sub1.set_ylabel('sxz/sqrt(sxx*szz) syz/sqrt(syy*szz)')
-  sub1.set_ylabel('sxz/sxx_szz')
-  sub1.set_yscale('log')
-  sub1.set_ylim([1e-4,1e2])
-
-  sub2 = fig.add_subplot(2,1,2)
-  sub2.scatter(p1[:,4],p1[:,6],marker='+',color='g')
-  sub2.scatter(p2[:,4],p2[:,6],marker='x',color='b')
-  sub2.set_xlim([1e-6,1.])
-  sub2.set_xscale('log')
-  sub2.set_xlabel('C')
-  sub2.set_ylabel('syz/syy_szz')
-  sub2.set_yscale('log')
-  sub2.set_ylim([1e-4,1e2])
-
-  plt.hold(False)
-  figName = csvFile[0].replace('.csv','') + csvFile[0].replace('.csv','') + '.png'
-  print figName
-  plt.savefig(figName)
-=======
-csvFile  = sys.argv[1]
-nameList = sys.argv[2].split(',')
-
-print 'nameList = ',nameList
+csvFile = csvFiles[0]
 
 if not os.path.exists(csvFile):
   print 'Error: cannot find csvFile = ',csvFile
@@ -190,59 +74,142 @@ for line in fileinput.input(csvFile):
   if fileinput.lineno() == 1:
     title,tvalue = line.split(',')
     npuf = int(tvalue.split('=')[-1].split('"')[0])
-    print 'npuf = ',npuf
+    #print 'npuf = ',npuf
 
   if fileinput.lineno() == 2:
     nvar = int(line.split(',')[1])
-    print 'nvar = ',nvar
+    #print 'nvar = ',nvar
 
   if fileinput.lineno() == 3:
+    
     varNames = line.split(',')
     for vNo, varName in enumerate(varNames):
       varNames[vNo] = varName.replace('"','').upper()
-    print varNames
+    #print varNames
     
-    colnos  = []
+    colNos  = []
     opStrs  = []
     opNames = []
-    opers   = [ '+','-','*','/']
+    
     for varName in nameList:
+      
       if any(oper in varName for oper in opers):
         rStrng =  eqn_split(varName, opers, varNames)
         opNames.append(varName)
         opStrs.append(rStrng)
-        colnos.append(-len(opStrs))
+        colNos.append(-len(opStrs))
       else:
-        colnos.append(varNames.index(varName.upper()))
-    print colnos 
-    
+        print varName.upper(),varNames.index(varName.upper())
+        colNos.append(varNames.index(varName.upper()))
+              
+    for colno in colNos:
+      if colno < 0:
+        sys.stdout.write('%14s '%opNames[-colno-1])    
+      else:    
+        sys.stdout.write('%14s '%varNames[colno])
+    sys.stdout.write('\n')
+                     
     break
-
+    
 fileinput.close()
 
-print 
+for fNo,csvFile in enumerate(csvFiles):
+        
+  for line in fileinput.input(csvFile):
+      
+    if fileinput.lineno() < 4:
+      continue
 
-for colno in colnos:
-  if colno < 0:
-    sys.stdout.write('%14s '%opNames[-colno-1])    
-  else:    
-    sys.stdout.write('%14s '%varNames[colno])
-sys.stdout.write('\n')
+    if line.strip()[-1] == ',':
+      line = line.strip()[:-1]
+    colVals = map(float,line.split(','))
+    
+    for colno in colNos:
+      if colno < 0:  
+        sys.stdout.write('%14.4e '%eval(opStrs[-colno-1]))
+      else:
+        sys.stdout.write('%14.4e '%colVals[colno])
+    sys.stdout.write('\n')
+      
+    nameVals = {}
+    for varNo,colNo in enumerate(colNos):
+      nameVals.update({nameList[varNo]:colVals[colNo]})
+ 
+    colVals  = []        
+    for vName in nameList: 
+      if vName == 'ipuf':
+        colVals.append(int(nameVals[vName]))
+      else:
+        colVals.append(nameVals[vName])
+        
+    #if fileinput.lineno() == 4:
+    #  sys.stdout.write('\n')
+    #  print colVals
 
-for line in fileinput.input(csvFile):
-  if fileinput.lineno() < 4:
-    continue
-  if line.strip()[-1] == ',':
-    line = line.strip()[:-1]
-  colvals = map(float,line.split(','))
-  for colno in colnos:
-    if colno < 0:  
-      sys.stdout.write('%14.4e '%eval(opStrs[-colno-1]))
-    else:
-      sys.stdout.write('%14.4e '%colvals[colno])
-  sys.stdout.write('\n')
+    pDat[fNo].append(tuple(colVals))
+  
+  fileinput.close()
+  
+  print 'File ',fNo+1
+  print pDat[fNo][0]
+  print pDat[fNo][-1]
+  print 
 
-fileinput.close()
+#if nFiles == 1:
+for fNo,csvFile in enumerate(csvFiles):
+  
+  p1 = np.array(pDat[fNo])
+  print p1.shape
+  
+  # Y distance from source 
+  p1[:,0] = (p1[:,0] - 4247.423)*1000.
 
+  #p2 = np.array(pDat[1])
+  #print p2.shape
 
->>>>>>> c3cd4a70d7c2a1252ee55b6c7edf280c196da8cd
+  fig = plt.figure(1)
+  plt.clf()
+  plt.hold(True)
+  plt.setp(plt.gca(),frame_on=False,xticks=(),yticks=())
+
+  sub1 = fig.add_subplot(2,2,1)
+  sub1.scatter(p1[:,0],np.sqrt(p1[:,1]),marker='+',color='g')
+  sub1.set_xlim([0,3000.])
+  #sub1.set_xscale('log')
+  sub1.set_xlabel('x')
+  #sub1.set_ylabel('sxz/sqrt(sxx*szz) syz/sqrt(syy*szz)')
+  sub1.set_ylabel('sz')
+  #sub1.set_yscale('log')
+  #sub1.set_ylim([1e-4,1e2])
+
+  sub2 = fig.add_subplot(2,2,2)
+  sub2.scatter(p1[:,0],p1[:,2]/p1[:,3],marker='+',color='g')
+  sub2.set_xlim([0.,3000.])
+  #sub2.set_xscale('log')
+  sub2.set_xlabel('x')
+  sub2.set_ylabel('zwc')
+  sub2.yaxis.tick_right()
+  #sub2.yaxis.set_label_position("right")
+  #sub2.set_yscale('log')
+  #sub2.set_ylim([1e-4,1e2])
+  
+  sub2 = fig.add_subplot(2,2,3)
+  sub2.scatter(p1[:,0],p1[:,4],marker='+',color='g')
+  sub2.set_xlim([0.,3000.])
+  #sub2.set_xscale('log')
+  sub2.set_xlabel('x')
+  sub2.set_ylabel('z')
+  
+  sub2 = fig.add_subplot(2,2,4)
+  sub2.scatter(p1[:,0],p1[:,5]/p1[:,3],marker='+',color='g')
+  sub2.set_xlim([0.,3000.])
+  #sub2.set_xscale('log')
+  sub2.set_xlabel('x')
+  sub2.set_ylabel('wc')
+  sub2.yaxis.tick_right()
+  #sub2.yaxis.set_label_position("right")
+
+  plt.hold(False)
+  figName = csvFile.replace('.csv','') + '_zwc' + '.png'
+  print figName
+  plt.savefig(figName)
