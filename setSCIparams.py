@@ -215,11 +215,11 @@ class RelList(object):
     (nmlNames,nmlValues) = mySCIpattern.readNml(scnFile)
     for i in range(len(nmlNames)):
       relDat = {}
-      for key in ['relmat','trel','xrel','yrel','zrel','tdur']:
+      for key in ['relmat','reltyp','trel','xrel','yrel','zrel','cmass','sigx','sigy','sigz','tdur']:
         #print key,nmlValues[i][key]
         relDat.update({key:nmlValues[i][key]})
       self.rlsList.append(relDat)
-        
+                   
 class Files(object):
 
   def __init__(self,prjName,mySCIpattern=None,samFile=None):
