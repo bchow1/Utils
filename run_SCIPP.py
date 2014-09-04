@@ -15,19 +15,18 @@ env      = os.environ.copy()
 # Local modules
 if compName == 'sm-bnc' or compName == 'sage-d600':
   sys.path.append('C:\\Users\\sid\\python')
-  scriptDir = 'D:\\SrcEst\\P1\\script'
   runDir    = 'D:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\simplei'
 
 if compName == 'pj-linux4':
   sys.path.append('/home/user/bnc/python')
-  scriptDir = '/home/user/bnc/SrcEst/P1/script'
-sys.path.append(scriptDir)
+  runDir = '/home/user/bnc/TestHPAC/Outputs/140902_OMP_p1/Experimental/Etex'
+  
 os.chdir(runDir)
 
 def mainProg():
   
   if os.sys.platform != 'win32':
-    binDir      = "/home/user/bnc/hpac/SCIPUFF/UNIX/FULL/bin/linux/gfort"
+    binDir      = "/home/user/testuserP/SCIPUFF/UNIX/FULLx64_OMP/bin/linux/ifort"
     iniFile     = "/home/user/bnc/hpac/SCIPUFF/UNIX/FULL/bin/linux/scipuff.ini"
     env["PATH"] = "%s:%s" % (binDir,env["PATH"])
     scipp       = os.path.join(binDir,'scipp')
@@ -41,83 +40,123 @@ def mainProg():
   print scipp
   print env["PATH"]
   
-  rType   = 'INST'
-  prjName = 'simplei'
-  getsrcFunc(env,scipp,prjName,iniFile,rType)
+  prjName = 'etex_cux_p1_nosmfld'
+  (tSmp1,cInst1,cAvrg1,tDos1,cDos1) = runSCIPP(env,scipp,prjName,iniFile)
+
+  prjName = 'etex_cux_p2_nosmfld'
+  (tSmp2,cInst2,cAvrg2,tDos2,cDos2) = runSCIPP(env,scipp,prjName,iniFile)
   
-def getsrcFunc(env,scipp,prjName,iniFile,rType):
+  fig = plt.figure(1)
+  plt.clf()
+  
+  nSkip = 1
+  
+  tDos1 = tDos1 - 1.5
+  tDos2 = tDos2 - 1.5
+  
+  hI1, = plt.semilogy(tSmp1[::nSkip],cInst1[::nSkip],marker='^',linestyle='None',\
+               markerfacecolor='None',markeredgecolor='red')
+  hA1, = plt.semilogy(tSmp1[::nSkip],cAvrg1[::nSkip],marker='s',linestyle='None',\
+               markerfacecolor='None',markeredgecolor='red')
+  hD1, = plt.semilogy(tDos1,cDos1,marker='o',linestyle='None',\
+               markerfacecolor='None',markeredgecolor='red')
+  
+  hI2, = plt.semilogy(tSmp2[::nSkip],cInst2[::nSkip],marker='^',linestyle='None',\
+               markerfacecolor='None',markeredgecolor='green')
+  hA2, = plt.semilogy(tSmp2[::nSkip],cAvrg2[::nSkip],marker='s',linestyle='None',\
+               markerfacecolor='None',markeredgecolor='green')
+  hD2, = plt.semilogy(tDos2,cDos2,marker='o',linestyle='None',\
+               markerfacecolor='None',markeredgecolor='green')
+  
+  plt.ylim([1.e-20,1e-10]) 
+  plt.legend((hI1,hA1,hD1,hI2,hA2,hD2),('Inst1','Avg1','Dos1','Inst2','Avg2','Dos2'),ncol=1,bbox_to_anchor=(0.98,0.98))
+  #plt.show()
+  plt.savefig('p1_p2_90hr_nosmfld.png')  
+
+  ax = plt.gca()
+  ax.relim()
+  plt.xlim([28.,52.])
+  plt.ylim([1.e-15,1e-11]) 
+  plt.draw() 
+  plt.savefig('p1_p2_10hr_nosmfld.png')
+  
+  
+def runSCIPP(env,scipp,prjName,iniFile):
   
   global timeList
 
-  #-- Run scipp on reverse run for given release type
-  print 'Running scipp on project ',prjName,' for type ',rType
+  #-- Run scipp fo project
+  print 'Running scipp on project ',prjName
   
-  if rType == 'CONT':
-    pass
-  else:
-    sclFile = prjName + '_' + rType + '.scl'    
-    crtScl(scipp,iniFile,prjName,'User time',sclFile,rmOut=False)      
-    os.remove(sclFile)
-    
-    timeLStart = 9999
-    timeList   = []
-    for line in fileinput.input('scipp.output'):
-      if 'Available Field Times' in line:
-        timeLStart = fileinput.lineno() + 1
-      if 'User time' in line:
-        break
-      if fileinput.lineno() > timeLStart:
-        timeList.append(line.split('(')[1].split(')')[0].strip())
-    fileinput.close()
-    os.remove('scipp.output')    
-    timeList.reverse()
-    #print timeList
-    
-    sfnMax = np.zeros((2,len(timeList)),float)
-    scale  = np.zeros(1,dtype={'names':['scl','hit','null'],'formats':['float','float','float']})
-    
-    for tNo,tString in enumerate(timeList):
-      print tNo,tString
-      sclFile = prjName + '_' + rType + '_%d.scl'%tNo
-      #crtScl(scipp,iniFile,prjName,tString,sclFile)
-      sfnMax[0,tNo] = tNo
-      if tNo == 0: 
-        dType,sfnMax[1,tNo] = pltScl(sclFile,tNo)
-      else:
-        dType,sfnMax[1,tNo] = pltScl(sclFile,tNo,dType=dType)
-      #break
-    scale['scl'] = sfnMax[1,:].max()
-    print scale['scl']
-    
-    # Scaled
-    for tNo,tString in enumerate(timeList):
-      sclFile = prjName + '_' + rType + '_%d.scl'%tNo
-      dType,sfnMax[1,tNo] = pltScl(sclFile,tNo,dType=dType,scale=scale)
-    fig = plt.figure(1)
-    plt.clf()
-    plt.scatter(sfnMax[0,:],sfnMax[1,:])
-    plt.show()
+  outFile = prjName + '_scipp' + '.out'    
+  crtOut(scipp,iniFile,prjName,'0',outFile,rmOut=False)      
+  os.remove(outFile)
+  
+  timeLStart = 9999
+  timeList   = []
+  for line in fileinput.input('scipp.output'):
+    #print fileinput.lineno(),': ',line
+    if 'Available Field Times' in line:
+      timeLStart = fileinput.lineno() + 1
+      print timeLStart
+    if fileinput.lineno() > timeLStart:
+      if len(line.strip()) == 0:
+        print 'Break'
+        break      
+      timeList.append(line.split('(')[1].split(')')[0].strip())
+  fileinput.close()
+  os.remove('scipp.output')    
+  #print timeList
+  
+  # Dosage
+  dosList = []
+  for tNo,tString in enumerate(timeList):
+    outFile = prjName + '_%d.out'%tNo
+    crtOut(scipp,iniFile,prjName,tString,outFile)
+    mdos,vdos = np.loadtxt(outFile,skiprows=13,usecols=(2,3))
+    dosList.append([(tNo+1)*3.,mdos,0.])
+  dosList = np.array(dosList)
+  dosDiff = np.diff(dosList[:,1])
+  dosList[1:,2] = dosDiff/(3.*3600.)
+  print dosList
+  
+  # Sampler values
+  smpVals = np.loadtxt(prjName +'.smp' ,skiprows=1,usecols=(0,1,4,0))
+  print 'SMP\n',smpVals
+  smpDiff = np.diff(smpVals,axis=0)
+  smpVals[0,3]  = 0.
+  smpVals[1:,3] = smpDiff[:,2]/smpDiff[:,0]
+  smpVals[:,0]  = smpVals[:,0]/3600.
+  for row in range(len(smpVals)):
+    print row,smpVals[row,:]
+  
+  # 
+  tSmp   = smpVals[:,0]
+  cInst  = smpVals[:,1]
+  cAvrg  = smpVals[:,3]
+  tDos   = dosList[:,0] 
+  cDos   = dosList[:,2]
 
-  return
+  return (tSmp,cInst,cAvrg,tDos,cDos)
 
-def crtScl(scipp,iniFile,prjName,tString,sclFile,rmOut=True):
-          
-    sfnFile  = sclFile.replace('.scl','.sfn')
-    
+def crtOut(scipp,iniFile,prjName,tString,outFile,rmOut=True):
+        
+  
     inSCIpp = open('scipp.input','w') 
     inSCIpp.write('%s\n'%iniFile)
     inSCIpp.write('KE\n%s\n'%prjName)
-    inSCIpp.write('Adjoint Concentration\nSource Location Prob\n')
-    # slice lower, left; upper, right; Slice height
-    inSCIpp.write('%s\n\n\n\n'%tString)
-    inSCIpp.write('AG\n1e-30\n100 100\n')
-    inSCIpp.write('%s\n'%sfnFile)
+    
+    # Surface Dosage
+    inSCIpp.write('Surface Dosage \nMean\n')
+    inSCIpp.write('%s\n'%tString)
+    inSCIpp.write('CG \n1 \n8.7 53.866 \n')
+    
+    
+    inSCIpp.write('%s\n'%outFile)    
     inSCIpp.close()
     
-    if os.path.exists(sfnFile):
-      os.remove(sfnFile)
-    if os.path.exists(sclFile):
-      os.remove(sclFile)
+    if os.path.exists(outFile):
+      os.remove(outFile)
     
     scipp_inp = open('scipp.input','r')
     scipp_out = open('scipp.output','w')
@@ -127,175 +166,12 @@ def crtScl(scipp,iniFile,prjName,tString,sclFile,rmOut=True):
     scipp_inp.close()
     scipp_out.close()
     scipp_err.close()
-    
-    try:
-      shutil.move('fort.77',sclFile)
-      print '\nMove %s to %s'% ('fort.77',sclFile)
-    except EnvironmentError:
-      raise
-    
+        
     # Cleanup
-    os.remove(sfnFile)
     os.remove('scipp.input')
     if rmOut:
       os.remove('scipp.output')
     os.remove('scipp.error')
-
-def pltScl(sclFile,tNo,dType=None,scale=None):
-  
-  global timeList
-  
-  for line in fileinput.input(sclFile):
-    if fileinput.lineno() == 1:
-      nList = line.split(',')
-      for vNo,val in enumerate(nList):
-        nList[vNo] = int(val.split('=')[1])
-      nxy, nHit, nNull = nList
-      break
-  fileinput.close()
-  
-  nCols   = 2 + nHit + nNull + 2
-  ny      = np.sqrt(nxy)
-  nx      = ny
-  npzFile = 'Slf%03d.npz'%tNo
-    
-  if dType is None:
-    print nxy, nHit, nNull
-    colNames = ['x','y']
-    for i in range(nHit):
-      colNames.extend(['T%03d'%i])
-    for i in range(nNull):
-      colNames.extend(['N%03d'%i])
-    colNames.extend(['Slf','Mass'])
-    colFmt = []
-    for iCol in range(nCols):
-      colFmt.extend(['float'])
-    print colNames
-    #print colFmt
-    dType = {'names':colNames,'formats':colFmt}
-    #print dType
-
-  cMin = 0.01
-  cMax = 1.01
-  levels = np.linspace(cMin,cMax,num=6)
-  if tNo == 0:
-    print levels
-  
-  lnorm  = colors.Normalize(levels,clip=False)
-  lScatter = True
-    
-  if os.path.exists(npzFile) and scale is not None:
-    
-    sclDat = np.load(npzFile)
-    x   = sclDat['arr_0']
-    y   = sclDat['arr_1']
-    scl = sclDat['arr_2']/scale['scl'] 
-
-    fig = plt.figure(1)
-    plt.clf()
-    cf = plt.contourf(x,y,scl,levels)
-    plt.colorbar(cf)
-    timeStr = timeList(tNo).split()[2]
-    plt.title('Time %s'%timeStr)
-    plt.savefig('Slf%s.png'%timeStr)
-    
-  else: 
-    
-    sclDat = np.loadtxt(sclFile,skiprows=1,dtype=dType)
-    scl    = np.transpose(sclDat['Slf'].reshape(np.sqrt(nxy),-1))
-    x      = sclDat['x'][::ny]
-    y      = sclDat['y'][:ny]
-    np.savez(npzFile,x,y,scl)
-        
-    cncH = np.zeros((nx,ny,nHit),float)
-    cncN = np.zeros((nx,ny,nNull),float)
-    #print sclDat.dtype[0],len(sclDat.dtype)
-    cnc_view = sclDat.view((sclDat.dtype[0],len(sclDat.dtype)))
-    #print np.shape(cnc_view),sclDat.dtype.names[2:nHit+2]
-    
-    hMax = cnc_view[:,2:2+nHit].max()
-    nMax = cnc_view[:,2+nHit:2+nHit+nNull].max() 
-    print 'Max Conc for hit and null = ',hMax,nMax
-    
-    if lScatter:
-      for i in range(nHit):
-        colName = 'T%03d'%i
-        sclDat[colName] = sclDat[colName]/hMax
-        if sclDat[colName].max() < 1.e-2:
-          continue
-        fig = plt.figure(1)
-        plt.clf()
-        plt.hold(True)
-        #print sclDat['x']
-        #print sclDat['y']
-        #print sclDat[colName].min(), sclDat[colName].max(),i+2,':',colName,cnc_view[:,i+2].max()
-        cf = plt.scatter(sclDat['x'],sclDat['y'],c=sclDat[colName],edgecolors='none',cmap=plt.cm.jet,vmin=cMin,vmax=cMax)
-        cf.cmap.set_under('white')
-        cf.set_clim(cMin,cMax)
-        cbar = plt.colorbar(cf,ticks=levels,format="%3.1f")
-        cbar.ax.set_yticklabels(levels-0.01)
-        timeStr = timeList(tNo).split()[2]
-        plt.savefig('Slf%s_hits.png'%timeStr)        
-        plt.title('Hit Concentration at Time %s'%timeStr)
-        plt.hold(False)
-        plt.savefig('Slf%03d_%03d_nulls.png'%(tNo,i))
-      for i in range(nNull):
-        colName = 'N%03d'%i
-        sclDat[colName] = sclDat[colName]/hMax
-        if sclDat[colName].max() < 1.e-2:
-          continue
-        fig = plt.figure(1)
-        plt.clf()
-        plt.hold(True)
-        cf = plt.scatter(sclDat['x'],sclDat['y'],c=sclDat[colName],edgecolors='none',cmap=plt.cm.jet,vmin=cMin,vmax=cMax)
-        cf.cmap.set_under('white')
-        cf.set_clim(cMin,cMax)
-        cbar = plt.colorbar(cf,ticks=levels,format="%3.1f")
-        cbar.ax.set_yticklabels(levels-0.01)
-        timeStr = timeList(tNo).split()[2]
-        plt.savefig('Slf%s_nulls.png'%timeStr)        
-        plt.title('Null Concentration at Time %s'%timeStr)
-        plt.hold(False)
-        plt.savefig('Slf%03d_%03d_nulls.png'%(tNo,i))                   
-    else:
-      for i in range(nHit):
-        cncH[:,:,i] = np.transpose(sclDat[colName].reshape(np.sqrt(nxy),-1))/hMax
-        if cncH[:,:,i].max() < 0.01:
-          continue             
-        fig = plt.figure(1)
-        plt.clf()
-        plt.hold(True)
-        cf = plt.contourf(x,y,cncH[:,:,i],norm=lnorm,levels=levels,cmap=plt.cm.jet,vmin=cMin,extend='both')
-        cf.cmap.set_under('white')
-        cf.set_clim(cMin,cMax)
-        cs = plt.contour(x,y,cncH[:,:,i],norm=lnorm,levels=levels,colors='k')
-        plt.grid(b=True, which='major', color='k',linestyle='-')
-        cbar = plt.colorbar(cf,ticks=levels,format="%3.1f")
-        cbar.ax.set_yticklabels(levels-cMin)
-        plt.title('Time %s'%str(tNo))
-        plt.hold(False)
-        plt.savefig('Slf%03d_%03d_hits.png'%(tNo,i)) 
-                                                   
-      for i in range(nNull):
-        colName = 'N%03d'%i
-        cncN[:,:,i] = np.transpose(sclDat[colName].reshape(np.sqrt(nxy),-1))/nMax         
-        if cncN[:,:,i].max() < cMin:
-          continue
-        fig = plt.figure(1)
-        plt.clf()
-        plt.hold(True) 
-        cf = plt.contourf(x,y,cncN[:,:,i],norm=lnorm,levels=levels,cmap=plt.cm.jet,vmin=cMin,extend='both')
-        cf.cmap.set_under('white')
-        cf.set_clim(cMin,cMax)
-        cs = plt.contour(x,y,cncN[:,:,i],norm=lnorm,levels=levels,colors='k')
-        plt.grid(b=True, which='major', color='k',linestyle='-')
-        cbar = plt.colorbar(cf,ticks=levels,format="%3.1f")
-        cbar.ax.set_yticklabels(levels-cMin)
-        plt.title('Time %s'%str(tNo))
-        plt.hold(False)
-        plt.savefig('Slf%03d_%03d_nulls.png'%(tNo,i))
-    
-  return dType,scl.max()
            
 if __name__ == '__main__':
     mainProg() 
