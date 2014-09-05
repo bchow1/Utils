@@ -40,6 +40,7 @@ def mainProg():
   print scipp
   print env["PATH"]
   
+  '''
   prjName = 'etex_cux_p1_nosmfld'
   (tSmp1,cInst1,cAvrg1,tDos1,cDos1) = runSCIPP(env,scipp,prjName,iniFile)
 
@@ -79,7 +80,49 @@ def mainProg():
   plt.ylim([1.e-15,1e-11]) 
   plt.draw() 
   plt.savefig('p1_p2_10hr_nosmfld.png')
+  '''
   
+  prjName1 = 'etex_cux_p1_dt1'
+  prjName2 = 'etex_cux_p2_dt1'
+  npzFile  = 'cInst.npz'
+  
+  if not os.path.exists(npzFile) or os.path.getmtime(npzFile) < os.path.getmtime(prjName1+'.log'):
+    
+    (cInst1) = runSCIPP(env,scipp,prjName1,iniFile)
+    (cInst2) = runSCIPP(env,scipp,prjName2,iniFile)
+    
+    np.savez(npzFile,cInst1,cInst2) 
+    
+  else:
+        
+    npzData = np.load(npzFile)
+    cInst1  = npzData['arr_0']
+    cInst2  = npzData['arr_1']
+    
+  fig = plt.figure(1)
+  plt.clf()
+  
+  nSkip = 1  
+  
+  hI1, = plt.semilogy(cInst1[:,0][::nSkip],cInst1[:,1][::nSkip],marker='^',linestyle='None',\
+               markerfacecolor='None',markeredgecolor='red')
+  
+  hI2, = plt.semilogy(cInst2[:,0][::nSkip],cInst2[:,1][::nSkip],marker='^',linestyle='None',\
+               markerfacecolor='None',markeredgecolor='green')  
+  
+  plt.ylim([1.e-20,1e-11]) 
+  plt.xlabel('Hr')
+  plt.ylabel('Concentration')
+  plt.legend((hI1,hI2),('Inst1','Inst2'),ncol=1,bbox_to_anchor=(0.98,0.98))
+  #plt.show()
+  plt.savefig('p1_p2_90hr_cnc.png')  
+
+  ax = plt.gca()
+  ax.relim()
+  plt.xlim([28.,52.])
+  plt.ylim([1.e-15,1e-11]) 
+  plt.draw() 
+  plt.savefig('p1_p2_24hr_dt_10min.png')
   
 def runSCIPP(env,scipp,prjName,iniFile):
   
@@ -106,8 +149,9 @@ def runSCIPP(env,scipp,prjName,iniFile):
       timeList.append(line.split('(')[1].split(')')[0].strip())
   fileinput.close()
   os.remove('scipp.output')    
-  #print timeList
+  print timeList
   
+  '''
   # Dosage
   dosList = []
   for tNo,tString in enumerate(timeList):
@@ -138,6 +182,20 @@ def runSCIPP(env,scipp,prjName,iniFile):
   cDos   = dosList[:,2]
 
   return (tSmp,cInst,cAvrg,tDos,cDos)
+  '''
+  
+  cncList = []
+  for tNo,tString in enumerate(timeList):
+    outFile = prjName + '_%d.out'%tNo
+    crtOut(scipp,iniFile,prjName,tString,outFile)
+    mCnc,vCnc = np.loadtxt(outFile,skiprows=13,usecols=(2,3))
+    cncList.append([(tNo+1)*10./60.,mCnc,vCnc])
+    os.remove(outFile)
+  cInst = np.array(cncList)
+  #print cInst[:,0],cInst[:,1]
+  
+  return cInst
+  
 
 def crtOut(scipp,iniFile,prjName,tString,outFile,rmOut=True):
         
@@ -146,9 +204,17 @@ def crtOut(scipp,iniFile,prjName,tString,outFile,rmOut=True):
     inSCIpp.write('%s\n'%iniFile)
     inSCIpp.write('KE\n%s\n'%prjName)
     
+    '''
     # Surface Dosage
     inSCIpp.write('Surface Dosage \nMean\n')
     inSCIpp.write('%s\n'%tString)
+    inSCIpp.write('CG \n1 \n8.7 53.866 \n')
+    '''
+    
+    # Surface Concentration
+    inSCIpp.write('Concentration \nSurface \nMean \n')
+    inSCIpp.write('%s\n'%tString)
+    inSCIpp.write(' \n \n') # Slice lower left and upper right points.    
     inSCIpp.write('CG \n1 \n8.7 53.866 \n')
     
     
