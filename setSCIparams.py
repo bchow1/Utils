@@ -109,7 +109,7 @@ class Pattern(object) :
     self.pattSmp1  = re.compile("(.+)001")                         # First sampler
 
     # ntv file keywords
-    self.pattRelTime = re.compile("^Time(.+):\s*(.+)")
+    self.pattRelTime = re.compile("^Time(.+?):\s*(.+)")
     self.pattRelLoc  = re.compile("^Field max(.+):\s*(.+?)\s+(.+?)\s+(.+)")
 
     # ini file keywords
@@ -305,12 +305,19 @@ class Files(object):
         break
     fileinput.close()
     if 'Z' in relTime:
+      Hr = None
+      if '(' in relTime:
+        Hr,relTime = relTime.split('(')
+        relTime    = relTime.split()[1].replace(")","")
       (HH, MM, SS) = relTime.replace("Z","").split(':')
-      relTime = float(HH) + float(MM)/60. + float(SS)/3600.
+      if Hr is None:
+        relTime = float(HH) + float(MM)/60. + float(SS)/3600.
+      else:
+        relTime = str(float(HH) + float(MM)/60. + float(SS)/3600.) + '(%8.3f Hr)'%float(Hr)        
 
     return(relTime,relX,relY)
 
-  def readSumFile(self,sumFile):
+  def readSumFile(self,sumFile,showDate=False):
     #print '\nPredicted source parameters from ',sumFile,' :'
     pName = [sLoc,sMas,sDur] = [0,1,2]
     estList = [[] for i in pName]
@@ -330,7 +337,10 @@ class Files(object):
         float(line.split()[0])
       except ValueError:
         if line[:4] == ' t -':
-          tMax = line.split()[3] 
+          if showDate:
+            tMax = line.split()[2:4]
+          else: 
+            tMax = line.split()[3]
         elif 'Duration' in line:
           matchDurUnt = pattDurUnt.match(line)      
           maxList[sDur][1] = matchDurUnt.group(1)
@@ -351,7 +361,6 @@ class Files(object):
           if abs(relP-maxList[sLoc][0]) < 1.e-10:
             maxList[sDur][0] = durT
             break
-
     return (tMax,maxList)
 
 # class for creating sam file
