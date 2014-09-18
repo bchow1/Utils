@@ -7,6 +7,7 @@ import fileinput
 import sqlite3
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 #
 import run_cmd
 import tab2db
@@ -159,19 +160,28 @@ def getHrDat(readpuf,env,prjName,hr,rmOut=False,tail='\n'):
   if not os.path.exists(pufFile):
     print 'Error: cannot file puf file ',pufFile
 
-  outFile = prjName + '_%08.2f_puff.txt'%hr
+  if int(hr) == -1:
+    outFile = prjName + '_All_puff.txt'
+  else:    
+    outFile = prjName + '_%08.2f_puff.txt'%hr
+    
   if os.path.exists(outFile):
     if rmOut:
       os.remove(outFile)
+      rmOut = True
   else:
     rmOut = True
     
   #
   if rmOut:
-    Inputs = ('%s%s %s%s %s%s%s %s%s %s%s %s'%('go ',pufFile,tail,'time %8.2f'%hr,\
-              tail, 'file TXT:',outFile,tail,'go ',tail, 'exit', tail))
+    if int(hr) == -1:
+      Inputs = ('%s%s %s%s %s%s%s %s%s %s%s %s'%('go ',pufFile,tail,'time %8.2f'%hr,\
+                 tail, 'file TXT:',outFile,tail,'go ',tail, 'exit', tail))
+    else:
+      Inputs = ('%s%s %s%s %s%s%s %s%s %s%s %s'%('go ',pufFile,tail,'time -1'%hr,\
+                 tail,'var ipuf',tail,'file TXT:',outFile,tail,'go ',tail, 'exit', tail))      
     print Inputs
-    run_cmd.Command(env,readpuf,Inputs,tail)
+    run_cmd.Command(env,readpuf,Inputs,tail,outOut=True)
   
   vNames = {}
   if os.path.exists(outFile):
@@ -189,15 +199,15 @@ def getHrDat(readpuf,env,prjName,hr,rmOut=False,tail='\n'):
 
     for vNo,vName in enumerate(varNames):
       vNames.update({vName:vNo})
-    print vNames
+    #print vNames
 
-    zLt200 = hrDat[hrDat[:,vNames['Z']]< 200.]
-    C = zLt200[:,vNames['C']]
-    print len(C),np.sum(C)
+    #zLt200 = hrDat[hrDat[:,vNames['Z']]< 200.]
+    #C = zLt200[:,vNames['C']]
+    #print len(C),np.sum(C)
 
-    zGt200 = hrDat[hrDat[:,vNames['Z']]> 200.]
-    C = zGt200[:,vNames['C']]
-    print len(C),np.sum(C)
+    #zGt200 = hrDat[hrDat[:,vNames['Z']]> 200.]
+    #C = zGt200[:,vNames['C']]
+    #print len(C),np.sum(C)
 
   else:
     print 'Error: Cannot find %s'%outFile
@@ -205,27 +215,19 @@ def getHrDat(readpuf,env,prjName,hr,rmOut=False,tail='\n'):
   
   return vNames,hrDat
 
-def pltHrDat(hrDat,hrLbl,vNames,vPltNms):
-  fig = plt.figure()
-  plt.clf()
-  plt.hold(True)
-  mark = ['+','s','d']
-  clrs = ['red','blue','green']
+def pltHrDat(hrDat,hrLbl,vNames,vPltNms,vLims=None,vType=['lin','log'],ihr=0):
+ 
   #
-  vPltNms = ['C','Z']
   xIndx = vNames[vPltNms[0]]
   yIndx = vNames[vPltNms[1]]
-  ax = fig.add_subplot(2,2,1)
-  ax.semilogx(hrDat[:,xIndx],hrDat[:,yIndx],marker='o',markersize=3,linestyle='None',color='red')
-  plt.xlabel(vPltNms[0])
-  plt.ylabel(vPltNms[1])
-  plt.ylim([0,200])
-  title = 'Hr%s_%s_vs_%s'%(hrLbl,vPltNms[0],vPltNms[1])
-  plt.title(title)
-  plt.hold(False)
-  plt.show()
-  #plt.savefig('Hr%s_%s_%s_vs_%s.png'%(hrLbls[0],hrLbls[1],vPltNms[0],vPltNms[1]))
   
+  ax = fig.add_subplot(1,1,1)
+  ax.plot(hrDat[:,xIndx],hrDat[:,yIndx],marker='o',markersize=3,linestyle='None',color=clrs[ihr])
+  if vType[0] == 'log':
+    ax.set_xscale('log')
+  if vType[1] == 'log':
+    ax.set_yscale('log')
+    
   return
   
 if __name__ == '__main__':
@@ -236,8 +238,11 @@ if __name__ == '__main__':
   #sys.argv = ['','mc_ter']
 
   #runDir = 'D:\\Aermod\\v12345\\runs\\martin\\SCICHEM'
-  runDir = '/home/user/bnc/scipuff/Repository/export/EPRI/EPRI_130620/test'
-  sys.argv = ['','lin']
+  #runDir = '/home/user/bnc/scipuff/Repository/export/EPRI/EPRI_130620/test'
+  runDir = '/home/user/bnc/TestHPAC/Outputs/140902_OMP_p1/Experimental/Etex'
+  
+  # prjName as 2nd argument
+  sys.argv = ['','etex_cux_p1_dt1']
 
   if len(sys.argv) > 1:
     prjNames = sys.argv[1]
@@ -265,21 +270,14 @@ if __name__ == '__main__':
         binDir = os.path.join(SCIPUFF_BASEDIR,"workspace","EPRI","bin",compiler,"Win32",version)
         iniFile = "D:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\workspace\\EPRI\\scipuff.ini"
       env["PATH"] = "%s" % (binDir)
-      readpuf  = ["%s\\scipp.exe"%binDir,"-I:%s"%iniFile,"-R:RP"]
-      #OldPath = env["PATH"]
-      #bindir = SCIPUFF_BASEDIR + "\\" + compiler + "\\" + version
-      #urbdir = SCIPUFF_BASEDIR + "\\" + compiler + "\\nonurban"  + "\\" + version
-      #vendir = SCIPUFF_BASEDIR + "\\vendor" 
-      #env["PATH"] = "%s;%s;%s;%s" % (bindir,urbdir,vendir,OldPath)
-      #env["PATH"] = "%s;%s;%s" % (bindir,urbdir,vendir)
       print env["PATH"]
       readpuf  = ["%s\\scipp.exe"%binDir,"-I:%s"%iniFile,"-R:RP"]
     tail = '\r\n'
   else:
-    SCIPUFF_BASEDIR = "/home/user/bnc/scipuff/Repository/UNIX/EPRI/bin/linux/ifort"
+    SCIPUFF_BASEDIR = "/home/user/bnc/scipuff/Repository/UNIX/FULLx64_OMP/bin/linux/ifort"
     #SCIPUFF_BASEDIR = "/home/user/bnc/scipuff/EPRI_121001/UNIX/EPRI/bin/linux/lahey_debug"
     #SCIPUFF_BASEDIR = "/usr/pc/biswanath/hpac/gitEPRI/UNIX/EPRI/bin/linux/lahey"
-    readpuf = ["%s/scipp" % SCIPUFF_BASEDIR,"-I:","-R:RP"]
+    readpuf = ["%s/scipp" % SCIPUFF_BASEDIR,"-I:scipuff.ini","-R:RP"]
     env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran/x86_32:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
     env["LD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH"] + ':' + SCIPUFF_BASEDIR
     tail = '\n'
@@ -291,13 +289,62 @@ if __name__ == '__main__':
   os.chdir(runDir)
   
   #
-  vPltNms = ['C','Z']
-  hrs = [i for i in range(12,21)]
+  vPltNms  = [['C','ZI']] # ,['X','C'],['Y','C']]
+  vLims    = [[None,-100],[None,[0.,2500.]],None,None]
+  vTypes   = [['log','lin'],['lin','log'],['lin','log']]
+  
+  hrs = [i for i in range(39,41)]
+  mark = ['+','s','d']
+  clrs = ['red','blue','green']
+  
   for prjName in prjNames.split(':'):
-    for ihr,hr in enumerate(hrs):
-      vNames,hrDat = getHrDat(readpuf,env,prjName,hr,tail=tail)
-      hrLbl = 'Hr %02d'%hr
-      pltHrDat(hrDat,hrLbl,vNames,vPltNms)
+    
+    for pltNo in range(len(vPltNms)):
+      
+      fig = plt.figure()
+      plt.clf()
+      plt.hold(True)
+      
+      for ihr,hr in enumerate(hrs):
+        vNames,hrDat = getHrDat(readpuf,env,prjName,hr,tail=tail)
+        print hr,len(hrDat[:,vNames['C']]),np.sum(hrDat[:,vNames['C']])
+        hrLbl = '%02d'%hr
+        
+        # Check if variable in vNames list
+        if vPltNms[pltNo][0] not in vNames or vPltNms[pltNo][1] not in vNames:
+          print 'Cannot find ',vPltNms[pltNo][0],' or ',vPltNms[pltNo][1]
+          print 'Valid variable names are :\n****'
+          vList = vNames.keys()
+          vList.sort()
+          for iKey,Key in enumerate(vList):
+            sys.stdout.write('%s'%Key)
+            if (iKey+1)%20 == 0:
+              tail = '\n'
+            else:
+              tail = ', '
+            sys.stdout.write('%s'%tail)
+          sys.stdout.write('\n****\n')
+          sys.exit()
+                            
+        pltHrDat(hrDat,hrLbl,vNames,vPltNms[pltNo],vLims=vLims[pltNo],vType=vTypes[pltNo],ihr=ihr)
+      
+      plt.xlabel(vPltNms[pltNo][0])
+      plt.ylabel(vPltNms[pltNo][1])
+  
+      if vLims[pltNo] is not None:
+        if vLims[pltNo][0] is not None:
+          plt.xlim(vLims[pltNo][0])
+        if vLims[pltNo][1] is not None:
+          plt.ylim(vLims[pltNo][1])
+          
+      title = 'Hr%s_%s_vs_%s'%(hrLbl,vPltNms[pltNo][0],vPltNms[pltNo][1])
+      plt.title(title)
+      
+      plt.hold(False)
+      #plt.show()
+      figName = 'Hr%s_%s_vs_%s.png'%(hrLbl,vPltNms[pltNo][0],vPltNms[pltNo][1])
+      plt.savefig(figName)
+      print 'Created %s in %s'%(figName,os.getcwd())
   #
   '''
   for prjName in prjNames.split(':'):
