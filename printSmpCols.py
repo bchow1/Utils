@@ -12,6 +12,7 @@ class smp(object):
     self.wrap     = False
     self.splist   = []
     self.nspc     = 0
+    self.spClStrt = 9999
     self.hdr      = False
     self.nsmp     = 1
     self.smpNo    = [1] 
@@ -19,6 +20,7 @@ class smp(object):
     self.colNames = ["T","C001","V001"]
     self.varNames = ["T","C","V"]
     self.pltNames = ["Time","Concentration","Variance"]
+    self.varCols  = []
     self.nTime    = 1
     self.Times    = [0.,]
     self.skiprows = 1
@@ -27,29 +29,59 @@ class smp(object):
     colNames   = line.split()
     self.colNames = colNames
     self.ncols = len(colNames)
-    self.spColStart = 0
-    varNames = []
+    varNames = ['T']
+    print "\n==============="
+    print "colNo  colNames"
+    print "==============="
     for colNo,colName in enumerate(colNames):
       if colName.endswith('_001'):
-        if self.spColStart == 0:
-          self.spColStart = colNo
+        if self.spClStrt == 9999:
+          self.spClStrt = colNo
         varNames.append(colName.replace('_001',''))
       if len(colName) == 4 and colName.endswith('001'):
         varNames.append(colName.replace('001',''))
       if colName.endswith('C002') or colName.endswith('D002'):
         break
-      print colNo,colName
+      if self.nspc > 0 and colNo >= self.spClStrt:        
+        print '%3d   %s   %s'%(colNo,varNames[colNo],self.splist[colNo-self.spClStrt])
+      else:
+        print '%3d   %s'%(colNo,varNames[colNo])
     self.varNames = varNames
-    self.nsmp = (self.ncols - 1)/len(varNames) 
+    self.nsmp = (self.ncols - 1)/(len(varNames) - 1) 
     
-  def getVarCols(self,varNames=None):
-    # Find col numbers for variable names requested by user 
+  def getVarCols(self,varNames=None,smpNos=[]):
+    # Find col numbers for variable names requested by user
+     
     if varNames is None:
-      varNames = self.varNames + self.spNames    
-    self.varcol = []
+      varNames = self.varNames
+    
+    varCols = []
     for varName in varNames:
-      self.varcol.append(self.varNames.index(varName))
-      print 'varName,varCol = ',varName,self.varcol[-1]
+      if varName in self.varNames:
+        varCols.append(self.varNames.index(varName))
+        #print 'varName,varCol = ',varName,varCols[-1]
+      elif self.nspc > 0 and varName in self.splist:
+        varCols.append(self.splist.index(varName) + self.spClStrt)
+        #print 'varName,varCol = ',varName,varCols[-1]
+      else:
+        print 'Warning cannot find variable ',varName
+        return
+      
+    if len(smpNos) == 0:
+      smpNos = [i for i in range(1,self.nsmp+1)]
+
+    if 'T' not in varNames:
+      self.varCols = [0]            # Always add time as first user variable
+      varNames.insert(0, 'T')
+    nVar = len(self.varNames) - 1
+    for smpNo in smpNos:
+      if int(smpNo) > self.nsmp:
+        print 'smpNo(%d) > nsmp(%d)'%(int(smpNo),self.nsmp)
+        return
+      for varCol in varCols:
+        self.varCols.append((int(smpNo)-1)*nVar + varCol)
+    
+    return
     
   def setSpList(self,line):
     self.splist = line.split('(')[1].split(')')[0].split(',')
@@ -126,13 +158,20 @@ if sys.argv.__len__() == 4:
 mySmp = smp(smpFile)
 mySmp.setType()
 
+mySmp.getVarCols(varNames=varNames,smpNos=smpNos)
+
 # Load sampler data
 
 if not mySmp.wrap:
   smpDat = pd.read_table(mySmp.fsmp,skiprows=mySmp.skiprows,sep=r'\s*',names=mySmp.colNames)
 
-for colNo,colName in enumerate(smpDat.columns):
-  print colNo,colName,smpDat[colName].min(),smpDat[colName].max() 
+print "\n==================================="
+print ' varName       Min           Max'  
+print "===================================="
+for colNo in mySmp.varCols:
+  colName = smpDat.columns[colNo]
+  print '%8s %13.4e %13.4e'%(colName,smpDat[colName].min(),smpDat[colName].max())
+print '\n'
 
 '''
 
