@@ -8,6 +8,7 @@ import matplotlib.tri as tri
 import matplotlib.cm as cm
 from matplotlib import colors
 import numpy as np
+import numpy.ma as ma
 import os
 import sys
 import optparse
@@ -32,7 +33,7 @@ print 'Current directory = ',os.getcwd()
 if opt.inFile:
   inFile = opt.inFile
 else:
-  inFile = 'rev_etex_mle.ntv'
+  inFile = 'h42n40_v2_t0001.ntv'
   #print 'Error: inFile must be specified'
   #printUsage()
   #sys.exit()
@@ -87,6 +88,8 @@ print 'Max Value = ',maxc
 print 'No. of points = ',npts
 
 c = c/maxc
+c = ma.masked_where(c<1e-30,c)
+c = ma.filled(c,1e-30)
 
 if isLog:
   logBase = 10.
@@ -116,11 +119,20 @@ print levels
 fig = plt.figure()
 plt.clf()
 plt.hold(True)
-cax = plt.tricontourf(x,y,c, triangles=triangles, norm= lnorm, levels = levels, cmap=plt.cm.jet, vmin=0.01,extend='both')
+if isLog:
+  cax = plt.tricontourf(x,y,c, triangles=triangles, norm= lnorm, levels = levels, cmap=plt.cm.jet, vmin = 10**clrmin)
+else:
+  cax = plt.tricontourf(x,y,c, triangles=triangles, norm= lnorm, levels = levels, cmap=plt.cm.jet, vmin=0.01,extend='both')
 cax.cmap.set_under('white')
-cax.set_clim(0.01,1.01)
-cbar = plt.colorbar(ticks=levels,format="%3.1f")
-cbar.ax.set_yticklabels(levels-0.01)
+
+if isLog:
+  cax.set_clim(10**clrmin,10**clrmax)
+  cbar = plt.colorbar(ticks=levels,format="%5.3e")
+  cbar.ax.set_yticklabels(levels)
+else:
+  cax.set_clim(0.01,1.01)
+  cbar = plt.colorbar(ticks=levels,format="%3.1f")
+  cbar.ax.set_yticklabels(levels-0.01)
 plt.tricontour(x,y,c, triangles=triangles, norm= lnorm, levels = levels, colors='k')
 
 if isLatLon:
