@@ -178,8 +178,7 @@ def getHrDat(readpuf,env,prjName,hr,rmOut=False,tail='\n'):
       Inputs = ('%s%s %s%s %s%s%s %s%s %s%s %s'%('go ',pufFile,tail,'time %8.2f'%hr,\
                  tail, 'file TXT:',outFile,tail,'go ',tail, 'exit', tail))
     else:
-      Inputs = ('%s%s %s%s %s%s%s %s%s %s%s %s'%('go ',pufFile,tail,'time -1'%hr,\
-                 tail,'var ipuf',tail,'file TXT:',outFile,tail,'go ',tail, 'exit', tail))      
+      Inputs = ('go %s \ntime -1 \nvar C \nfile TXT:%s \ngo \nexit\n'%(pufFile,outFile))      
     print Inputs
     run_cmd.Command(env,readpuf,Inputs,tail,outOut=True)
   
@@ -238,11 +237,12 @@ if __name__ == '__main__':
   #sys.argv = ['','mc_ter']
 
   #runDir = 'D:\\Aermod\\v12345\\runs\\martin\\SCICHEM'
+  runDir = 'D:\\SCIPUFF\\runs\\EPRI\\Ana\\trac'
   #runDir = '/home/user/bnc/scipuff/Repository/export/EPRI/EPRI_130620/test'
-  runDir = '/home/user/bnc/TestHPAC/Outputs/140902_OMP_p1/Experimental/Etex'
+  #runDir = '/home/user/bnc/TestHPAC/Outputs/140902_OMP_p1/Experimental/Etex'
   
   # prjName as 2nd argument
-  sys.argv = ['','etex_cux_p1_dt1']
+  sys.argv = ['','trac_jan']
 
   if len(sys.argv) > 1:
     prjNames = sys.argv[1]
@@ -259,9 +259,9 @@ if __name__ == '__main__':
     version = "Debug"
     if env["SCICHEM"] == "True":
       if compName == 'sm-bnc' or compName == 'sage-d600':
-        SCIPUFF_BASEDIR="D:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\"
-        binDir = os.path.join(SCIPUFF_BASEDIR,"workspace","EPRI","bin",compiler,"Win32",version)
-        iniFile = "D:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\workspace\\EPRI\\scipuff.ini"
+        SCIPUFF_BASEDIR="D:\\SCIPUFF\\EPRI_WIP"
+        binDir = os.path.join(SCIPUFF_BASEDIR,"workspace","EPRI","vs2008","bin",compiler,"Win32",version)
+        iniFile = "D:\\SCIPUFF\\Repository\\workspace\\EPRI\\scipuff.ini"
       env["PATH"] = "%s" % (binDir)
       readpuf  = ["%s\\scipp.exe"%binDir,"-I:%s"%iniFile,"-R:RP"]
     else:
