@@ -86,30 +86,95 @@ htmlFile.write('<h1>Summary of regression test&nbsp;&nbsp;&nbsp; -&nbsp;&nbsp;&n
 htmlFile.write('FAIL(0P,33F,33T)')
 htmlFile.write('</span><br></h1>\n')
 
-
+# Details
 htmlFile.write('<h1 style="text-decoration: underline; font-weight: normal; color: rgb(51, 102, 255);">Details:</h1>\n')
 
+#
 htmlFile.write('<h2>Platform &nbsp; <span style="color: rgb(255, 102, 0);">')
 htmlFile.write('Windows')
 htmlFile.write('</span></h2>\n')
-
-
+#
 htmlFile.write('<h2>Current Executable Directory &nbsp; <span style="color: rgb(255, 102, 0);">')
 htmlFile.write('/cygdrive/d/SCIPUFF/2014-10-09/bin')
 htmlFile.write('</span></h2>\n')
-
-htmlFile.write('<h2>Regression Executable Directory&nbsp <span style="color: rgb(255, 102, 0);">')
+#
+htmlFile.write('<h2>Regression Executable Directory &nbsp; <span style="color: rgb(255, 102, 0);">')
 htmlFile.write('/cygdrive/m/util256/amd64')
 htmlFile.write('</span></h2>\n')
+
+htmlFile.write('<h2>Regression Run Date &nbsp; <span style="color: rgb(255, 102, 0);">')
+htmlFile.write('Wed Feb 12 16:09:07 EST 2014')
+htmlFile.write('</span></h2>\n')
+
+# Summary Table
+htmlFile.write('<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">\n')
+htmlFile.write('<tbody><tr><td style="width: 61px; text-align: center;">No.<br></td>\n')
+
+htmlFile.write('<td style="width: 304px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
+htmlFile.write('Project Name<br></td>\n')
+
+htmlFile.write('<td style="width: 87px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
+htmlFile.write('Results<br></td>\n')
+
+htmlFile.write('<td style="width: 128px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
+htmlFile.write('Number of Puffs <br></td>\n')
+
+htmlFile.write('<td style="width: 133px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
+htmlFile.write('Puff Dump<br></td>\n')
+
+htmlFile.write('<td style="width: 360px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
+htmlFile.write('Dose Dump<br></td></tr>\n')
+
+# Rows
+
+for sunum,suite in enumerate(suiteList):
+  htmlFile.write('<tr><td style="width: 61px; text-align: center;">')
+  htmlFile.write('%s'%sunum)
+  htmlFile.write('<br></td>')
+  
+  htmlFile.write('<td style="width: 304px; text-align: center;<h3>">')
+  htmlFile.write('%s'%suite.name)
+  htmlFile.write('</h3></td>\n')
+  
+  htmlFile.write('<td style="width: 87px; text-align: center;"><h3>')
+  htmlFile.write('FAIL')
+  htmlFile.write('</h3></td>\n')
+  
+  htmlFile.write('<td style="width: 128px; text-align: center;">')
+  htmlFile.write('Different')
+  htmlFile.write('<br></td>\n')
+  
+  htmlFile.write('<td style="width: 133px; text-align: center;">')
+  htmlFile.write('Different')
+  htmlFile.write('<br></td>\n')
+  
+  htmlFile.write('<td style="width: 360px; text-align: center;">')
+  htmlFile.write('Different')
+  htmlFile.write('<br></td></tr>\n')
+
+htmlFile.write('</tbody></table>')
+
+suiteProps = {}
+for suite in suiteList:
+  suiteProps.update({suite:['Using historical database','Fail']})
+
+print 'suiteProps: ',suiteProps
 
 htmlDiff = difflib.HtmlDiff()
       
 for suite in suiteList:
   
+  # Name
   htmlFile.write('<h1> <u>Test Suite: ') 
   htmlFile.write(suite.name)
   htmlFile.write('</u> </h1>\n') 
-
+  
+  # Purpose
+  htmlFile.write('<h5><big><big>Purpose</big></big></h5>\n')
+  htmlFile.write('<p class="MsoNormal">%s</p>\n'%suiteProps[suite][0])
+  htmlFile.write('<h5><big><big>Regression : %s</big></big></h5>\n'%suiteProps[suite][1])
+  htmlFile.write('<h5><big><big>Results: </big></big></h5>\n')
+  
   print 'Suite: ',suite.name,', Plots:',suite.pltList
   
   if suite.name == 'SecondaryEvap':
@@ -134,10 +199,9 @@ for suite in suiteList:
     suite.pltList = ['MultiMaterial_01', 'MultiMaterial_02', 'MultiMateriala', 'MultiMaterialb', 'MultiMaterialc', 'MultiMateriald']          
   
   if suite.name == 'PGT':
-     suite.pltList = ['PGT_report']
+    suite.pltList = ['PGT_report']
     
-  for pltName in suite.pltList:
-    
+  for pltName in suite.pltList:    
     
     if '.png' in pltName or '.' not in pltName:
       
