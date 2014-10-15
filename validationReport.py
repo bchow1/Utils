@@ -76,6 +76,32 @@ docType += '  <link href="reports.css" type="text/css" rel="stylesheet" /></head
 docType += ' <body>\n'
 htmlFile.write(docType)
 
+# Date
+htmlFile.write('<h1><small style="font-weight: normal; font-style: italic; color: rgb(255, 102, 0);"><small>')
+htmlFile.write('Fri Oct 10 13:20:18 EDT 2014')
+htmlFile.write('</small></small><br></h1>\n')
+
+# Summary
+htmlFile.write('<h1>Summary of regression test&nbsp;&nbsp;&nbsp; -&nbsp;&nbsp;&nbsp;<span style="color: rgb(255, 102, 0);">')
+htmlFile.write('FAIL(0P,33F,33T)')
+htmlFile.write('</span><br></h1>\n')
+
+
+htmlFile.write('<h1 style="text-decoration: underline; font-weight: normal; color: rgb(51, 102, 255);">Details:</h1>\n')
+
+htmlFile.write('<h2>Platform &nbsp; <span style="color: rgb(255, 102, 0);">')
+htmlFile.write('Windows')
+htmlFile.write('</span></h2>\n')
+
+
+htmlFile.write('<h2>Current Executable Directory &nbsp; <span style="color: rgb(255, 102, 0);">')
+htmlFile.write('/cygdrive/d/SCIPUFF/2014-10-09/bin')
+htmlFile.write('</span></h2>\n')
+
+htmlFile.write('<h2>Regression Executable Directory&nbsp <span style="color: rgb(255, 102, 0);">')
+htmlFile.write('/cygdrive/m/util256/amd64')
+htmlFile.write('</span></h2>\n')
+
 htmlDiff = difflib.HtmlDiff()
       
 for suite in suiteList:
