@@ -3,6 +3,7 @@ import os
 import sys
 import re
 import fileinput
+import difflib
 
 class tstSuite:
   
@@ -68,14 +69,22 @@ for suite in suiteList:
   #htmlFile.write(suite.pltList)
   print suite.pltList
   for pltName in suite.pltList:
-      if '.' in pltName:
-        htmlFile.write('<p>Output for version:%s<br>'%regDir)
-        for line in fileinput.input(os.path.join(regDir,'Plots',pltName)):
-          htmlFile.write(line+'\n')
-        htmlFile.write('<p>Output for version:%s<br>'%outDir)
-        for line in fileinput.input(os.path.join(outDir,'Plots',pltName)):
-          htmlFile.write(line+'\n')        
-      else:        
+    if '.' in pltName:
+      regFile = os.path.join(regDir,'Plots',pltName)
+      outFile = os.path.join(outDir,'Plots',pltName)
+      htmlFile.write('<p>Difference in %s for version:%s and %s<br>'%(pltName,regDir,outDir))
+      print 'Difference in output for version:%s and %s'%(regDir,outDir)
+      diff=difflib.ndiff(open(regFile).readlines(), open(outFile).readlines())
+      try:
+        while 1:
+          diffLine = diff.next()
+          htmlFile.write('<p>%s<br>'%diffLine)
+          print diffLine
+      except:
+        pass                 
+      #for line in fileinput.input(regFile)):
+        #htmlFile.write('<p>%s<br>'%line)
+    else:        
         htmlFile.write('<p>Plot for version:%s<br>'%regDir)
         htmlFile.write('<img  alt="%s Plot" src="%s/plots/%s.png">' %(pltName,regDir,pltName)) 
         htmlFile.write('<p>Plot for version:%s<br>'%outDir)
