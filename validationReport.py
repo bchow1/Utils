@@ -45,25 +45,23 @@ for line in fileinput.input('runlist.sh'):
     isCase = False
     break
   if isCase:
-    if line.rstrip().endswith('")'):
-      if mySuite is not None:
-        suiteList.append(mySuite)
+    if line.rstrip().endswith('")'):       
       mySuite = tstSuite(line.strip().replace(')','').replace('"',''))
-      print mySuite.name
+      suiteList.append(mySuite)
     if "DIR=" in line:
       line  = line.strip().replace('"','').replace(';','')
-      dName = line.split('=')[1].replace('${RUN}',mySuite.name)
+      dName = line.split('=')[1].replace('${RUN}',suiteList[-1].name)
       if "INPDIR=" not in line and "OUTDIR=" not in line:
         prjDir = dName
         #print prjDir
     if "PlotList" in line:
       pltNames = line.split('=')[1].replace('${PlotList[@]}','').replace(';','').replace('(','').replace(')','').split()
       for pltName in pltNames:
-        mySuite.addPlt(pltName)
+        suiteList[-1].addPlt(pltName)
     if "RptList" in line:
       pltNames = line.split('=')[1].replace('${RptList[@]}','').replace(';','').replace('(','').replace(')','').split()
       for pltName in pltNames:
-        mySuite.addPlt(pltName)      
+        suiteList[-1].addPlt(pltName)      
 fileinput.close()
 print
 
@@ -100,7 +98,7 @@ htmlFile.write('</td></tr>\n')
 htmlFile.write('<tr><td style="width: 504px; ">')#
 htmlFile.write('<h2>Current Executable Directory: ')
 htmlFile.write('</td><td><h2><span style="color: rgb(255, 102, 0);">')
-htmlFile.write('/cygdrive/d/SCIPUFF/2014-10-09/bin')
+htmlFile.write('/cygdrive/d/SCIPUFF/%s/bin'%outDir)
 htmlFile.write('</span></h2>\n')
 htmlFile.write('</td></tr>\n')
 
@@ -122,47 +120,47 @@ htmlFile.write('<footer></footer>\n')
 
 # Summary Table
 htmlFile.write('<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2" >\n')
-htmlFile.write('<tbody><tr><td style="width: 61px; text-align: center; color: rgb(204, 102, 0); ">No.<br></td>\n')
+htmlFile.write('<tbody><tr><td style="width: 60px; text-align: center; color: rgb(204, 102, 0); ">No.<br></td>\n')
 
-htmlFile.write('<td style="width: 304px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
+htmlFile.write('<td style="width: 160px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
 htmlFile.write('Project Name<br></td>\n')
 
-htmlFile.write('<td style="width: 87px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
+htmlFile.write('<td style="width: 90px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
 htmlFile.write('Results<br></td>\n')
 
-htmlFile.write('<td style="width: 128px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
+htmlFile.write('<td style="width: 130px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
 htmlFile.write('Number of Puffs <br></td>\n')
 
-htmlFile.write('<td style="width: 133px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
+htmlFile.write('<td style="width: 130px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
 htmlFile.write('Puff Dump<br></td>\n')
 
-htmlFile.write('<td style="width: 360px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
+htmlFile.write('<td style="width: 130px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
 htmlFile.write('Dose Dump<br></td></tr>\n')
 
 # Rows
 
-for sunum,suite in enumerate(suiteList):
-  htmlFile.write('<tr><td style="width: 61px; text-align: center;">')
-  htmlFile.write('%s'%sunum)
+for suNum,suite in enumerate(suiteList):
+  htmlFile.write('<tr><td style="width: 60px; text-align: center;">')
+  htmlFile.write('%d'%(suNum+1))
   htmlFile.write('<br></td>')
   
-  htmlFile.write('<td style="width: 304px; text-align: left;"><h3>')
+  htmlFile.write('<td style="width: 160px; text-align: center;"><h3>')
   htmlFile.write('%s'%suite.name)
   htmlFile.write('</h3></td>\n')
   
-  htmlFile.write('<td style="width: 87px; text-align: center;"><h3>')
+  htmlFile.write('<td style="width: 90px; text-align: center;"><h3>')
   htmlFile.write('FAIL')
   htmlFile.write('</h3></td>\n')
   
-  htmlFile.write('<td style="width: 128px; text-align: center;">')
+  htmlFile.write('<td style="width: 130px; text-align: center;">')
   htmlFile.write('Different')
   htmlFile.write('<br></td>\n')
   
-  htmlFile.write('<td style="width: 133px; text-align: center;">')
+  htmlFile.write('<td style="width: 130px; text-align: center;">')
   htmlFile.write('Different')
   htmlFile.write('<br></td>\n')
   
-  htmlFile.write('<td style="width: 360px; text-align: center;">')
+  htmlFile.write('<td style="width: 130px; text-align: center;">')
   htmlFile.write('Different')
   htmlFile.write('<br></td></tr>\n')
 
@@ -179,7 +177,7 @@ suiteProps['HillDense'][0] = 'Test dense gas on slope, quiescent background'
 suiteProps['Hill'][0] = 'MC-SCIPUFF mass consistency model and plume interaction with idealized hill'
 suiteProps['LSV'][0] = 'Large scale variability included in meteorology input.'
 suiteProps['MultiMaterial'][0] = 'Dispersion tracking of several materials with different release specifications'
-suiteProps['MultiProfile'][0] = 'Ingest of multiple observations'
+suiteProps['MultiProfile'][0] = 'Multiple meteorology observations'
 suiteProps['SecondaryEvap'][0] = 'Secondary evaporation model'
 suiteProps['LOSSampler'][0] = 'Line-of-sight samplers for obscurants'
 suiteProps['RadSampler'][0] = 'Radiological samplers for RTH numerical decay materials'
@@ -205,22 +203,22 @@ suiteProps['DataEtex'][0] = 'Long range diffusion of passive tracer across Europ
 suiteProps['MDAPassive'][0] = 'Dispersion of a passive gas'
 suiteProps['MDADense'][0] = 'Dispersion of a passive dense gas'
 suiteProps['MDASigmax'][0] = 'Dispersion of a passive light gas'
-suiteProps['EPRI'][0] = 'Mid range diffusin os a passive racer in both flat and complex terrain environments'
+suiteProps['EPRI'][0] = 'Mid range diffusion of a passive tracer in both flat and complex terrain environments'
 
-print 'suiteProps: ',suiteProps
+#print 'suiteProps: ',suiteProps
 
-suiteProps['Anatex'][0] = 'Long range diffusion of passive tracer across North America'
+#suiteProps['Anatex'][0] = 'Long range diffusion of passive tracer across North America'
 
-print 'suiteProps: ',suiteProps
+#print 'suiteProps: ',suiteProps
 
-sys.exit()
+#sys.exit()
 
 htmlDiff = difflib.HtmlDiff()
       
-for suite in suiteList:
+for suNum,suite in enumerate(suiteList):  
   
   # Name
-  htmlFile.write('<h1><u>Test Suite: ') 
+  htmlFile.write('<h1><u> %d. Test Suite: '%(suNum+1)) 
   htmlFile.write(suite.name)
   htmlFile.write('</u> </h1>\n') 
   
