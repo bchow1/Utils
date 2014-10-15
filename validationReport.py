@@ -80,9 +80,9 @@ htmlDiff = difflib.HtmlDiff()
       
 for suite in suiteList:
   
-  htmlFile.write('<h1> Test Suite: ') 
+  htmlFile.write('<h1> <u>Test Suite: ') 
   htmlFile.write(suite.name)
-  htmlFile.write('</h1>\n') 
+  htmlFile.write('</u> </h1>\n') 
 
   print 'Suite: ',suite.name,', Plots:',suite.pltList
   
@@ -136,10 +136,12 @@ for suite in suiteList:
         htmlFile.write('<h3>Plot for version:%s<br></h3></td>'%regDir)
         htmlFile.write('<td><h3>Plot for version:%s<h3></td></tr>'%outDir)    
         htmlFile.write('<tr><td>')  
+        htmlFile.write('<a href="%s">' %regPlt) 
         htmlFile.write('<img  alt="%s Plot" src="%s">' %(regPlt,regPlt)) 
-        htmlFile.write('</td><td>')  
+        htmlFile.write('</a></td><td>')  
+        htmlFile.write('<a href="%s">' %outPlt)  
         htmlFile.write('<img  alt="%s Plot" src="%s">' %(outPlt,outPlt)) 
-        htmlFile.write('</td></tr></Table>\n')
+        htmlFile.write('</a></td></tr></Table>\n')
         htmlFile.write('<footer></footer>\n') 
         #htmlFile.write('<hr/><footer></footer>\n')      
       else:
