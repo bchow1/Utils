@@ -3,8 +3,6 @@ import os
 import sys
 import re
 import fileinput
-import numpy as np
-import matplotlib.pyplot as plt
 
 class tstSuite:
   
@@ -71,8 +69,12 @@ for suite in suiteList:
   print suite.pltList
   for pltName in suite.pltList:
       if '.' in pltName:
-        writeAsTest()
-        htmlFile = open('RegressionReport.html','w')
+        htmlFile.write('<p>Output for version:%s<br>'%regDir)
+        for line in fileinput.input(os.path.join(regDir,'Plots',pltName)):
+          htmlFile.write(line+'\n')
+        htmlFile.write('<p>Output for version:%s<br>'%outDir)
+        for line in fileinput.input(os.path.join(outDir,'Plots',pltName)):
+          htmlFile.write(line+'\n')        
       else:        
         htmlFile.write('<p>Plot for version:%s<br>'%regDir)
         htmlFile.write('<img  alt="%s Plot" src="%s/plots/%s.png">' %(pltName,regDir,pltName)) 
