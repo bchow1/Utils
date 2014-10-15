@@ -2,6 +2,7 @@
 import os
 import sys
 import re
+import socket
 import fileinput
 import difflib
 
@@ -21,7 +22,21 @@ class tstSuite:
   def addPlt(self,pltName):
     self.pltList.append(pltName)
 
-os.chdir('D:\\TestHPAC\\Scripts')
+
+compName = socket.gethostname()
+
+if compName == 'sm-bnc':
+  testDir = 'D:\\TestHPAC' 
+else:
+  testDir = 'C:\\Users\\Bishusunita\\BNC\\TestSCICHEM'
+
+regDir = 'b225x64'
+outDir = '2014.10.09'  
+  
+scriptDir = os.path.join(testDir,'Scripts')
+outputDir = os.path.join(testDir,'Outputs')
+
+os.chdir(scriptDir)
 suiteList = []
 mySuite   = None
 isCase    = False
@@ -50,9 +65,7 @@ for line in fileinput.input('runlist.sh'):
         mySuite.addPlt(pltName)
 fileinput.close()
 
-regDir = 'b225x64'
-outDir = '2014.10.09'
-os.chdir('D:\\TestHPAC\\Outputs')
+os.chdir(outputDir)
 
 htmlFile = open('RegressionReport.html','w')
 docType = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">\n'
@@ -61,6 +74,8 @@ docType += '  <style type="text/css"></style>\n'
 docType += '  <link href="reports.css" type="text/css" rel="stylesheet" /></head>\n'
 docType += ' <body>\n'
 htmlFile.write(docType)
+
+htmlDiff = difflib.HtmlDiff()
       
 for suite in suiteList:
   htmlFile.write('<h1>') 
@@ -73,22 +88,17 @@ for suite in suiteList:
       regFile = os.path.join(regDir,'Plots',pltName)
       outFile = os.path.join(outDir,'Plots',pltName)
       htmlFile.write('<p>Difference in %s for version:%s and %s<br>'%(pltName,regDir,outDir))
-      print 'Difference in output for version:%s and %s'%(regDir,outDir)
-      diff=difflib.ndiff(open(regFile).readlines(), open(outFile).readlines())
-      try:
-        while 1:
-          diffLine = diff.next()
-          htmlFile.write('<p>%s<br>'%diffLine)
-          print diffLine
-      except:
-        pass                 
-      #for line in fileinput.input(regFile)):
-        #htmlFile.write('<p>%s<br>'%line)
-    else:        
-        htmlFile.write('<p>Plot for version:%s<br>'%regDir)
-        htmlFile.write('<img  alt="%s Plot" src="%s/plots/%s.png">' %(pltName,regDir,pltName)) 
-        htmlFile.write('<p>Plot for version:%s<br>'%outDir)
-        htmlFile.write('<img  alt="%s Plot" src="%s/plots/%s.png">' %(pltName, outDir,pltName)) 
+      print 'Difference in %s for version:%s and %s'%(pltName,regDir,outDir)
+      diffLines = htmlDiff.make_table(open(regFile).readlines(), open(outFile).readlines(), fromdesc='', todesc='',\
+                                context=False, numlines=2)
+      print htmlFile.write(diffLines)
+    else: 
+      print 'Add %s.png'%pltName      
+      htmlFile.write('<p>Plot for version:%s<br>'%regDir)
+      htmlFile.write('<img  alt="%s Plot" src="%s/plots/%s.png">' %(pltName,regDir,pltName)) 
+      htmlFile.write('<p>Plot for version:%s<br>'%outDir)
+      htmlFile.write('<img  alt="%s Plot" src="%s/plots/%s.png">' %(pltName, outDir,pltName)) 
+      
 htmlFile.write(' </body></html>\n')
 htmlFile.close()
  
