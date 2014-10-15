@@ -84,11 +84,32 @@ for suite in suiteList:
   htmlFile.write(suite.name)
   htmlFile.write('</h1>\n') 
 
-  print 'Suite: ',suite.name,'Plots: ',suite.pltList
+  print 'Suite: ',suite.name,', Plots:',suite.pltList
   
-  if 'Conflux' in suite.name:
-     suite.pltList = ['cf_rp1', 'cf_rp2']
+  if suite.name == 'SecondaryEvap':
+    suite.pltList = ['SecondaryEvap1_01','SecondaryEvap1_02','SecondaryEvap2']
+          
+  if suite.name == 'ConfluxContinuous':
+    suite.pltList = ['cf_rp1', 'cf_rp2']
+     
+  if suite.name == 'Etex':
+    suite.pltList = ['etex', 'etexx_01'] 
   
+  if suite.name == 'DataEtex':
+    suite.pltList = ['etex.sta', 'plot_4', 'etexb', 'fig_etex']
+
+  if suite.name == 'Instantaneous':
+    suite.pltList = ['weil_report', 'mikkelsen_report', 'hogstrom_report']
+    
+  if suite.name == 'Jets':
+    suite.pltList = ['jet_report1', 'jet_report2', 'bj_neutral_report', 'bj_stable_report']
+
+  if suite.name == 'MultiMaterial':
+    suite.pltList = ['MultiMaterial_01', 'MultiMaterial_02', 'MultiMateriala', 'MultiMaterialb', 'MultiMaterialc', 'MultiMateriald']          
+  
+  if suite.name == 'PGT':
+     suite.pltList = ['PGT_report']
+    
   for pltName in suite.pltList:
     
     
