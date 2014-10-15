@@ -82,25 +82,33 @@ htmlFile.write('Fri Oct 10 13:20:18 EDT 2014')
 htmlFile.write('</small></small><br></h1>\n')
 
 # Summary
-htmlFile.write('<h1>Summary of regression test&nbsp;&nbsp;&nbsp; -&nbsp;&nbsp;&nbsp;<span style="color: rgb(255, 102, 0);">')
+htmlFile.write('<h1>Summary of regression test - <span style="color: rgb(255, 102, 0);">')
 htmlFile.write('FAIL(0P,33F,33T)')
 htmlFile.write('</span><br></h1>\n')
 
 
-htmlFile.write('<h1 style="text-decoration: underline; font-weight: normal; color: rgb(51, 102, 255);">Details:</h1>\n')
-
-htmlFile.write('<h2>Platform &nbsp; <span style="color: rgb(255, 102, 0);">')
+htmlFile.write('<h1 style="text-decoration: underline;">Details:</h1>\n')
+htmlFile.write('<table><tr><td>')
+htmlFile.write('<h2>Platform: ')
+htmlFile.write('</td><td><h2> <span style="color: rgb(255, 102, 0);">')
 htmlFile.write('Windows')
 htmlFile.write('</span></h2>\n')
+htmlFile.write('</td></tr>\n')
 
-
-htmlFile.write('<h2>Current Executable Directory &nbsp; <span style="color: rgb(255, 102, 0);">')
+htmlFile.write('<tr><td>')
+htmlFile.write('<h2>Current Executable Directory: ')
+htmlFile.write('</td><td><h2><span style="color: rgb(255, 102, 0);">')
 htmlFile.write('/cygdrive/d/SCIPUFF/2014-10-09/bin')
 htmlFile.write('</span></h2>\n')
+htmlFile.write('</td></tr>\n')
 
-htmlFile.write('<h2>Regression Executable Directory&nbsp <span style="color: rgb(255, 102, 0);">')
+htmlFile.write('<tr><td>')
+htmlFile.write('<h2>Regression Executable Directory: ')
+htmlFile.write('</td><td><h2><span style="color: rgb(255, 102, 0);">')
 htmlFile.write('/cygdrive/m/util256/amd64')
 htmlFile.write('</span></h2>\n')
+htmlFile.write('</td></tr></table>\n')
+htmlFile.write('<footer></footer>\n') 
 
 htmlDiff = difflib.HtmlDiff()
       
@@ -162,10 +170,10 @@ for suite in suiteList:
         htmlFile.write('<h3>Plot for version:%s<br></h3></td>'%regDir)
         htmlFile.write('<td><h3>Plot for version:%s<h3></td></tr>'%outDir)    
         htmlFile.write('<tr><td>')  
-        htmlFile.write('<a href="%s">' %regPlt) 
+        htmlFile.write('<a href="%s" target="_blank">' %regPlt) 
         htmlFile.write('<img  alt="%s Plot" src="%s">' %(regPlt,regPlt)) 
         htmlFile.write('</a></td><td>')  
-        htmlFile.write('<a href="%s">' %outPlt)  
+        htmlFile.write('<a href="%s" target="_blank">' %outPlt)  
         htmlFile.write('<img  alt="%s Plot" src="%s">' %(outPlt,outPlt)) 
         htmlFile.write('</a></td></tr></Table>\n')
         htmlFile.write('<footer></footer>\n') 
