@@ -9,7 +9,7 @@ import difflib
 class tstSuite:
   
   def __init__(self,name):
-    print 'Create mySuite ',name
+    print 'Suite: ',name
     self.name    = name
     self.inpDir  = []
     self.outDir  = []
@@ -54,7 +54,7 @@ for line in fileinput.input('runlist.sh'):
       dName = line.split('=')[1].replace('${RUN}',mySuite.name)
       if "INPDIR=" not in line and "OUTDIR=" not in line:
         prjDir = dName
-        print prjDir
+        #print prjDir
     if "PlotList" in line:
       pltNames = line.split('=')[1].replace('${PlotList[@]}','').replace(';','').replace('(','').replace(')','').split()
       for pltName in pltNames:
@@ -64,6 +64,7 @@ for line in fileinput.input('runlist.sh'):
       for pltName in pltNames:
         mySuite.addPlt(pltName)      
 fileinput.close()
+print
 
 os.chdir(outputDir)
 
@@ -78,12 +79,19 @@ htmlFile.write(docType)
 htmlDiff = difflib.HtmlDiff()
       
 for suite in suiteList:
-  htmlFile.write('<h1>') 
+  
+  htmlFile.write('<h1> Test Suite: ') 
   htmlFile.write(suite.name)
   htmlFile.write('</h1>\n') 
-  #htmlFile.write(suite.pltList)
-  print suite.pltList
+
+  print 'Suite: ',suite.name,'Plots: ',suite.pltList
+  
+  if 'Conflux' in suite.name:
+     suite.pltList = ['cf_rp1', 'cf_rp2']
+  
   for pltName in suite.pltList:
+    
+    
     if '.png' in pltName or '.' not in pltName:
       
       if '.png' not in pltName:
@@ -95,17 +103,29 @@ for suite in suiteList:
       else:
         regPlt = '%s/Plots/%s'%(regDir, pltName)
         outPlt = '%s/Plots/%s'%(outDir, pltName)
+      
+      if not os.path.exists(outPlt):
+        if '/Plots/' in outPlt:
+          regPlt = '%s/Reports/%s'%(regDir, pltName)
+          outPlt = '%s/Reports/%s'%(outDir, pltName)
                 
       if os.path.exists(outPlt):      
-        print 'Add %s'%pltName      
-        htmlFile.write('<p>Plot for version:%s<br>'%regDir)
-        htmlFile.write('<img  alt="%s Plot" src="%s">'%(regPlt,regPlt)) 
-        htmlFile.write('<p>Plot for version:%s<br>'%outDir)
-        htmlFile.write('<img  alt="%s Plot" src="%s">'%(outPlt,outPlt))
+        print 'Add %s'%pltName  
+        htmlFile.write('<Table><tr><td>') 
+        htmlFile.write('<h3>Plot for version:%s<br></h3></td>'%regDir)
+        htmlFile.write('<td><h3>Plot for version:%s<h3></td></tr>'%outDir)    
+        htmlFile.write('<tr><td>')  
+        htmlFile.write('<img  alt="%s Plot" src="%s">' %(regPlt,regPlt)) 
+        htmlFile.write('</td><td>')  
+        htmlFile.write('<img  alt="%s Plot" src="%s">' %(outPlt,outPlt)) 
+        htmlFile.write('</td></tr></Table>\n')
+        htmlFile.write('<footer></footer>\n') 
+        #htmlFile.write('<hr/><footer></footer>\n')      
       else:
         print 'Missing %s'%outPlt
             
-    else:            
+    else:    
+              
       regFile = os.path.join(regDir,'Plots',pltName)
       outFile = os.path.join(outDir,'Plots',pltName)
       htmlFile.write('<p>Difference in %s for version:%s and %s<br>'%(pltName,regDir,outDir))
@@ -113,7 +133,8 @@ for suite in suiteList:
       diffLines = htmlDiff.make_table(open(regFile).readlines(), open(outFile).readlines(), fromdesc='', todesc='',\
                                 context=False, numlines=2)
       htmlFile.write(diffLines)
-       
+  print
+
 htmlFile.write(' </body></html>\n')
 htmlFile.close()
  
