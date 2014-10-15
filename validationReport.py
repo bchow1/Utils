@@ -49,6 +49,7 @@ for line in fileinput.input('runlist.sh'):
       if mySuite is not None:
         suiteList.append(mySuite)
       mySuite = tstSuite(line.strip().replace(')','').replace('"',''))
+      print mySuite.name
     if "DIR=" in line:
       line  = line.strip().replace('"','').replace(';','')
       dName = line.split('=')[1].replace('${RUN}',mySuite.name)
@@ -166,9 +167,49 @@ htmlFile.write('</tbody></table>')
 
 suiteProps = {}
 for suite in suiteList:
-  suiteProps.update({suite:['Using historical database','Fail']})
+  print suite.name
+  suiteProps.update({suite.name:['','NA']})
+  
+suiteProps['3dClimatology'][0] = 'Using historical database' 
+suiteProps['HillDense'][0] = 'Test dense gas on slope, quiescent background'
+suiteProps['Hill'][0] = 'MC-SCIPUFF mass consistency model and plume interaction with idealized hill'
+suiteProps['LSV'][0] = 'Large scale variability included in meteorology input.'
+suiteProps['MultiMaterial'][0] = 'Dispersion tracking of several materials with different release specifications'
+suiteProps['MultiProfile'][0] = 'Ingest of multiple observations'
+suiteProps['SecondaryEvap'][0] = 'Secondary evaporation model'
+suiteProps['LOSSampler'][0] = 'Line-of-sight samplers for obscurants'
+suiteProps['RadSampler'][0] = 'Radiological samplers for RTH numerical decay materials'
+suiteProps['NWPNSampler'][0] = 'Radiological samplers for NWPN analytic decay materials'
+suiteProps['DepositionSampler'][0] = 'Deposition samplers'
+suiteProps['AutoBySizeSampler'][0] = 'Dosage samplers on a by-size-group basis'
+suiteProps['DTRAPhaseI'][0] = 'These tests contain multiple sequential puff releases to create ensemble statistics for probabilistic validation.'
+suiteProps['RTH_NFAC'][0] = 'Dispersion with numerical decay of RTH radiological materials'
+suiteProps['RTH_NWPN'][0] = 'Dispersion with numerical decay RTH radiological materials and analytic decay of NWPN materials'
+suiteProps['NativeCoord'][0] = 'Reading gridded met data in native coordinate system'
+suiteProps['SigmaCbyC'][0] = 'Test variations of C(sigma)/C(mean) for short range with different met conditions.  Stability varies from a-f, time averaging of 0s, 300s and 900s and large-scale meteorology types of none and model '
+suiteProps['BuoyantPuff'][0] = 'Centroid height and surface concentration for light bubbles released into a boundary layer with idealized free convection profiles'
+suiteProps['ColdBubble'][0] = 'Comparison between calculated mean bubble rise and spread with measurements for instantaneous buoyant releases. Meteorology: quiescent background'
+suiteProps['ConfluxContinuous'][0] = 'Compare vertical profiles of mean concentration and standard deviation to concentration time series constructed from measurements of neutrally buoyant plumes in slightly convective to moderately stable atmospheric conditions'
+suiteProps['DeardoffWillis'][0] = 'Continuous buoyant releases in a capped convective boundary layer'
+suiteProps['Etex'][0] = 'Long range diffusion of passive tracer across Europe'
+suiteProps['FackrellRobins'][0] = 'Concentration fluctuations'
+suiteProps['Instantaneous'][0] = 'Using historical database'
+suiteProps['Jets'][0] = 'Jet centerline height as a function of downstream distance for a variety of exit velocity ratios'
+suiteProps['PGT'][0] = 'Short range dispersion from surface release'
+suiteProps['Spore'][0] = 'Dispersion of spores released from an elevated line source within a wheat canopy'
+suiteProps['DataEtex'][0] = 'Long range diffusion of passive tracer across Europe'
+suiteProps['MDAPassive'][0] = 'Dispersion of a passive gas'
+suiteProps['MDADense'][0] = 'Dispersion of a passive dense gas'
+suiteProps['MDASigmax'][0] = 'Dispersion of a passive light gas'
+suiteProps['EPRI'][0] = 'Mid range diffusin os a passive racer in both flat and complex terrain environments'
 
 print 'suiteProps: ',suiteProps
+
+suiteProps['Anatex'][0] = 'Long range diffusion of passive tracer across North America'
+
+print 'suiteProps: ',suiteProps
+
+sys.exit()
 
 htmlDiff = difflib.HtmlDiff()
       
@@ -181,8 +222,8 @@ for suite in suiteList:
   
   # Purpose
   htmlFile.write('<h5><big><big>Purpose</big></big></h5>\n')
-  htmlFile.write('<p class="MsoNormal">%s</p>\n'%suiteProps[suite][0])
-  htmlFile.write('<h5><big><big>Regression : %s</big></big></h5>\n'%suiteProps[suite][1])
+  htmlFile.write('<p class="MsoNormal">%s</p>\n'%suiteProps[suite.name][0])
+  htmlFile.write('<h5><big><big>Regression : %s</big></big></h5>\n'%suiteProps[suite.name][1])
   htmlFile.write('<h5><big><big>Results: </big></big></h5>\n')
   
   print 'Suite: ',suite.name,', Plots:',suite.pltList
