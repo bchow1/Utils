@@ -97,7 +97,7 @@ htmlFile.write('Windows')
 htmlFile.write('</span></h2>\n')
 htmlFile.write('</td></tr>\n')
 
-htmlFile.write('<tr><td>')
+htmlFile.write('<tr><td style="width: 504px; ">')#
 htmlFile.write('<h2>Current Executable Directory: ')
 htmlFile.write('</td><td><h2><span style="color: rgb(255, 102, 0);">')
 htmlFile.write('/cygdrive/d/SCIPUFF/2014-10-09/bin')
@@ -110,16 +110,19 @@ htmlFile.write('</td><td><h2><span style="color: rgb(255, 102, 0);">')
 
 htmlFile.write('/cygdrive/m/util256/amd64')
 htmlFile.write('</span></h2>\n')
+htmlFile.write('</td></tr>\n')
+
+htmlFile.write('<tr><td>')
+htmlFile.write('<h2>Regression Run Date:')
+htmlFile.write('</td><td><h2> <span style="color: rgb(255, 102, 0);">')
+htmlFile.write('Wed Feb 12 16:09:07 EST 2014')
+htmlFile.write('</span></h2>\n')
 htmlFile.write('</td></tr></table>\n')
 htmlFile.write('<footer></footer>\n') 
 
-htmlFile.write('<h2>Regression Run Date &nbsp; <span style="color: rgb(255, 102, 0);">')
-htmlFile.write('Wed Feb 12 16:09:07 EST 2014')
-htmlFile.write('</span></h2>\n')
-
 # Summary Table
-htmlFile.write('<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2">\n')
-htmlFile.write('<tbody><tr><td style="width: 61px; text-align: center;">No.<br></td>\n')
+htmlFile.write('<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2" >\n')
+htmlFile.write('<tbody><tr><td style="width: 61px; text-align: center; color: rgb(204, 102, 0); ">No.<br></td>\n')
 
 htmlFile.write('<td style="width: 304px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
 htmlFile.write('Project Name<br></td>\n')
@@ -143,7 +146,7 @@ for sunum,suite in enumerate(suiteList):
   htmlFile.write('%s'%sunum)
   htmlFile.write('<br></td>')
   
-  htmlFile.write('<td style="width: 304px; text-align: center;<h3>">')
+  htmlFile.write('<td style="width: 304px; text-align: left;"><h3>')
   htmlFile.write('%s'%suite.name)
   htmlFile.write('</h3></td>\n')
   
@@ -164,6 +167,7 @@ for sunum,suite in enumerate(suiteList):
   htmlFile.write('<br></td></tr>\n')
 
 htmlFile.write('</tbody></table>')
+htmlFile.write('<footer></footer>')
 
 suiteProps = {}
 for suite in suiteList:
@@ -216,7 +220,7 @@ htmlDiff = difflib.HtmlDiff()
 for suite in suiteList:
   
   # Name
-  htmlFile.write('<h1> <u>Test Suite: ') 
+  htmlFile.write('<h1><u>Test Suite: ') 
   htmlFile.write(suite.name)
   htmlFile.write('</u> </h1>\n') 
   
