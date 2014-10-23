@@ -26,8 +26,16 @@ if compName == 'sm-bnc':
 else:
   testDir = 'C:\\Users\\Bishusunita\\BNC\\TestSCICHEM'
 
+# Regression Directory
 regDir = 'b225x64'
-outDir = '2014.10.09'  
+
+# Current Output Directory
+#outDir = '2014.10.09'  
+#ReportFile = 'Regression_Test_Results_b225x64_141009.html'
+
+#Current Output Directory
+outDir = '2014-10-09-OMP'
+ReportFile = 'Regression_Test_Results_b225x64_141009-OMP.html'
   
 scriptDir = os.path.join(testDir,'Scripts')
 outputDir = os.path.join(testDir,'Outputs')
@@ -67,7 +75,7 @@ print
 
 os.chdir(outputDir)
 
-htmlFile = open('RegressionReport.html','w')
+htmlFile = open(ReportFile,'w')
 docType = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">\n'
 docType += '<head><meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>Regression Test Results</title>\n'
 docType += '  <style type="text/css"></style>\n'
@@ -206,11 +214,8 @@ suiteProps['MDASigmax'][0] = 'Dispersion of a passive light gas'
 suiteProps['EPRI'][0] = 'Mid range diffusion of a passive tracer in both flat and complex terrain environments'
 
 #print 'suiteProps: ',suiteProps
-
 #suiteProps['Anatex'][0] = 'Long range diffusion of passive tracer across North America'
-
 #print 'suiteProps: ',suiteProps
-
 #sys.exit()
 
 htmlDiff = difflib.HtmlDiff()
@@ -253,7 +258,40 @@ for suNum,suite in enumerate(suiteList):
   
   if suite.name == 'PGT':
     suite.pltList = ['PGT_report']
+
+  if suite.name == 'NativeCoord':
+    suite.pltList = ['NativeCoord']
+  
+  #if suite.name == 'AutoBySizeSampler':
+  #  suite.pltList = ['AutoBySizeSampler.smp']
     
+  if suite.name == 'LOSSampler':
+    suite.pltList = ['LOSSampler']
+ 
+  if suite.name == 'LOSSampler':
+    suite.pltList = ['LOSSampler']
+  
+  if suite.name == 'DepositionSampler':
+    suite.pltList = ['DepositionSampler1','DepositionSampler2']
+
+  if suite.name == 'NWPNSampler':
+    suite.pltList = ['NWPNSampler1','NWPNSampler2']
+
+  if suite.name == 'RadSampler':
+    suite.pltList = ['RadSampler1','RadSampler2','RadSampler3']
+
+  if suite.name == 'RTH_NFAC':
+    suite.pltList = ['RTH_NFAC1','RTH_NFAC2','RTH_NFAC3']
+
+  if suite.name == 'RTH_NWPN':
+    suite.pltList = ['RTH_NWPN1','RTH_NWPN2','RTH_NWPN3']
+      
+  if suite.name == 'RadSampler':
+    suite.pltList = ['RadSampler1','RadSampler2','RadSampler3']
+
+  if suite.name == 'SigmaCbyC':
+    suite.pltList = ['CCOC00.out','CCOC01.out','CCOC30.out','CCOC31.out','CCOC90.out','CCOC91.out']
+       
   for pltName in suite.pltList:    
     
     if '.png' in pltName or '.' not in pltName:
@@ -303,7 +341,7 @@ for suNum,suite in enumerate(suiteList):
 
 htmlFile.write(' </body></html>\n')
 htmlFile.close()
- 
+print 'Completed creating html report file %s'%ReportFile
       
   
       
