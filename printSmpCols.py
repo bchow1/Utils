@@ -15,7 +15,7 @@ class smp(object):
     self.spClStrt = 9999
     self.hdr      = False
     self.nsmp     = 1
-    self.smpNo    = [1] 
+    self.smpNos   = [] 
     self.ncols    = 3
     self.colNames = ["T","C001","V001"]
     self.varNames = ["T","C","V"]
@@ -40,7 +40,7 @@ class smp(object):
         varNames.append(colName.replace('_001',''))
       if len(colName) == 4 and colName.endswith('001'):
         varNames.append(colName.replace('001',''))
-      if colName.endswith('C002') or colName.endswith('D002'):
+      if len(colName) == 4 and colName.endswith('002'):
         break
       if self.nspc > 0 and colNo >= self.spClStrt:        
         print '%3d   %s   %s'%(colNo,varNames[colNo],self.splist[colNo-self.spClStrt])
@@ -56,30 +56,40 @@ class smp(object):
       varNames = self.varNames
     
     varCols = []
+    addSmp  = True
+    print self.colNames
     for varName in varNames:
-      if varName in self.varNames:
+      if varName in self.colNames:
+        varCols.append(self.colNames.index(varName))
+        addSmp = False
+      elif varName in self.varNames:
         varCols.append(self.varNames.index(varName))
-        #print 'varName,varCol = ',varName,varCols[-1]
       elif self.nspc > 0 and varName in self.splist:
         varCols.append(self.splist.index(varName) + self.spClStrt)
-        #print 'varName,varCol = ',varName,varCols[-1]
       else:
         print 'Warning cannot find variable ',varName
         return
-      
-    if len(smpNos) == 0:
-      smpNos = [i for i in range(1,self.nsmp+1)]
+      print 'varName,varCol = ',varName,varCols[-1]
 
     if 'T' not in varNames:
       self.varCols = [0]            # Always add time as first user variable
       varNames.insert(0, 'T')
     nVar = len(self.varNames) - 1
+
+    if len(smpNos) == 0 and addSmp:
+      smpNos = [i for i in range(1,self.nsmp+1)]
+    else:
+      self.varCols = varCols
+      self.varCols.insert(0,0)
+
     for smpNo in smpNos:
       if int(smpNo) > self.nsmp:
         print 'smpNo(%d) > nsmp(%d)'%(int(smpNo),self.nsmp)
         return
       for varCol in varCols:
         self.varCols.append((int(smpNo)-1)*nVar + varCol)
+
+    self.smpNos = smpNos
     
     return
     
@@ -172,57 +182,16 @@ for colNo in mySmp.varCols:
   colName = smpDat.columns[colNo]
   print '%8s %13.4e %13.4e'%(colName,smpDat[colName].min(),smpDat[colName].max())
 print '\n'
-
-'''
-
-for line in fileinput.input(smpFile):
- 
-  if lHeader:
-    if fileinput.lineno() == nSmp + 3:
-      spColStart,varNames,colNames = getColStart(line,getColNames=True)
-      print 'spNames = ',spNames
-      for smpNo in smpNos:
-        for spNo,spName in enumerate(spNames):
-          icol = spColStart + (spColStart - 1 + nSp)*(smpNo-1) + spCol[spNo]
-          sys.stdout.write('%3d:%s '%(icol+1,colNames[icol]))
-      sys.stdout.write('\n')
-      lHeader = False
-      continue
-  if not lHeader and spColStart < 0:
-    spColStart,varNames = getColStart(' '.join(colNames))
-    nVar = len(varNames)
-    print nVar,varNames #,colNames
-    colNos = []
-    for smpNo in smpNos:
-      for varNo,varName in enumerate(spNames):
-        icol = 2 + varNames.index(varName)+ (smpNo-1)*nVar
-        colNos.append(icol)
-        # Verify
-        print 'Variable Name: ',varName,' ,Sampler No. = ',smpNo,' , ColNo = ',icol,'  ColName = ',colNames[icol-1]
-  try:
-    colVals = map(float,line.split())
-    if lWrap:
-      if len(wrapColVals) < len(colNames):
-        wrapColVals.extend(colVals)
-      if len(wrapColVals) < len(colNames):
-        continue
-  except ValueError:
-    print 'Skip line ',line.strip()
-    continue
-  #print fileinput.lineno(),': ',line[:50]
-  if lHeader:
-    sys.stdout.write('%13.4e %13.4e '%(colVals[0]/3600.,colVals[1]))
-    for spNo,spName in enumerate(spNames):
-      for smpNo in smpNos:
-        icol = spColStart + (spColStart - 1 + nSp)*(smpNo-1) + spCol[spNo]
-        sys.stdout.write('%13.4e'%colVals[icol])
+if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
+  colList = []
+  for colNo in mySmp.varCols:
+    colList.append(smpDat.columns[colNo])
+  for colName in colList:
+    sys.stdout.write('%8s '%colName)
+  sys.stdout.write('\n')
+  for row in range(len(smpDat['T'])):
+    for colName in colList:
+      sys.stdout.write('%13.4e'%(smpDat[colName][row]))
     sys.stdout.write('\n')
-  else:
-    if lWrap:
-      colVals = wrapColVals
-      wrapColVals = []   
-    sys.stdout.write('%13.4e  '%(colVals[0]/3600.))
-    for colNo in colNos:
-      sys.stdout.write('%13.4e'%colVals[colNo])
-    sys.stdout.write('\n')
-'''
+  sys.stdout.write('\n')
+    
