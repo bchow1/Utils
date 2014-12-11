@@ -32,8 +32,15 @@ def replaceH(string):
 
 if __name__ == '__main__':
 
+  isFile = False
   if sys.argv.__len__() > 1:
-     os.chdir(sys.argv[1])
+     arg1 = sys.argv[1]
+     if 'FILE:' in arg1:
+       arg1 = arg1.replace('FILE:','')
+       isFile = True
+       ans = raw_input('Rename files %s\n Continue? '%arg1)
+     else:
+       os.chdir(arg1)
   else:
     #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\workspace\\EPRI')
     #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\src\\sys\\windows')
@@ -41,13 +48,16 @@ if __name__ == '__main__':
     #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\workspace\\EPRI')
     #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\src\\sys\\windows')
     os.chdir('D:\\SCIPUFF\\EPRI_WIP\\Processed_Tmp\\src')
+    ans = raw_input('Renaming directories and files in %s.\n Continue? '%os.getcwd())
 
-  ans = raw_input('Renaming directories and files in %s.\n Continue? '%os.getcwd())
   if ans == 'n' or ans == 'N':
     sys.exit()
   
   errList = []
-  fList   = getFnames()
+  if isFile:
+    fList = arg1.split(';')
+  else:
+    fList = getFnames()
   for fName in fList:
     print 'rename File:',fName
     newHName = fName+'.new'
