@@ -102,27 +102,51 @@ def mainProg():
   fig = plt.figure(1)
   plt.clf()
   
-  nSkip = 1  
+  plt.hold(True)
   
-  hI1, = plt.semilogy(cInst1[:,0][::nSkip],cInst1[:,1][::nSkip],marker='^',linestyle='None',\
-               markerfacecolor='None',markeredgecolor='red')
+  plt.setp(plt.gca(),frame_on=False,xticks=(),yticks=())
   
-  hI2, = plt.semilogy(cInst2[:,0][::nSkip],cInst2[:,1][::nSkip],marker='^',linestyle='None',\
-               markerfacecolor='None',markeredgecolor='green')  
+  ax1 = fig.add_subplot(1,2,1)
+  ax2 = fig.add_subplot(1,2,2)
   
-  plt.ylim([1.e-20,1e-11]) 
+  nSkip = 1
+  
+  tHr = cInst1[:,0][::nSkip]
+  cm  = cInst1[:,1][::nSkip]*1e12
+  cc  = np.sqrt(cInst1[:,2][::nSkip])*1e12
+  
+  print cm.max(),cc.max()
+  
+  hI1 = ax1.scatter(tHr,cm,marker='^',color='red') 
+  ax1.set_xlim([35.,45.])
+  ax1.set_xlabel('Hr')
+  ax1.set_ylabel('C(1e-12 kg/m3)')
+  #ax1.set_ylim([0.,cm.max()])
+   
+  hI2 = ax2.scatter(tHr,cc,marker='^',color='red')
+  #ax2.semilogy(tHr,cc,marker='^',markerfacecolor='red')
+  ax2.set_xlabel('Hr')
+  ax2.set_ylabel('CC(1e-12 kg/m3)')
+  ax2.set_xlim([35.,45.])
+  #ax2.set_ylim([0.,100.])
+  
+  #hI2, = plt.semilogy(cInst2[:,0][::nSkip],cInst2[:,1][::nSkip],marker='^',linestyle='None',\
+  #             markerfacecolor='None',markeredgecolor='green')  
+  
+  #plt.ylim([1.e-20,1e-11]) 
   plt.xlabel('Hr')
-  plt.ylabel('Concentration')
-  plt.legend((hI1,hI2),('Inst1','Inst2'),ncol=1,bbox_to_anchor=(0.98,0.98))
+  #plt.ylabel('Concentration')
+  #plt.legend((hI1,hI2),('Inst1','Inst2'),ncol=1,bbox_to_anchor=(0.98,0.98))
   #plt.show()
-  plt.savefig('p1_p2_90hr_cnc.png')  
+  #plt.savefig('p1_p2_90hr_cnc.png')  
 
-  ax = plt.gca()
-  ax.relim()
-  plt.xlim([28.,52.])
-  plt.ylim([1.e-15,1e-11]) 
+  #ax = plt.gca()
+  #ax.relim()
+  plt.xlim([35.,40.])
+  #plt.ylim([1.e-15,1e-11]) 
+  plt.hold(False)
   plt.draw() 
-  plt.savefig('p1_p2_24hr_dt_10min.png')
+  plt.savefig('p1_C10min.png')
   
 def runSCIPP(env,scipp,prjName,iniFile):
   
