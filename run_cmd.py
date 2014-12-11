@@ -82,6 +82,9 @@ def hr2hms(hr):
   if HH != -999: 
     MM  = int((hr-HH)*60.)
     SS  = int(round((hr-HH)*3600. - MM*60.))
+    if SS >= 60:
+      MM += 1
+      SS -= 60
     hms = "%02d:%02d:%02d"%(HH,MM,SS)
   else:
     hms = None
