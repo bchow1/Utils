@@ -41,6 +41,7 @@ if __name__ == '__main__':
        ans = raw_input('Rename files %s\n Continue? '%arg1)
      else:
        os.chdir(arg1)
+       ans = raw_input('Renaming directories and files in %s.\n Continue? '%os.getcwd())
   else:
     #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\workspace\\EPRI')
     #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\src\\sys\\windows')
@@ -82,7 +83,6 @@ if __name__ == '__main__':
     newSName = replaceH(fName)
     if newSName is not None:
       try:
-        #os.rename(newHName,newSName)
         dName = os.path.dirname(newSName)
         if not os.path.exists(dName):          
           print 'Creating dir ',dName
@@ -97,13 +97,14 @@ if __name__ == '__main__':
         #break
     else:
       try:
-        #os.rename(newHName,fName)
         dName = os.path.dirname(fName)
-        if not os.path.exists(dName):
-          os.makedirs(dName)
-          print 'Creating dir ',dName
+        if len(dName.strip()) > 1:
+          print 'dName = "',dName,'"'
+          if not os.path.exists(dName):
+            os.makedirs(dName)
+            print 'Creating dir ',dName
         shutil.move(newHName,fName)
-        #print 'Moving %s to %s in %s'%(newHName,fName,os.getcwd())        
+        print 'Moving %s to %s in %s'%(newHName,fName,os.getcwd())        
       except OSError:
         #print 'Error: renaming ',newHName,' to ',fName
         #break
