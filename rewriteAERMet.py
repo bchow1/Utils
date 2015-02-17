@@ -9,19 +9,20 @@ import sqlite3
 import time
 
 # Local modules
-#sys.path.append('C:\\cygwin\\home\\sid\\python')
-sys.path.append('/home/user/bnc/python')
+sys.path.append('C:\\cygwin\\home\\sid\\python')
 import utilDb
 
 # Code for SCICHEM 2012 plots
 
 def mainProg():
+
+  os.chdir('D:\\SCIPUFF\\runs\\EPRI\\Lynne\\quatar')
   #os.chdir('D:\\SCIPUFF\\runs\\EPRI\\DES_NH\\140905')
   #os.chdir('D:\\SCIPUFF\\runs\\EPRI\\aermod\\kinso2\\SCICHEM')
-  os.chdir('/home/user/bnc/TestSCICHEM/Outputs/2015_02_10/AERMOD/Clifty/SCICHEM')
+  #os.chdir('/home/user/bnc/scipuff/runs/EPRI/wwright')
 
-  
-  dataFile = 'cc75.sfc'
+  dataFile = 'quatar.sfc'
+  #dataFile = 'Concord2008v2.SFC'
   #dataFile = 'kinso2.sfc'
   #dataFile = 'kinso2.pfl'
   colNames = ''
@@ -30,10 +31,10 @@ def mainProg():
   if dataFile.lower().endswith('.sfc'):
     colNames = ('year','month','day','j_day','hour',\
                 'H','u','w','VPTG','Zic','Zim','L','Zo','Bo','r',\
-                'Ws','Wd','zref','temp','ztemp','col1') #,'col2','col3')
+                'Ws','Wd','zref','temp','ztemp','col1','col2','col3')
     colFormats = ('int','int','int','int','int','float','float','float','float','float',\
                   'float','float','float','float','float','float','float','float','float','float',\
-                  'float')#,'float','float')
+                  'float','float','float')
   #   9,   9,      1,    244    1,\
   # -40.9,  0.755,  -9.000, -9.000, -999., 1510., 927.9, 0.1500, 6.00, 1.00,\
   #  7.57    173.0    7.9     287.1    2.0     0     0.80    66.     987.    10      ADJ-A1
@@ -97,39 +98,43 @@ def mainProg():
       # (3(I2,1X), I3,1X, I2,1X, F6.1,1X, 2(F6.3,1X), F5.0,1X, F8.1,1X, F5.2,1X,
       # 2(F6.2,1X), F7.2,1X, F5.0, 3(1X,F6.1))
       s  = '{0[0]:2d} {0[1]:2d} {0[2]:2d} {0[3]:3d} {0[4]:2d} {0[5]:6.1f} '
-      s += '{0[6]:6.3f} {0[7]:6.3f} {0[8]:5.0f} {0[9]:8.1f} {0[10]:5.2f} {0[11]:6.2f} {0[12]:6.2f} '
+      s += '{0[6]:6.3f} {0[7]:6.3f} {0[8]:5.0f} {0[9]:8.1f} {0[10]:5.2f} {0[11]:6.2f} {0[12]:13.4e} '
       s += '{0[13]:7.2f} {0[14]:6.1f} {0[15]:6.1f} {0[16]:6.1f} {0[17]:6.1f} {0[18]:6.1f} {0[19]:6.1f} {0[20]:6.1f}\n'
   if dataFile.lower().endswith('.pfl'):
       # 4(I2,1X), F6.1,1X, I1,1X, F5.0,1X, F7.2,1X, F7.1, 1X,F6.1, 1X,F7.2
       s  = '{0[0]:2d} {0[1]:2d} {0[2]:2d} {0[3]:2d} {0[4]:6.1f} {0[5]:1d} {0[6]:5.0f} '
       s += '{0[7]:7.2f} {0[8]:7.1f} {0[9]:6.1f} {0[10]:7.2f}\n'         
+  print colNames
   for row in range(len(sfcDat)):
-        sfcFile.write(s.format(sfcDat[row]))       
+    outLine = s.format(sfcDat[row])
+    if sfcDat[row] == sfcDat[0] or sfcDat[row] == sfcDat[-1]:
+      sys.stdout.write(outLine)
+    sfcFile.write(outLine)       
   sfcFile.close()
 
 
 def getDataFromFile(dataFile, colNames, colFormats):
   print colNames , '\n'
   print colFormats, '\n'
-  sfcDat = np.loadtxt(dataFile,skiprows=1,dtype={'names':colNames,'formats':colFormats})
+  colNos = [i for i in range(len(colNames))]
+  sfcDat = np.loadtxt(dataFile,skiprows=1,dtype={'names':colNames,'formats':colFormats},usecols=colNos)
   return sfcDat
    
 # Main program
 if __name__ == '__main__':
-  s = '{0[0]:2d} {0[1]:2d} {0[2]:2d} {0[3]:2d} {0[4]:6.1f} {0[5]:1d} {0[6]:5.0f} {0[7]:7.2f} {0[8]:7.1f} {0[9]:6.1f} {0[10]:7.2f}'
-  sfcDat = [80, 4,  3,  1,   10.0, 0, -999.,    4.90,     9.9, -999.0, -999.00]
-  print s.format(sfcDat)
+  
+  #s = '{0[0]:2d} {0[1]:2d} {0[2]:2d} {0[3]:2d} {0[4]:6.1f} {0[5]:1d} {0[6]:5.0f} {0[7]:7.2f} {0[8]:7.1f} {0[9]:6.1f} {0[10]:7.2f}'
+  #sfcDat = [80, 4,  3,  1,   10.0, 0, -999.,    4.90,     9.9, -999.0, -999.00]
+  #print s.format(sfcDat)
+  
   #s = '{:04d} {:03d}'
   # sfcDat = [10,80]
   #print  '{0[0]:+6.3f}; {0[1]:+6.2f}'.format(sfcDat)#(10, 80)
   
-  print sfcDat
-  
-  coord = (3, 5)
-  print 'X: {0[0]};  Y: {0[1]}'.format(coord)
+  #coord = (3, 5)
+  #print 'X: {0[0]};  Y: {0[1]}'.format(coord)
 
-  print '{0[0]:6.3f};  Y: {0[1]:5.0f}'.format(sfcDat)
+  #print '{0[0]:6.3f};  Y: {0[1]:5.0f}'.format(sfcDat)
   #print '{0[0]}; {:+f}'.format(sfcDat)  # show it always
   
- 
   mainProg()
