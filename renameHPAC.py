@@ -3,6 +3,7 @@ import sys
 import shutil
 import re
 import fileinput
+import difflib
 
 # patterns
 hpacPatt  = re.compile('(.*)hpac(.*)',re.I)
@@ -34,33 +35,32 @@ if __name__ == '__main__':
 
   isFile = False
   if sys.argv.__len__() > 1:
-     arg1 = sys.argv[1]
-     if 'FILE:' in arg1:
-       arg1 = arg1.replace('FILE:','')
+     if 'FILE:' in sys.argv[1]:
+       fNames = sys.argv[1].replace('FILE:','')
        isFile = True
        ans = raw_input('Rename files %s\n Continue? '%arg1)
      else:
-       os.chdir(arg1)
-       ans = raw_input('Renaming directories and files in %s.\n Continue? '%os.getcwd())
+       dName = sys.argv[1]
+       ans = raw_input('  Renaming directories and files in %s\n Continue? '%dName)
   else:
-    #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\workspace\\EPRI')
-    #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\src\\sys\\windows')
-    #os.chdir('D:\\SCIPUFF\\Repository\\EPRI_STE\\')
-    #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\workspace\\EPRI')
-    #os.chdir('D:\\hpac\\SCIPUFF\\export\\SCICHEM\\120719\\src\\sys\\windows')
-    os.chdir('D:\\SCIPUFF\\EPRI_WIP\\Processed_Tmp\\src')
-    ans = raw_input('Renaming directories and files in %s.\n Continue? '%os.getcwd())
-
+    print 'Usage: renameHPAC.py (dirname|FILE:filename)'
+    sys.exit()
+    
   if ans == 'n' or ans == 'N':
     sys.exit()
+  if not isFile:
+    os.chdir(dName)
+    print 'Current dir = ',os.getcwd()
   
   errList = []
   if isFile:
-    fList = arg1.split(';')
+    fList = fNames.split(';')
   else:
     fList = getFnames()
+    print fList
+
   for fName in fList:
-    print 'rename File:',fName
+    print 'Renaming File:',fName
     newHName = fName+'.new'
     fNew = open(newHName,'w')
     for line in fileinput.input(fName):
@@ -71,6 +71,12 @@ if __name__ == '__main__':
         fNew.write('%s'%line)
     fileinput.close()
     fNew.close()
+    #diff = difflib.ndiff(open(fName).readlines(),open(newHName).readlines())
+    #try:
+    #  while 1:
+    #    print diff.next()
+    #except:
+    #  pass
     os.remove(fName)
 
     '''
@@ -99,12 +105,11 @@ if __name__ == '__main__':
       try:
         dName = os.path.dirname(fName)
         if len(dName.strip()) > 1:
-          print 'dName = "',dName,'"'
           if not os.path.exists(dName):
             os.makedirs(dName)
             print 'Creating dir ',dName
         shutil.move(newHName,fName)
-        print 'Moving %s to %s in %s'%(newHName,fName,os.getcwd())        
+        #print 'Moving %s to %s in %s'%(newHName,fName,os.getcwd())        
       except OSError:
         #print 'Error: renaming ',newHName,' to ',fName
         #break

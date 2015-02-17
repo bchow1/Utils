@@ -620,7 +620,7 @@ if __name__ == '__main__':
   arg.add_option("-a",action="store",type="string",dest="samFiles")
   arg.set_defaults(prjNames=None,senName=None,samFiles=None)
   opt,args = arg.parse_args()
-  opt.prjNames = 'Gibson1hr_4_dom_fix_met'
+  #opt.prjNames = 'Gibson1hr_4_dom_fix_met'
   #opt.prjNames = 'Rev_simplei'
   #opt.prjNames = 'dolethills'
   #opt.prjNames = '070699_vo3'
@@ -636,7 +636,7 @@ if __name__ == '__main__':
     print 'Error: prjNames or senName must be specified'
     print 'Usage: smp2db.py [-p prjName1[:prjName2...] [-a prj1.sam[:prj2.sam...]]] [ -e senName]'
   elif opt.prjNames is not None:
-    os.chdir('D:\\SCIPUFF\\runs\\EPRI\\AECOM\\Gibson\\SCICHEM\\Gibson_090423')
+    #os.chdir('D:\\SCIPUFF\\runs\\EPRI\\AECOM\\Gibson\\SCICHEM\\Gibson_090423')
     #os.chdir('d:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\simple1')
     #os.chdir('d:\\EPRI\\SCICHEM-99\\runs\\070699')
     #os.chdir('d:\\Aermod\\v12345\\runs\\kinsf6\\SCICHEM_SELECT')

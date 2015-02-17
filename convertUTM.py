@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Original from http:#www.uwgb.edu/dutchs/UsefulData/ConvertUTMNoOZ.HTM
 import os
 import math
@@ -156,8 +157,8 @@ class convertUTM(object):
 if __name__ == '__main__':
   LLtoUTM = True
   myConvertUTM = convertUTM()
-  #ll2utm = raw_input('Convert from Lat Lon to UTM (y/n)? :')
-  ll2utm = 'n'
+  ll2utm = raw_input('Convert from Lat Lon to UTM (y/n)? :')
+  #ll2utm = 'n'
   if len(ll2utm) > 0:
     if ll2utm.strip()[0].lower() == 'n':
       LLtoUTM = False
