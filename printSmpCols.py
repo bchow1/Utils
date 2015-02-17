@@ -3,6 +3,7 @@ import sys
 import fileinput
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 class smp(object):
     
@@ -94,8 +95,12 @@ class smp(object):
     return
     
   def setSpList(self,line):
-    self.splist = line.split('(')[1].split(')')[0].split(',')
-    self.nspc   = len(self.splist)
+    if '(' in line:
+      self.splist = line.split('(')[1].split(')')[0].split(',')
+      self.nspc   = len(self.splist)
+    else:
+      self.splist = []
+      self.nspc   = 0
     print 'nSp,spList = ',self.nspc,self.splist
     
   def setType(self):
@@ -176,11 +181,15 @@ if not mySmp.wrap:
   smpDat = pd.read_table(mySmp.fsmp,skiprows=mySmp.skiprows,sep=r'\s*',names=mySmp.colNames)
 
 print "\n==================================="
-print ' varName       Min           Max'  
+print ' varName       Tmax(Days)         CMax(ug/m3)'  
 print "===================================="
 for colNo in mySmp.varCols:
   colName = smpDat.columns[colNo]
-  print '%8s %13.4e %13.4e'%(colName,smpDat[colName].min(),smpDat[colName].max())
+  #cMin = smpDat[colName].min()
+  #iMin = smpDat[colName].idxmin()
+  cMax = smpDat[colName].max()
+  iMax = smpDat[colName].idxmax()
+  print '%8s %13.4e %13.4e'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax*1e+9)
 print '\n'
 if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
   colList = []
@@ -194,4 +203,17 @@ if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
       sys.stdout.write('%13.4e'%(smpDat[colName][row]))
     sys.stdout.write('\n')
   sys.stdout.write('\n')
+  
+# Create Plots
+if True:
+  for colNo in mySmp.varCols:
+    colName = smpDat.columns[colNo]
+    if colName == 'T':
+      continue
+    plt.figure()
+    plt.clf()
+    plt.plot(smpDat['T'],smpDat[colName])
+    plt.title('Plot from %s'%colName)
+    plt.savefig('%s.png'%colName)
+    print 'Created %s.png\n'%colName
     
