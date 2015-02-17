@@ -94,9 +94,10 @@ class smp(object):
     return
     
   def setSpList(self,line):
-    self.splist = line.split('(')[1].split(')')[0].split(',')
-    self.nspc   = len(self.splist)
-    print 'nSp,spList = ',self.nspc,self.splist
+    if '(' in line:
+      self.splist = line.split('(')[1].split(')')[0].split(',')
+      self.nspc   = len(self.splist)
+      print 'nSp,spList = ',self.nspc,self.splist
     
   def setType(self):
     for line in fileinput.input(self.fsmp):
