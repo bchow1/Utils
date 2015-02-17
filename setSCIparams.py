@@ -317,7 +317,7 @@ class Files(object):
 
     return(relTime,relX,relY)
 
-  def readSumFile(self,sumFile,showDate=False):
+  def readSumFile(self,sumFile,showDate=False,getList=False):
     #print '\nPredicted source parameters from ',sumFile,' :'
     pName = [sLoc,sMas,sDur] = [0,1,2]
     estList = [[] for i in pName]
@@ -361,7 +361,10 @@ class Files(object):
           if abs(relP-maxList[sLoc][0]) < 1.e-10:
             maxList[sDur][0] = durT
             break
-    return (tMax,maxList)
+    if getList:
+      return (tMax,estList)
+    else:
+      return (tMax,maxList)
 
 # class for creating sam file
 class samList:

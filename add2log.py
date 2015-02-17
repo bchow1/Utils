@@ -58,7 +58,7 @@ def wrtLog(logName,xySam):
 if __name__ == '__main__':
   #os.chdir('D:\\Aermod\\v12345\\runs\\kinsf6\\SCICHEM_Select')
   #os.chdir('d:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\Trial071')
-  os.chdir('D:\\SCIPUFF\\runs\\EPRI\\DoletHills')
+  #os.chdir('D:\\SCIPUFF\\runs\\EPRI\\DoletHills')
   #os.chdir('d:\\SCIPUFF\\runs\\EPRI\\AECOM\\Gibson\\SCICHEM\\Gibson_090423')
   # Parse arguments
   arg = optparse.OptionParser()
@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
   if opt.logFile is None and opt.samFile is None:
     print 'Error: logFile and samFile must be specified'
-    print 'Usage: add2log.py [-l logFile -s samFile]'
+    print 'Usage: add2log.py -l logFile -s samFile'
     sys.exit()
 
   if not os.path.exists(opt.logFile):
