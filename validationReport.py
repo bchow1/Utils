@@ -19,32 +19,30 @@ class tstSuite:
   def addPlt(self,pltName):
     self.pltList.append(pltName)
 
-compName = socket.gethostname()
-
-if compName == 'sm-bnc':
-  testDir = 'D:\\TestHPAC' 
-else:
-  testDir = 'C:\\Users\\Bishusunita\\BNC\\TestSCICHEM'
-
-# Regression Directory
-regDir = 'b225x64'
-
 # Current Output Directory
-#outDir = '2014.10.09'  
-#ReportFile = 'Regression_Test_Results_b225x64_141009.html'
-
-#Current Output Directory
-outDir = '2014-10-09-OMP'
-ReportFile = 'Regression_Test_Results_b225x64_141009-OMP.html'
+curDir     = os.getcwd()
+baseDir    = os.path.dirname(curDir).replace('Outputs','')
+outDir     = os.path.basename(curDir)
   
-scriptDir = os.path.join(testDir,'Scripts')
-outputDir = os.path.join(testDir,'Outputs')
+# Regression Directory
+regDir     = sys.argv[1].replace('Outputs/','')  #'b225x64'
+ReportFile = 'Regression_Test_Results_%s_%s.html'%(regDir,outDir)
 
-os.chdir(scriptDir)
+# Make it relative to current directory
+regDir     = os.path.join('..',regDir)
+
+# Script Directory
+scriptDir  = os.path.join(baseDir,'Scripts')
+
+print 'Regression Dir = ',regDir
+print 'Output Dir     = ',outDir
+print 'Current Dir    = ',curDir
+print 'ReportFile     = ',ReportFile,'\n'
+
 suiteList = []
 mySuite   = None
 isCase    = False
-for line in fileinput.input('runlist.sh'):
+for line in fileinput.input(os.path.join(scriptDir,'runlist.sh')):
   if "case" in line:
     isCase = True
     prjDir = None
@@ -73,112 +71,290 @@ for line in fileinput.input('runlist.sh'):
 fileinput.close()
 print
 
-os.chdir(outputDir)
-
 htmlFile = open(ReportFile,'w')
 docType = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">\n'
 docType += '<head><meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>Regression Test Results</title>\n'
-docType += '  <style type="text/css"></style>\n'
-docType += '  <link href="reports.css" type="text/css" rel="stylesheet" /></head>\n'
-docType += ' <body>\n'
 htmlFile.write(docType)
 
-# Date
-htmlFile.write('<h1><small style="font-weight: normal; font-style: italic; color: rgb(255, 102, 0);"><small>')
-htmlFile.write('Fri Oct 10 13:20:18 EDT 2014')
-htmlFile.write('</small></small><br></h1>\n')
+if os.path.exists('reports.css'):
+  #begin include style sheet file
+  docType  = '  <style type="text/css"></style>\n'
+  docType += '  <link href="reports.css" type="text/css" rel="stylesheet" />\n'
+  docType += '</head>\n'
+  docType += ' <body>\n'
+  htmlFile.write(docType)
+  #end include style sheet file
+else:
+  #begin inline style sheet
+  styleType =  'html {\n'
+  styleType += '  padding:35px 105px 0;\n'
+  styleType += '  font-family:sans-serif;\n'
+  styleType += '  font-size:14px;\n'
+  styleType += '}\n'
+  styleType += 'h1 {\n'
+  styleType += '  margin-bottom:25px;\n'
+  styleType += '}\n'
+  styleType += 'p, h3 { \n'
+  styleType += '  margin-bottom:15px;\n'
+  styleType += '}\n'
+  styleType += 'div {\n'
+  styleType += '  padding:10px;\n'
+  styleType += '  width:1200px;\n'
+  styleType += '}\n'
+  styleType += '.tabs li {\n'
+  styleType += '  list-style:none;\n'
+  styleType += '  display:inline;\n'
+  styleType += '}\n'
+  styleType += '.tabs a {\n'
+  styleType += '  padding:5px 10px;\n'
+  styleType += '  margin-bottom:8px;\n'
+  styleType += '  display:inline-block;\n'
+  styleType += '  background:#666;\n'
+  styleType += '  color:#fff;\n'
+  styleType += '  text-decoration:none;\n'
+  styleType += '}\n'
+  styleType += '.tabs a.active {\n'
+  styleType += '  background:#fff;\n'
+  styleType += '  color:#000;\n'
+  styleType += '}\n'
+  styleType += '?#tow { display: none; }?\n'
+  styleType += 'div {\n'
+  styleType += '  padding:10px;\n'
+  styleType += '  width:1000px;\n'
+  styleType += '  position: relative;\n'
+  styleType += '  \n'
+  styleType += '  left: 175px;\n'
+  styleType += '}\n'
+  styleType += 'img {\n'
+  styleType += '  padding: 10px;\n'
+  styleType += '  #//-webkit-box-shadow: 1px 1px 15px #999999;\n'
+  styleType += '  box-shadow: 1px 1px 15px #999999;\n'
+  styleType += '  height: 60%;\n'
+  styleType += '  width: 60%;\n'
+  styleType += '}\n'
+  styleType += 'footer {\n'
+  styleType += '  padding: 10px;\n'
+  styleType += '}\n'
+  styleType += 'media print {\n'
+  styleType += '  footer {page-break-after: always;}\n'
+  styleType += '}\n'
 
-# Summary
-htmlFile.write('<h1>Summary of regression test - <span style="color: rgb(255, 102, 0);">')
-htmlFile.write('FAIL(0P,33F,33T)')
-htmlFile.write('</span><br></h1>\n')
+  htmlFile.write('<style>\n')
+  htmlFile.write(styleType)
+  htmlFile.write('</style>\n')
 
+  htmlFile.write('</head>\n')
+  htmlFile.write('<body>\n')
+  #end style sheet
+
+# Read Regression Summary Log
+if os.path.exists('Regression_Summary.log'):
+  regAvail = True
+else:
+  regAvail = False
+
+if regAvail:
+  summary   = {}
+  runResult = {}
+  runStatus = {}
+  runName = None
+  for line in fileinput.input('Regression_Summary.log'):
+    if len(line.strip()) > 0:
+      if 'RUN:' in line:
+        # RUN:DTRAPhaseI,17,17,PRJ:r17m,CSO,CSR,DNP,NA,NA,FAIL
+        runName = line.split(':')[1].split(',')[0].strip()
+        rStat   = line.split(':')[2].split(',')[1:]
+        if runName not in runStatus:
+          stat = {'rNo':'','DNP':'','SNP':'','DPD':'','SPD':'','DDD':'','SDD':''}
+          runStatus.update({runName:stat})
+        if runStatus[runName]['rNo'] == '':
+          runStatus[runName]['rNo'] = 0
+        rNo = runStatus[runName]['rNo'] + 1
+        stat.update({'rNo':rNo})
+        nStat = {}
+        for iStat,vStat in [[2,'DNP'],[2,'SNP'],[3,'DPD'],[3,'SPD'],[4,'DDD'],[4,'SDD']]:
+          if rStat[iStat] == vStat:
+            if runStatus[runName][vStat] == '':
+              runStatus[runName][vStat] = 0
+              nStat.update({vStat:0})
+            nStat[vStat] = runStatus[runName][vStat] + 1
+            stat.update({vStat:nStat[vStat]})
+        runStatus.update({runName:stat})
+        #if runName == 'DeardoffWillis':
+        #  print line
+        #  print runStatus[runName]
+      elif 'Run Result' in line:
+        # Run Result = FAIL(0P,17F,17T)
+        runResult.update({runName:line.split('=')[1]})
+        #if runName == 'DeardoffWillis':
+        #  print line
+        print '%s: %s'%(runName,runResult[runName])
+        runName = None
+      elif 'TestSummary' in line:
+        testSummary = line.strip().split('=')[1]
+      elif '=' in line:
+        key,value = line.strip().split('=')
+        summary.update({key.strip():value})
+
+  '''
+  for key in summary.iterkeys():    
+    print 'key:',key.strip(),', value:',summary[key].strip()
+  
+  for runName in runStatus.iterkeys():    
+    print 'runName:',runName,', Status:',runStatus[runName]
+
+  for runName in runResult.iterkeys():    
+    print 'runName:',runName,', Result:',runResult[runName]
+  '''
+  
 # Details
+# Date
 
-htmlFile.write('<h1 style="text-decoration: underline;">Details:</h1>\n')
-htmlFile.write('<table><tr><td>')
+
+htmlFile.write('<table>\n')
+
+htmlFile.write('<tr><td><span style="font-weight: normal; font-style: italic; color: rgb(255, 102, 0);">')
+htmlFile.write('%s'%summary['RunDate'])
+htmlFile.write('</span><br></td><td></td></tr>\n')
+
+if regAvail:
+  # Summary
+  htmlFile.write('<tr><td><h1>Summary of regression test : </h1></td> ')
+  htmlFile.write('<td><h1><span style="color: rgb(255, 102, 0);">%s'%testSummary)
+  htmlFile.write('</span><br></h1></td></tr>\n')
+
+htmlFile.write('<tr><td><h1 style="text-decoration: underline;">Details:</h1></td><td></td></tr>\n')
+htmlFile.write('<tr><td>')
 htmlFile.write('<h2>Platform: ')
 htmlFile.write('</td><td><h2> <span style="color: rgb(255, 102, 0);">')
-htmlFile.write('Windows')
+htmlFile.write('%s'%summary['PLATFORM'])
 htmlFile.write('</span></h2>\n')
 htmlFile.write('</td></tr>\n')
 
 htmlFile.write('<tr><td style="width: 504px; ">')#
 htmlFile.write('<h2>Current Executable Directory: ')
 htmlFile.write('</td><td><h2><span style="color: rgb(255, 102, 0);">')
-htmlFile.write('/cygdrive/d/SCIPUFF/%s/bin'%outDir)
+htmlFile.write('%s'%summary['BINDIR'])
 htmlFile.write('</span></h2>\n')
 htmlFile.write('</td></tr>\n')
 
-htmlFile.write('<tr><td>')
-htmlFile.write('<h2>Regression Executable Directory: ')
-htmlFile.write('</td><td><h2><span style="color: rgb(255, 102, 0);">')
+if regAvail:
+  htmlFile.write('<tr><td>')
+  htmlFile.write('<h2>Regression Executable Directory: ')
+  htmlFile.write('</td><td><h2><span style="color: rgb(255, 102, 0);">')
+  htmlFile.write('%s'%summary['RegBinDir'])
+  htmlFile.write('</span></h2>\n')
+  htmlFile.write('</td></tr>\n')
 
-htmlFile.write('/cygdrive/m/util256/amd64')
-htmlFile.write('</span></h2>\n')
-htmlFile.write('</td></tr>\n')
-
-htmlFile.write('<tr><td>')
-htmlFile.write('<h2>Regression Run Date:')
-htmlFile.write('</td><td><h2> <span style="color: rgb(255, 102, 0);">')
-htmlFile.write('Wed Feb 12 16:09:07 EST 2014')
-htmlFile.write('</span></h2>\n')
-htmlFile.write('</td></tr></table>\n')
+  htmlFile.write('<tr><td>')
+  htmlFile.write('<h2>Regression Run Date:')
+  htmlFile.write('</td><td><h2> <span style="color: rgb(255, 102, 0);">')
+  htmlFile.write('%s'%summary['RegRunDate'])
+  htmlFile.write('</span></h2>\n')
+  htmlFile.write('</td></tr>\n')
+htmlFile.write('</table>\n')
 htmlFile.write('<footer></footer>\n') 
 
+#
 # Summary Table
+#
+# Headers
 htmlFile.write('<table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2" >\n')
-htmlFile.write('<tbody><tr><td style="width: 60px; text-align: center; color: rgb(204, 102, 0); ">No.<br></td>\n')
+htmlFile.write('<tbody><tr><td rowspan=2 style="width: 60px; text-align: center; color: rgb(204, 102, 0); "><h1>No.</h1></td>\n')
 
-htmlFile.write('<td style="width: 160px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
-htmlFile.write('Project Name<br></td>\n')
+htmlFile.write('<td rowspan=2 style="width: 160px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
+htmlFile.write('<h1>Project Name</h1></td>\n')
 
-htmlFile.write('<td style="width: 90px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
-htmlFile.write('Results<br></td>\n')
+htmlFile.write('<td colspan=3 style="width: 90px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
+htmlFile.write('<h1>Results</h1></td>\n')
 
-htmlFile.write('<td style="width: 130px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
-htmlFile.write('Number of Puffs <br></td>\n')
+htmlFile.write('<td colspan=2 style="width: 128px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
+htmlFile.write('<h1>Number of Puffs </h1></td>\n')
 
-htmlFile.write('<td style="width: 130px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
-htmlFile.write('Puff Dump<br></td>\n')
+htmlFile.write('<td colspan=2 style="width: 128px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
+htmlFile.write('<h1>Puff Dump</h1></td>\n')
 
-htmlFile.write('<td style="width: 130px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
-htmlFile.write('Dose Dump<br></td></tr>\n')
+htmlFile.write('<td colspan=2 style="width: 128px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;">')
+htmlFile.write('<h1>Dose Dump</h1></td></tr>\n')
+
+# Sub Columns
+# Results
+htmlFile.write('<tr>\n')
+htmlFile.write('<td  style="width: 30px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;"><h1>Pass</h1></td>\n')
+htmlFile.write('<td  style="width: 30px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;"><h1>Fail</h1></td>\n')
+htmlFile.write('<td style="width: 30px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;"><h1>Total</h1></td>\n')
+# No of Puffs
+htmlFile.write('<td  style="width: 64px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;"><h1>Same</h1></td>\n')
+htmlFile.write('<td  style="width: 64px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;"><h1>Different</h1></td>\n')
+# Puff Dump
+htmlFile.write('<td  style="width: 64px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;"><h1>Same</h1></td>\n')
+htmlFile.write('<td  style="width: 64px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;"><h1>Different</h1></td>\n')
+# Dose Dump
+htmlFile.write('<td  style="width: 64px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;"><h1>Same</h1></td>\n')
+htmlFile.write('<td  style="width: 64px; text-align: center; font-style: italic; color: rgb(204, 102, 0); font-weight: bold;"><h1>Different</h1></td>\n')
+htmlFile.write('</tr>\n')
 
 # Rows
 
 for suNum,suite in enumerate(suiteList):
-  htmlFile.write('<tr><td style="width: 60px; text-align: center;">')
+  htmlFile.write('<tr style="width: 64px; text-align: center;"><td style="width: 60px; text-align: center;">')
   htmlFile.write('%d'%(suNum+1))
-  htmlFile.write('<br></td>')
+  htmlFile.write('</td>')
   
   htmlFile.write('<td style="width: 160px; text-align: center;"><h3>')
   htmlFile.write('%s'%suite.name)
   htmlFile.write('</h3></td>\n')
+
+  rResult = ''
+  nResult = ['','','']
+  stat    = {'rNo':'','DNP':'','SNP':'','DPD':'','SPD':'','DDD':'','SDD':''}
+  print 
+  if suite.name in runResult.iterkeys():
+    if '(' in runResult[suite.name]:
+      print 'Name:%s, runResult:%s'%(suite.name.strip(),runResult[suite.name].strip())
+      rResult = runResult[suite.name].split('(')[0]
+      nResult = runResult[suite.name].split('(')[1].split(')')[0].split(',')
+      stat    = runStatus[suite.name]
   
-  htmlFile.write('<td style="width: 90px; text-align: center;"><h3>')
-  htmlFile.write('FAIL')
-  htmlFile.write('</h3></td>\n')
+  nPass   = nResult[0].replace('P','')
+  nFail   = nResult[1].replace('F','')
+  nTotal  = nResult[2].replace('T','')
+  print suite.name.strip(),nResult
+  print stat,'\n' #,nPass,nFail,nTotal
   
-  htmlFile.write('<td style="width: 130px; text-align: center;">')
-  htmlFile.write('Different')
-  htmlFile.write('<br></td>\n')
+
+  htmlFile.write('<td style="width: 90px; text-align: center;">')
+  htmlFile.write('%s</td><td>%s</td><td>%s</td>'%(nPass,nFail,nTotal))
+  htmlFile.write('</td>\n')
   
-  htmlFile.write('<td style="width: 130px; text-align: center;">')
-  htmlFile.write('Different')
-  htmlFile.write('<br></td>\n')
+  rNo  = str(stat['rNo'])
+  nSNP = str(stat['SNP'])
+  nDNP = str(stat['DNP'])
   
-  htmlFile.write('<td style="width: 130px; text-align: center;">')
-  htmlFile.write('Different')
-  htmlFile.write('<br></td></tr>\n')
+  # No. of puffs
+  htmlFile.write('<td style="width: 64px; text-align: center;">')
+  htmlFile.write('%s</td><td>%s</td>'%(nSNP,nDNP))
+  
+  # Puff Dump
+  nSPD = str(stat['SPD'])
+  nDPD = str(stat['DPD'])
+  htmlFile.write('<td style="width: 64px; text-align: center;">')
+  htmlFile.write('%s</td><td>%s</td>'%(nSPD,nDPD))
+  
+  # Dose Dump
+  nSDD = str(stat['SDD'])
+  nDDD = str(stat['DDD'])
+  htmlFile.write('<td style="width: 64px; text-align: center;">')
+  htmlFile.write('%s</td><td>%s</td>'%(nSDD,nDDD))
+  htmlFile.write('</tr>\n')
 
 htmlFile.write('</tbody></table>')
 htmlFile.write('<footer></footer>')
 
 suiteProps = {}
 for suite in suiteList:
-  print suite.name
-  suiteProps.update({suite.name:['','NA']})
+  #print suite.name
+  suiteProps.update({suite.name:['','']})
   
 suiteProps['3dClimatology'][0] = 'Using historical database' 
 suiteProps['HillDense'][0] = 'Test dense gas on slope, quiescent background'
@@ -221,7 +397,7 @@ suiteProps['EPRI'][0] = 'Mid range diffusion of a passive tracer in both flat an
 htmlDiff = difflib.HtmlDiff()
       
 for suNum,suite in enumerate(suiteList):  
-  
+    
   # Name
   htmlFile.write('<h1><u> %d. Test Suite: '%(suNum+1)) 
   htmlFile.write(suite.name)
@@ -301,49 +477,57 @@ for suNum,suite in enumerate(suiteList):
         
       if '_report' in pltName:
         regPlt = '%s/Reports/%s'%(regDir, pltName)
-        outPlt = '%s/Reports/%s'%(outDir, pltName)
+        outPlt = 'Reports/%s'%(pltName)
       else:
         regPlt = '%s/Plots/%s'%(regDir, pltName)
-        outPlt = '%s/Plots/%s'%(outDir, pltName)
+        outPlt = 'Plots/%s'%(pltName)
       
       if not os.path.exists(outPlt):
-        if '/Plots/' in outPlt:
+        if 'Plots/' in outPlt:
           regPlt = '%s/Reports/%s'%(regDir, pltName)
-          outPlt = '%s/Reports/%s'%(outDir, pltName)
+          outPlt = 'Reports/%s'%(pltName)
                 
       if os.path.exists(outPlt):      
-        print 'Add %s'%pltName  
-        htmlFile.write('<Table><tr><td>') 
-        htmlFile.write('<h3>Plot for version:%s<br></h3></td>'%regDir)
-        htmlFile.write('<td><h3>Plot for version:%s<h3></td></tr>'%outDir)    
-        htmlFile.write('<tr><td>')  
-        htmlFile.write('<a href="%s" target="_blank">' %regPlt) 
-        htmlFile.write('<img  alt="%s Plot" src="%s">' %(regPlt,regPlt)) 
-        htmlFile.write('</a></td><td>')  
-        htmlFile.write('<a href="%s" target="_blank">' %outPlt)  
-        htmlFile.write('<img  alt="%s Plot" src="%s">' %(outPlt,outPlt)) 
-        htmlFile.write('</a></td></tr></Table>\n')
-        htmlFile.write('<footer></footer>\n') 
-        #htmlFile.write('<hr/><footer></footer>\n')      
+        if os.path.exists(regPlt):      
+          print 'Add %s'%pltName  
+          htmlFile.write('<Table><tr><td>') 
+          htmlFile.write('<h3>Plot for version:%s<br></h3></td>'%os.path.basename(regDir))
+          htmlFile.write('<td><h3>Plot for version:%s<h3></td></tr>'%outDir)    
+          htmlFile.write('<tr><td>')  
+          htmlFile.write('<a href="%s" target="_blank">' %regPlt) 
+          htmlFile.write('<img  alt="%s Plot" src="%s">' %(regPlt,regPlt)) 
+          htmlFile.write('</a></td><td>')  
+          htmlFile.write('<a href="%s" target="_blank">' %outPlt)  
+          htmlFile.write('<img  alt="%s Plot" src="%s">' %(outPlt,outPlt)) 
+          htmlFile.write('</a></td></tr></Table>\n')
+          htmlFile.write('<footer></footer>\n') 
+          #htmlFile.write('<hr/><footer></footer>\n')      
+        else:
+          print('Missing %s for version:%s'%(pltName,regDir))
+          htmlFile.write('<p>Missing %s for version:%s</p><br>'%(pltName,regDir))
       else:
-        print 'Missing %s'%outPlt
+        print('Missing %s for version:%s'%(pltName,outDir))
+        htmlFile.write('<p>Missing %s for version:%s</p><br>'%(pltName,outDir))
             
     else:    
               
       regFile = os.path.join(regDir,'Plots',pltName)
-      outFile = os.path.join(outDir,'Plots',pltName)
-      htmlFile.write('<p>Difference in %s for version:%s and %s<br>'%(pltName,regDir,outDir))
-      print 'Difference in %s for version:%s and %s'%(pltName,regDir,outDir)
-      diffLines = htmlDiff.make_table(open(regFile).readlines(), open(outFile).readlines(), fromdesc='', todesc='',\
+      outFile = os.path.join('Plots',pltName)
+      if os.path.exists(regFile):
+        if os.path.exists(outFile):
+          diffLines = htmlDiff.make_table(open(regFile).readlines(), open(outFile).readlines(), fromdesc='', todesc='',\
                                 context=False, numlines=2)
-      htmlFile.write(diffLines)
+          htmlFile.write('<p>Difference in %s for version:%s and %s</p><br>'%(pltName,regDir,outDir))
+          print 'Difference in %s for version:%s and %s'%(pltName,regDir,outDir)
+          htmlFile.write(diffLines)
+        else:
+          htmlFile.write('<p>Missing %s for version:%s</p><br>'%(pltName,outDir))
+          print 'Missing %s'%outFile
+      else:
+        htmlFile.write('<p>Missing %s for version:%s</p><br>'%(pltName,regDir))
+        print 'Missing %s'%regFile
   print
 
 htmlFile.write(' </body></html>\n')
 htmlFile.close()
-print 'Completed creating html report file %s'%ReportFile
-      
-  
-      
-      
-    
+print 'Completed creating html report file %s in %s\n'%(ReportFile,os.getcwd())
