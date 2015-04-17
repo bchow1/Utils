@@ -19,7 +19,7 @@ if compName == 'sm-bnc' or compName == 'sage-d600':
 if compName == 'pj-linux4':
   sys.path.append('/home/user/bnc/python')
   
-def mainProg():
+def runPrj(basePrj,ntList):
 
   if os.sys.platform == 'win32':
     binDir      = "D:\\SCIPUFF\\CVS_REPO\\workspace\\DTRA\\vs2008_Reverse\\bin\\intel\\Win32\\Debug"
@@ -41,8 +41,6 @@ def mainProg():
   print env["PATH"],'\n'
 
   
-  ntList = [1,4]
-  basePrj = 'stLouis'
   prjNames = []
   sfxList = ['inp','scn','msc']
   for iproc,nproc in enumerate(ntList): 
@@ -52,23 +50,20 @@ def mainProg():
       shutil.copy(basePrj+'.'+sfx,prjName+'.'+sfx)
     iniFile = 'scipuff_p%d.ini'%nproc
     shutil.copy(iniFile,'scipuff.ini')
-    #runSCI(env,runsci,prjName,iniFile)
-    nPuffs = countPuffs(prjName)
-    print nproc, nPuffs
-    #pltnPuffs(nPuffs,iproc,ntList) 
-  npArray = crtNpArray(prjNames)
-  prtNPuff(prjNames,npArray)
+    runSCI(env,runsci,prjName,iniFile)
 
 def crtNpArray(prjNames):
   for prjNo,prjName in enumerate(prjNames):
     nPuffs = countPuffs(prjName)
-    #print prjName,nPuffs[:,1]
+    print prjName,np.shape(nPuffs)
     if prjName == prjNames[0]:
       nt = len(nPuffs)
+      print nt,len(prjNames)+1
       npArray = np.zeros((nt,len(prjNames)+1))
       npArray[:,0] = nPuffs[:,0]
       npArray[:,1] = nPuffs[:,1]
     else:
+      nt = min(nt,np.shape(nPuffs)[0])
       npArray[:nt,prjNo+1] = nPuffs[:nt,1] -  npArray[:nt,1]
   return npArray
   prtNPuff(prjNames,npArray)
@@ -77,11 +72,15 @@ def prtNPuff(prjNames,npArray):
   sys.stdout.write('Hr ')
   for prj in prjNames:
     sys.stdout.write('%s '%prj)
+    if prj != prjNames[-1]:
+      sys.stdout.write(', ')
   sys.stdout.write('\n')
   for npuf in npArray:
-    sys.stdout.write('%3.1f'%npuf[0])
+    sys.stdout.write('%3.1f, '%npuf[0])
     for iproj,prjName in enumerate(prjNames):
       sys.stdout.write(' %5d'%npuf[iproj+1])
+      if prjName != prjNames[-1]:
+        sys.stdout.write(', ')      
     sys.stdout.write('\n')
 
 def runSCI(env,runsci,prjName,iniFile):
@@ -159,7 +158,11 @@ def pltnPuffs(nPuffs,ip,ntList):
   return
 
 if __name__ == '__main__':
-  #mainProg() 
+  ntList = [1,4]
+  basePrj = 'stLouis'
+  runPrj(basePrj,ntList) 
   prjNames  = ['stLouis_p1','stLouis_p4','win_p1','win_p4','sL08_t1','sL08_t4']
   npArray = crtNpArray(prjNames)
   prtNPuff(prjNames,npArray)
+  #nPuffs = countPuffs(prjName)
+  #pltnPuffs(nPuffs,iproc,ntList) 
