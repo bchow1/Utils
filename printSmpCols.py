@@ -1,9 +1,11 @@
 #!/bin/python
 import sys
 import fileinput
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import copy
 
 class smp(object):
     
@@ -80,7 +82,7 @@ class smp(object):
     if len(smpNos) == 0 and addSmp:
       smpNos = [i for i in range(1,self.nsmp+1)]
     else:
-      self.varCols = varCols
+      self.varCols = copy.copy(varCols)
       self.varCols.insert(0,0)
 
     for smpNo in smpNos:
@@ -158,7 +160,7 @@ if sys.argv.__len__() < 3:
   sys.exit()
 
 smpFile = sys.argv[1]
-print 'smpFile = ',smpFile
+print 'smpFile = ',os.getcwd(),smpFile
 
 varNames = sys.argv[2].split(',')
 print 'varNames = ',varNames
@@ -173,20 +175,41 @@ mySmp.setType()
 mySmp.getVarCols(varNames=varNames,smpNos=smpNos)
 
 # Load sampler data
+isFirst = True
+chSize = 10000
 
 if not mySmp.wrap:
-  smpDat = pd.read_table(mySmp.fsmp,skiprows=mySmp.skiprows,sep=r'\s*',names=mySmp.colNames)
+  if isFirst:
+    df  = pd.read_table(mySmp.fsmp,skiprows=mySmp.skiprows,sep=r'\s*',names=mySmp.colNames,iterator=True,chunksize=chSize)
+    isFirst = False
+  else:
+    df  = pd.read_table(mySmp.fsmp,sep=r'\s*',names=mySmp.colNames,chunksize=chSize)
+smpDat = pd.concat(list(df), ignore_index=True)    
+#for chunk in smpDat:
+#  print 'chunk1 ',chunk
 
+
+print smpDat[0:4][0:3]
+print pd.version
 print "\n==================================="
 print ' varName       Tmax(Days)         CMax(ug/m3)'  
 print "===================================="
 for colNo in mySmp.varCols:
   colName = smpDat.columns[colNo]
-  #cMin = smpDat[colName].min()
-  #iMin = smpDat[colName].idxmin()
   cMax = smpDat[colName].max()
   iMax = smpDat[colName].idxmax()
   print '%8s %13.4e %13.4e'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax*1e+9)
+  '''
+  for chunk in smpDat:
+    print 'chunk2 ',chunk
+    colName = chunk.columns[colNo]
+    print colName[0:3]
+    #cMin = chunk[colName].min()
+    #iMin = chunk[colName].idxmin()
+    cMax = chunk[colName].max()
+    iMax = chunk[colName].idxmax()
+    print '%8s %13.4e %13.4e'%(colName,chunk['T'][iMax]/(3600.*24.),cMax*1e+9)
+  '''
 print '\n'
 if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
   colList = []
