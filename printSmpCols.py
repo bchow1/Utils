@@ -1,5 +1,6 @@
 #!/bin/python
 import sys
+import os
 import fileinput
 import numpy as np
 import pandas as pd
@@ -158,7 +159,8 @@ if sys.argv.__len__() < 3:
   sys.exit()
 
 smpFile = sys.argv[1]
-print 'smpFile = ',smpFile
+print 'smpFile = ',os.path.join(os.getcwd(),smpFile)
+outFile = open(smpFile.replace('.','_') + '.out','w')
 
 varNames = sys.argv[2].split(',')
 print 'varNames = ',varNames
@@ -177,32 +179,32 @@ mySmp.getVarCols(varNames=varNames,smpNos=smpNos)
 if not mySmp.wrap:
   smpDat = pd.read_table(mySmp.fsmp,skiprows=mySmp.skiprows,sep=r'\s*',names=mySmp.colNames)
 
-print "\n==================================="
-print ' varName       Tmax(Days)         CMax(ug/m3)'  
-print "===================================="
+outFile.write("\n===================================\n")
+outFile.write(" varName       Tmax(Days)         CMax(ug/m3)\n")  
+outFile.write("====================================\n")
 for colNo in mySmp.varCols:
   colName = smpDat.columns[colNo]
   #cMin = smpDat[colName].min()
   #iMin = smpDat[colName].idxmin()
   cMax = smpDat[colName].max()
   iMax = smpDat[colName].idxmax()
-  print '%8s %13.4e %13.4e'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax*1e+9)
-print '\n'
+  outFile.write('%8s %13.4e %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax*1e+9))
+outFile.write('\n')
 if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
   colList = []
   for colNo in mySmp.varCols:
     colList.append(smpDat.columns[colNo])
   for colName in colList:
-    sys.stdout.write('%8s '%colName)
-  sys.stdout.write('\n')
+    outFile.write('%8s '%colName)
+  outFile.write('\n')
   for row in range(len(smpDat['T'])):
     for colName in colList:
-      sys.stdout.write('%13.4e'%(smpDat[colName][row]))
-    sys.stdout.write('\n')
-  sys.stdout.write('\n')
+      outFile.write('%13.4e'%(smpDat[colName][row]))
+    outFile.write('\n')
+  outFile.write('\n')
   
 # Create Plots
-if True:
+if False:
   for colNo in mySmp.varCols:
     colName = smpDat.columns[colNo]
     if colName == 'T':
