@@ -38,22 +38,30 @@ for line in fileinput.input(fName):
   #print matchStart
   lNo = '%04d:'%fileinput.lineno()
   lNo = '%04d:'%fileinput.lineno()
-  if matchStart or matchStarn or matchElse:
-    if matchStart or matchStarn:
-      nlev += 1 
-      heads = spaces + '|-'
-      spaces = spaces + '| '
+  if matchStart or matchStarn:
+    nlev += 1 
+    heads  = spaces + '{-'
+    mids   = spaces + '|='
+    tails  = spaces + '}-'
+    spaces = spaces + '| '
     if prntLNo:
       sys.stdout.write('%s%s%s'%(lNo,heads,line))
     else:
       sys.stdout.write('%s%s'%(heads,line))
+  elif matchElse:
+    if prntLNo:
+      sys.stdout.write('%s%s%s'%(lNo,mids,line))
+    else:
+      sys.stdout.write('%s%s'%(mids,line))    
   elif matchEnd:
     if prntLNo:
-      sys.stdout.write('%s%s%s'%(lNo,heads,line))
+      sys.stdout.write('%s%s%s'%(lNo,tails,line))
     else:
-      sys.stdout.write('%s%s'%(heads,line))
+      sys.stdout.write('%s%s'%(tails,line))
     nlev -= 1 
-    heads = heads[:-3] + '-'
+    heads  = heads[:-3] + '-'
+    mids   = mids[:-3]  + '-'
+    tails  = tails[2:]
     spaces = spaces[:-2]
   else:
     if prntLNo:

@@ -8,6 +8,7 @@ import sqlite3
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from difflib import Differ
 #
 import run_cmd
 import tab2db
@@ -32,6 +33,53 @@ def createCSV(env,prjName,readpuf):
     #Inputs = (' %s%s %s%s %s%s%s %s%s'% ('RP',tail,'file TXT:'+ outFile,tail, 'go ',prjName,tail, 'exit', tail))
     #run_cmd.Command(env,readpuf,Inputs,tail)
 
+def diffCSV(file1,file2,outFName):
+  '''
+  with open(file1) as f1, open(file2) as f2:
+    differ = Differ()
+    for line in differ.compare(f1.readlines(),f2.readlines()):
+      if line.startswith(" "):
+        print 'Same:',line[2:]
+      else:
+       print  'Diff:',line
+       sys.exit()
+  '''
+  varNames = None
+  tOld    = None
+  nDiff   = 0
+  with open(file1) as f1, open(file2) as f2, open(outFName,'w') as outFile:
+    for line1,line2 in zip(f1,f2):
+      if line1.startswith('"IPUF"'):
+        print line1
+        varNames = line1.replace('"','').split(',')
+        print varNames
+        #sys.exit()
+      if varNames is None:
+        continue
+      if line1 == line2:
+        colVals1 = line1.split(',')
+        tVal = colVals1[1]
+        if tVal != tOld:
+          print 'Time = ',tVal
+          tOld = tVal
+      else:
+        nDiff += 1
+        colVals1 = line1.split(',')
+        colVals2 = line2.split(',')
+        outFile.write('Diff at times = %s and %s for npuff %s and %s\n'%(colVals1[1],colVals2[1],colVals1[0],colVals2[0]))        
+        for colNo,colVar in enumerate(varNames):
+          if colVals1[colNo] != colVals2[colNo]:
+            outFile.write('%s, %s, %s\n'%(colVar,colVals1[colNo],colVals2[colNo]))
+        outFile.write('\n')
+        if nDiff > 10:
+          break
+  
+  f1.close()
+  f2.close()
+  outFile.close()
+  
+  return
+    
 def csv2Db(prjName):
   csvFile = prjName + '.csv'
   dbFile  = prjName + '_puff.db'
@@ -215,8 +263,7 @@ def getHrDat(readpuf,env,prjName,hr,rmOut=False,tail='\n'):
   return vNames,hrDat
 
 def pltHrDat(hrDat,hrLbl,vNames,vPltNms,vLims=None,vType=['lin','log'],ihr=0):
- 
-  #
+    #
   xIndx = vNames[vPltNms[0]]
   yIndx = vNames[vPltNms[1]]
   
@@ -228,67 +275,9 @@ def pltHrDat(hrDat,hrLbl,vNames,vPltNms,vLims=None,vType=['lin','log'],ihr=0):
     ax.set_yscale('log')
     
   return
-  
-if __name__ == '__main__':
 
-  #runDir = './'
-
-  #runDir = '/home/user/bnc/scipuff/EPRI_121001/runs/aermod/martin/case4'
-  #sys.argv = ['','mc_ter']
-
-  #runDir = 'D:\\Aermod\\v12345\\runs\\martin\\SCICHEM'
-  runDir = 'D:\\SCIPUFF\\runs\\EPRI\\Ana\\trac'
-  #runDir = '/home/user/bnc/scipuff/Repository/export/EPRI/EPRI_130620/test'
-  #runDir = '/home/user/bnc/TestHPAC/Outputs/140902_OMP_p1/Experimental/Etex'
-  
-  # prjName as 2nd argument
-  sys.argv = ['','trac_jan']
-
-  if len(sys.argv) > 1:
-    prjNames = sys.argv[1]
-  else:
-    print 'Usage: readPuf.py prjName1[:prjName2 ...]'
-    sys.exit()
-
-  compName = socket.gethostname()
-
-  env = os.environ.copy()
-  env["SCICHEM"] = "True"
-  if sys.platform == 'win32':
-    compiler = "intel"
-    version = "Debug"
-    if env["SCICHEM"] == "True":
-      if compName == 'sm-bnc' or compName == 'sage-d600':
-        SCIPUFF_BASEDIR="D:\\SCIPUFF\\EPRI_WIP"
-        binDir = os.path.join(SCIPUFF_BASEDIR,"workspace","EPRI","vs2008","bin",compiler,"Win32",version)
-        iniFile = "D:\\SCIPUFF\\Repository\\workspace\\EPRI\\scipuff.ini"
-      env["PATH"] = "%s" % (binDir)
-      readpuf  = ["%s\\scipp.exe"%binDir,"-I:%s"%iniFile,"-R:RP"]
-    else:
-      if compName == 'sm-bnc' or compName == 'sage-d600':
-        SCIPUFF_BASEDIR="D:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\"
-        binDir = os.path.join(SCIPUFF_BASEDIR,"workspace","EPRI","bin",compiler,"Win32",version)
-        iniFile = "D:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\workspace\\EPRI\\scipuff.ini"
-      env["PATH"] = "%s" % (binDir)
-      print env["PATH"]
-      readpuf  = ["%s\\scipp.exe"%binDir,"-I:%s"%iniFile,"-R:RP"]
-    tail = '\r\n'
-  else:
-    SCIPUFF_BASEDIR = "/home/user/bnc/scipuff/Repository/UNIX/FULLx64_OMP/bin/linux/ifort"
-    #SCIPUFF_BASEDIR = "/home/user/bnc/scipuff/EPRI_121001/UNIX/EPRI/bin/linux/lahey_debug"
-    #SCIPUFF_BASEDIR = "/usr/pc/biswanath/hpac/gitEPRI/UNIX/EPRI/bin/linux/lahey"
-    readpuf = ["%s/scipp" % SCIPUFF_BASEDIR,"-I:scipuff.ini","-R:RP"]
-    env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran/x86_32:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
-    env["LD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH"] + ':' + SCIPUFF_BASEDIR
-    tail = '\n'
-
-  #myEnv = SCI.setEnv(SCIPUFF_BASEDIR=SCIPUFF_BASEDIR)
-  print readpuf
-
-  # Set 
-  os.chdir(runDir)
-  
-  #
+def plotHr2d(): 
+   
   vPltNms  = [['C','ZI']] # ,['X','C'],['Y','C']]
   vLims    = [[None,-100],[None,[0.,2500.]],None,None]
   vTypes   = [['log','lin'],['lin','log'],['lin','log']]
@@ -345,10 +334,81 @@ if __name__ == '__main__':
       figName = 'Hr%s_%s_vs_%s.png'%(hrLbl,vPltNms[pltNo][0],vPltNms[pltNo][1])
       plt.savefig(figName)
       print 'Created %s in %s'%(figName,os.getcwd())
-  #
-  '''
-  for prjName in prjNames.split(':'):
-    createCSV(env,prjName,readpuf)
-    csv2Db(prjName)
-  '''
+  
+  return
+
+  
+if __name__ == '__main__':
+
+  #runDir = './'
+
+  #runDir = '/home/user/bnc/scipuff/EPRI_121001/runs/aermod/martin/case4'
+  #sys.argv = ['','mc_ter']
+
+  #runDir = 'D:\\Aermod\\v12345\\runs\\martin\\SCICHEM'
+  #runDir = 'D:\\SCIPUFF\\runs\\EPRI\\Ana\\trac'
+  #runDir = '/home/user/bnc/scipuff/Repository/export/EPRI/EPRI_130620/test'
+  runDir = '/home/user/bnc/scipuff/runs/AFTAC/OpenMP'
+  
+  # prjName as 2nd argument
+  #sys.argv = ['','trac_jan']
+  sys.argv = ['','stLouis2/stLouis_p1:stLouis_SS3_2008/scipuff'] # 
+  
+
+  if len(sys.argv) > 1:
+    prjNames = sys.argv[1]
+  else:
+    print 'Usage: readPuf.py prjName1[:prjName2 ...]'
+    sys.exit()
+
+  compName = socket.gethostname()
+
+  env = os.environ.copy()
+  env["SCICHEM"] = "False"
+  if sys.platform == 'win32':
+    compiler = "intel"
+    version = "Debug"
+    if env["SCICHEM"] == "True":
+      if compName == 'sm-bnc' or compName == 'sage-d600':
+        SCIPUFF_BASEDIR="D:\\SCIPUFF\\EPRI_WIP"
+        binDir = os.path.join(SCIPUFF_BASEDIR,"workspace","EPRI","vs2008","bin",compiler,"Win32",version)
+        iniFile = "D:\\SCIPUFF\\Repository\\workspace\\EPRI\\scipuff.ini"
+      env["PATH"] = "%s" % (binDir)
+      readpuf  = ["%s\\scipp.exe"%binDir,"-I:%s"%iniFile,"-R:RP"]
+    else:
+      if compName == 'sm-bnc' or compName == 'sage-d600':
+        SCIPUFF_BASEDIR="D:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\"
+        binDir = os.path.join(SCIPUFF_BASEDIR,"workspace","EPRI","bin",compiler,"Win32",version)
+        iniFile = "D:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\workspace\\EPRI\\scipuff.ini"
+      env["PATH"] = "%s" % (binDir)
+      print env["PATH"]
+      readpuf  = ["%s\\scipp.exe"%binDir,"-I:%s"%iniFile,"-R:RP"]
+    tail = '\r\n'
+  else:
+    SCIPUFF_BASEDIR = "/home/user/bnc/scipuff/Repository/UNIX/AFTACx64/bin/linux/ifort"
+    #SCIPUFF_BASEDIR = "/home/user/bnc/scipuff/EPRI_121001/UNIX/EPRI/bin/linux/lahey_debug"
+    #SCIPUFF_BASEDIR = "/usr/pc/biswanath/hpac/gitEPRI/UNIX/EPRI/bin/linux/lahey"
+    readpuf = ["%s/scipp" % SCIPUFF_BASEDIR,"-I:scipuff.ini","-R:RP"]
+    #env["LD_LIBRARY_PATH"] = "/usr/local/lf9562/lib:/home/user/bnc/gfortran/x86_32:/home/user/bnc/sqlite3/flibs-0.9/lib/gfort:/home/user/sid/HDF"
+    #env["LD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH"] + ':' + SCIPUFF_BASEDIR
+    tail = '\n'
+
+  #myEnv = SCI.setEnv(SCIPUFF_BASEDIR=SCIPUFF_BASEDIR)
+  print readpuf
+
+  # Set run directory
+  os.chdir(runDir)
+  print os.getcwd()
+  
+  #plotHr2d()
+
+  prjNames = prjNames.split(':')
+  for prjName in prjNames:
+    #createCSV(env,prjName,readpuf)
+    #csv2Db(prjName)
+    if prjName != prjNames[0]:
+      print prjNames[0]+'.csv',prjName+'.csv'
+      diffCSV(prjNames[0]+'.csv',prjName+'.csv','puffDiffs.txt')
+      
+  
 

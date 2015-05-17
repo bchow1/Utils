@@ -263,7 +263,7 @@ if __name__ == '__main__':
 
   #ver,subName = raw_input('Version [f|m], subroutine ? ').split(' ')
   ver = 'f'
-  subName = 'step_dep'
+  subName = 'AddChemAmbientDoseMC'
   if ver == 'f':
     dbFile = 'SciEpri.db'
   elif ver == 'm':
@@ -275,11 +275,14 @@ if __name__ == '__main__':
     skipDirs = ['CVS']
     #
     if dbFile == 'SciEpri.db':
-      #baseDir = 'v:\\scipuff\\Repository\\UNIX\\EPRI\\src\\lib\\SCIPUFFlib\\SCIPUFF'
-      baseDir = 'D:\\SCIPUFF\\SCIPUFFpcl4\\src\\lib'
+      baseDir = 'D:\SCIPUFF\EPRI\Processed\EPRI\Linux\src'
+      #baseDir = 'D:\\SCIPUFF\\SCIPUFFpcl4\\src\\lib'
     if dbFile == 'scichem_v1900.db':
       baseDir = 'd:\\EPRI\\SCICHEM_MADRID\\V1900\\src'
       skipDirs = ['pcscipuf','contri','ncar','noDll','ntinc','util','CVS']
+    if dbFile == 'SciNGIC.db':
+      baseDir = 'V:\\scipuff\\Repository\\UNIX\\NGICx64\\src\\lib\\SCIPUFFlib\\SCIPUFF'
+      #baseDir = 'D:\\SCIPUFF\\Repository\\src\\lib'      
     #
     os.chdir(baseDir)
     if not os.path.exists(dbFile):

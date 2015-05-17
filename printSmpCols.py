@@ -2,9 +2,11 @@
 import sys
 import os
 import fileinput
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import copy
 
 class smp(object):
     
@@ -81,7 +83,7 @@ class smp(object):
     if len(smpNos) == 0 and addSmp:
       smpNos = [i for i in range(1,self.nsmp+1)]
     else:
-      self.varCols = varCols
+      self.varCols = copy.copy(varCols)
       self.varCols.insert(0,0)
 
     for smpNo in smpNos:
@@ -159,6 +161,7 @@ if sys.argv.__len__() < 3:
   sys.exit()
 
 smpFile = sys.argv[1]
+
 print 'smpFile = ',os.path.join(os.getcwd(),smpFile)
 outFile = open(smpFile.replace('.','_') + '.out','w')
 
@@ -175,21 +178,30 @@ mySmp.setType()
 mySmp.getVarCols(varNames=varNames,smpNos=smpNos)
 
 # Load sampler data
+isFirst = True
+chSize = 10000
 
 if not mySmp.wrap:
-  smpDat = pd.read_table(mySmp.fsmp,skiprows=mySmp.skiprows,sep=r'\s*',names=mySmp.colNames)
+  if isFirst:
+    df  = pd.read_table(mySmp.fsmp,skiprows=mySmp.skiprows,sep=r'\s*',names=mySmp.colNames,iterator=True,chunksize=chSize)
+    isFirst = False
+  else:
+    df  = pd.read_table(mySmp.fsmp,sep=r'\s*',names=mySmp.colNames,chunksize=chSize)
+smpDat = pd.concat(list(df), ignore_index=True)    
+#for chunk in smpDat:
+#  print 'chunk1 ',chunk
 
 outFile.write("\n===================================\n")
 outFile.write(" varName       Tmax(Days)         CMax(ug/m3)\n")  
 outFile.write("====================================\n")
+
 for colNo in mySmp.varCols:
   colName = smpDat.columns[colNo]
-  #cMin = smpDat[colName].min()
-  #iMin = smpDat[colName].idxmin()
   cMax = smpDat[colName].max()
   iMax = smpDat[colName].idxmax()
   outFile.write('%8s %13.4e %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax*1e+9))
 outFile.write('\n')
+
 if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
   colList = []
   for colNo in mySmp.varCols:

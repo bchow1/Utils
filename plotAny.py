@@ -34,6 +34,31 @@ print eval(estr)
 sys.exit()
 '''
 
+# Try integrating area under the curve
+from scipy.integrate import simps
+
+def f1(x):
+  return x**2
+def f2(x):
+  return x**3
+
+x = np.array([1,-3,4])
+y1 = f1(x)
+y2 = f2(x)
+I1 = simps(y1, abs(x))
+I2 = simps(y2, abs(x))
+print I1,I2
+
+plt.clf()
+plt.hold(True)
+plt.plot(abs(x),y1,'r-')
+plt.plot(abs(x),y2,'g-')
+plt.hold(False)
+plt.show()
+
+
+
+sys.exit()
 # Plot sam file
 
 os.chdir('D:\\SrcEst\\P1\\runs\\Outputs\\OnlySimple\\Simple\\Case016')
@@ -52,6 +77,7 @@ sys.exit()
 
 #
 mdates.strpdate2num()
+
 # Plot traverses for Dolet Hills study
 os.chdir('d:\\SCIPUFF\\runs\\EPRI\\DoletHills')
 
