@@ -15,6 +15,7 @@ class smp(object):
     self.fsam     = fSam
     self.wrap     = False
     self.splist   = []
+    self.spDict   = {}
     self.nspc     = 0
     self.spClStrt = 9999
     self.hdr      = False
@@ -48,6 +49,7 @@ class smp(object):
         break
       if self.nspc > 0 and colNo >= self.spClStrt:        
         print '%3d   %s   %s'%(colNo,varNames[colNo],self.splist[colNo-self.spClStrt])
+        self.spDict.update({varNames[colNo]:self.splist[colNo-self.spClStrt]})
       else:
         print '%3d   %s'%(colNo,varNames[colNo])
     self.varNames = varNames
@@ -177,6 +179,11 @@ mySmp.setType()
 
 mySmp.getVarCols(varNames=varNames,smpNos=smpNos)
 
+if len(mySmp.splist) > 0:
+  for k,v in mySmp.spDict.items():
+    for icol,colName in enumerate(mySmp.colNames):
+      mySmp.colNames[icol] = colName.replace(k + '_',v + '_')
+  
 # Load sampler data
 isFirst = True
 chSize = 10000
@@ -199,7 +206,13 @@ for colNo in mySmp.varCols:
   colName = smpDat.columns[colNo]
   cMax = smpDat[colName].max()
   iMax = smpDat[colName].idxmax()
-  outFile.write('%8s %13.4e %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax*1e+9))
+  if colName == 'T':
+    outFile.write('%8s %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.)))
+  elif '_' in colName:
+    outFile.write('%8s %13.4e %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax))
+  else:
+    outFile.write('%8s %13.4e %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax*1e+9))
+  
 outFile.write('\n')
 
 if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
