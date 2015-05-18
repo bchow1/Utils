@@ -216,15 +216,20 @@ if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
   outFile.write('\n')
   
 # Create Plots
-if False:
+if True:
+  plt.figure()
+  plt.hold(True)
+  plt.clf()
   for colNo in mySmp.varCols:
     colName = smpDat.columns[colNo]
     if colName == 'T':
       continue
-    plt.figure()
-    plt.clf()
-    plt.plot(smpDat['T'],smpDat[colName])
-    plt.title('Plot from %s'%colName)
-    plt.savefig('%s.png'%colName)
-    print 'Created %s.png\n'%colName
+    
+    plt.plot(smpDat['T'],smpDat[colName], label="%s"%colName)
+  plt.title('Plot from %s'%colName)
+  plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=5,
+           ncol=2, mode="expand", borderaxespad=0.)
+  plt.hold(False)
+  plt.savefig('%s.png'%colName)
+  print 'Created %s.png\n'%colName
     
