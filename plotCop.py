@@ -49,20 +49,62 @@ def getMaskedArray(cOP):
     return cOP
 
 def getStats(data1, data2, statFile, case, arc):
-  upa = measure.upa(data1, data2)
+  global skew, std, obs
+  
+  #upa = measure.upa(data1, data2)
+  obsMean =  np.mean(data2)
+  predMean = np.mean(data1)
   nmse = measure.nmse_1(data1, data2, cutoff=0.0)
-  fac2 = measure.fac2(data1, data2)
-  mfbe = measure.mfbe(data1, data2, cutoff=0.0)          
-  print 'in get stats'
-  print 'obs:',data2
-  print 'pre:',data1
+  nmb  = measure.nmb(data1,data2)
+  #fac2 = measure.fac2(data1, data2)
+  #mfbe = measure.mfbe(data1, data2, cutoff=0.0)
+  #mbe = measure.mbe(data1,data2, cutoff=0.0)
+  #biasFac = measure.bf(data1,data2, cutoff=0.0)
+  correlation = measure.correlation(data1,data2, cutoff=0.0 ) 
+  if case == 'Skew':
+    if arc == '0':
+      skew = []
+    skew.append(data1)
+  if case == 'Standard':
+    if arc == '0':
+      obs = []
+      std = []
+    std.append(data1)
+    obs.append(data2)
+    if arc == '2':
+      #plt.hold(True)
+      for i in range(3):
+        data2 = obs[i]
+        data1 = std[i]
+        data3 = skew[i]
+        data1 = data1[data2 > 0.]
+        data3 = data3[data2 > 0.]
+        data2 = data2[data2 > 0.]
+        print data1
+        print data2
+        print data3
+        diff1 = data1 - data1.mean()
+        diff2 = data2 - data2.mean()
+        diff3 = data3 - data3.mean()
+        print i,diff1,diff2,diff3
+        plt.scatter(diff2,diff1,color='red')
+        plt.scatter(diff2,diff3,color='green')
+        plt.show()
+      #plt.hold(False)
+      #plt.show() 
+          
+  print 'getStats:'
+  print 'obs =',data2
+  print 'pre =',data1
+  print 'Case,arc,stats: ',case,arc,obsMean, predMean, nmse, nmb, correlation
   if statFile is not None:
-    statFile.write("%s,%s,%8.3f, %8.3f, %8.3f, %8.3f\n"%(case, arc, upa, nmse, mfbe,fac2))
+    #statFile.write("%s,%s,%8.3f, %8.3f, %8.3f, %8.3f\n"%(case, arc, upa, nmse, mfbe,fac2))
+    statFile.write("%8.2f, %8.2f, %8.2f, %8.2f,%8.2f\n"%(obsMean, predMean, nmse, nmb, correlation))    
 
 if compName == 'sage-d600':
   runDir = 'D:\\SCICHEM-2012\\Cop'
 if compName == 'sm-bnc':
-  runDir = 'D:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\runs\\COP'
+  runDir = 'D:\\SCIPUFF\\runs\\EPRI\\COP'
   
 os.chdir(runDir)
 
@@ -130,7 +172,7 @@ def pltWPDF():
   plt.savefig('w-pdf.eps',dpi=300)
   print "Done plotting w-pdf"
    
-pltWPDF()
+#pltWPDF()
 
 
 statFile = open("COP_stat.csv","w")

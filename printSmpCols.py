@@ -1,15 +1,25 @@
 #!/bin/python
 import sys
+import os
 import fileinput
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
+import copy
+'''^^^^^^^^^^^^
+Leave first 4 columns of asmp
+Leave fistr column of smp
+Create diff as data Frame
+plot the diff
+#^^^^^^^^^^^^^^^^^^
+'''
 class smp(object):
     
   def __init__(self,fSmp,fSam=None):
     self.fsmp     = fSmp
     self.fsam     = fSam
+    self.fasmp    = None
     self.wrap     = False
     self.splist   = []
     self.nspc     = 0
@@ -25,6 +35,20 @@ class smp(object):
     self.nTime    = 1
     self.Times    = [0.,]
     self.skiprows = 1
+  
+    
+    print smpFile
+    self.fasmp = smpFile.replace('.smp','') + '.asmp'
+
+    print self.fasmp
+    print os.getcwd()
+    
+    
+    if os.path.isfile(self.fasmp):
+      print 'asmp file exists'
+    else:
+      self.fasmp = None
+      print '*****asmp file does not exist'
     
   def getColNames(self,line):
     colNames   = line.split()
@@ -80,7 +104,7 @@ class smp(object):
     if len(smpNos) == 0 and addSmp:
       smpNos = [i for i in range(1,self.nsmp+1)]
     else:
-      self.varCols = varCols
+      self.varCols = copy.copy(varCols)
       self.varCols.insert(0,0)
 
     for smpNo in smpNos:
@@ -158,7 +182,10 @@ if sys.argv.__len__() < 3:
   sys.exit()
 
 smpFile = sys.argv[1]
-print 'smpFile = ',smpFile
+
+print 'smpFile = ',os.path.join(os.getcwd(),smpFile)
+outFile = open(smpFile.replace('.','_') + '.out','w')
+
 
 varNames = sys.argv[2].split(',')
 print 'varNames = ',varNames
@@ -173,44 +200,68 @@ mySmp.setType()
 mySmp.getVarCols(varNames=varNames,smpNos=smpNos)
 
 # Load sampler data
+isFirst = True
+chSize = 10000
 
 if not mySmp.wrap:
-  smpDat = pd.read_table(mySmp.fsmp,skiprows=mySmp.skiprows,sep=r'\s*',names=mySmp.colNames)
+  if isFirst:
+    df  = pd.read_table(mySmp.fsmp,skiprows=mySmp.skiprows,sep=r'\s*',names=mySmp.colNames,iterator=True,chunksize=chSize)
+    if mySmp.fasmp!=None:
+      adf  = pd.read_table(mySmp.fasmp,skiprows=mySmp.skiprows,sep=r'\s*',names=mySmp.colNames,iterator=True,chunksize=chSize)
+    isFirst = False
+  else:
+    df  = pd.read_table(mySmp.fsmp,sep=r'\s*',names=mySmp.colNames,chunksize=chSize)
+    if mySmp.fasmp!=None:
+      adf  = pd.read_table(mySmp.fasmp,sep=r'\s*',names=mySmp.colNames,chunksize=chSize)
+smpDat = pd.concat(list(df), ignore_index=True) 
+if mySmp.fasmp!=None: 
+  asmpDat = pd.concat(list(adf), ignore_index=True) 
 
-print "\n==================================="
-print ' varName       Tmax(Days)         CMax(ug/m3)'  
-print "===================================="
+#for chunk in smpDat:
+#  print 'chunk1 ',chunk
+
+outFile.write("\n===================================\n")
+outFile.write(" varName       Tmax(Days)         CMax(ug/m3)\n")  
+outFile.write("====================================\n")
+
 for colNo in mySmp.varCols:
   colName = smpDat.columns[colNo]
-  #cMin = smpDat[colName].min()
-  #iMin = smpDat[colName].idxmin()
+  
   cMax = smpDat[colName].max()
   iMax = smpDat[colName].idxmax()
-  print '%8s %13.4e %13.4e'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax*1e+9)
-print '\n'
+  outFile.write('%8s %13.4e %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax*1e+9))
+outFile.write('\n')
+
 if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
   colList = []
   for colNo in mySmp.varCols:
-    colList.append(smpDat.columns[colNo])
+    if smpDat.columns[colNo] not in colList:
+      colList.append(smpDat.columns[colNo])
   for colName in colList:
-    sys.stdout.write('%8s '%colName)
-  sys.stdout.write('\n')
+    outFile.write('%8s '%colName)
+  outFile.write('\n')
   for row in range(len(smpDat['T'])):
     for colName in colList:
-      sys.stdout.write('%13.4e'%(smpDat[colName][row]))
-    sys.stdout.write('\n')
-  sys.stdout.write('\n')
+      outFile.write('%13.4e'%(smpDat[colName][row]))
+    outFile.write('\n')
+  outFile.write('\n')
   
 # Create Plots
 if True:
+  plt.figure()
+  plt.hold(True)
+  plt.clf()
   for colNo in mySmp.varCols:
     colName = smpDat.columns[colNo]
     if colName == 'T':
       continue
-    plt.figure()
-    plt.clf()
-    plt.plot(smpDat['T'],smpDat[colName])
-    plt.title('Plot from %s'%colName)
-    plt.savefig('%s.png'%colName)
-    print 'Created %s.png\n'%colName
+    if mySmp.fasmp!=None:
+      plt.plot(smpDat['T'],smpDat[colName]-asmpDat[colName], label="%s"%colName)
+    else:
+      plt.plot(smpDat['T'],smpDat[colName], label="%s"%colName)
+  plt.title('Plot from %s'%colName)
+  plt.legend(bbox_to_anchor=(0.9,0.96),ncol=1)
+  plt.hold(False)
+  plt.savefig('%s.png'%colName)
+  print 'Created %s.png\n'%colName
     

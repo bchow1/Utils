@@ -7,19 +7,15 @@ import fileinput
 
 # Current Output Directory
 curDir     = os.getcwd()
-regDir     = '1405'
-outDir     = '1502'
-ReportFile = 'Compare_%s_%s.html'%(regDir,outDir)
+ReportFile = 'Compare_Plots.html'
 
-print 'Regression Dir = ',regDir
-print 'Output Dir     = ',outDir
 print 'Current Dir    = ',curDir
+
+os.chdir('C:\\Users\\sid\\Dropbox\\SUBI\\cmpDir')
+#os.chdir('C:\\Users\\Bishusunita\\Dropbox\\SUBI\\cmpDir')
 print 'ReportFile     = ',ReportFile,'\n'
 
-os.chdir(outDir)
 pltList = os.listdir('./')
-print pltList
-regDir  = os.path.join('..',regDir)  
 
 htmlFile = open(ReportFile,'w')
 docType = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">\n'
@@ -70,8 +66,8 @@ styleType += 'img {\n'
 styleType += '  padding: 10px;\n'
 styleType += '  #//-webkit-box-shadow: 1px 1px 15px #999999;\n'
 styleType += '  box-shadow: 1px 1px 15px #999999;\n'
-styleType += '  height: 60%;\n'
-styleType += '  width: 60%;\n'
+styleType += '  height: 90%;\n'
+styleType += '  width: 90%;\n'
 styleType += '}\n'
 styleType += 'footer {\n'
 styleType += '  padding: 10px;\n'
@@ -88,59 +84,37 @@ htmlFile.write('</head>\n')
 htmlFile.write('<body>\n')
 #end style sheet
 
-       
-for pltName in pltList:    
+# Arrange according to keywords
+keyNames = ['20km','55km','110km']
+
+for keyName in keyNames:
   
-  if '.png' in pltName or '.' not in pltName:
+  print keyName
+  
+  pltNames = []
+  for pltName in pltList:    
+    if '%s.png'%keyName in pltName:
+      pltNames.append(pltName)    
+  print pltNames
 
-    if '.png' not in pltName:
-      pltName = pltName + '.png'
-      
-    regPlt = '%s/%s'%(regDir, pltName)
-    outPlt = '%s'%(pltName)
-    if os.path.exists(outPlt):      
-      if os.path.exists(regPlt):      
-        print 'Add %s'%pltName  
-        htmlFile.write('<Table><tr><td>') 
-        htmlFile.write('<h3>%s(%s)<br></h3></td>'%(pltName,os.path.basename(regDir)))
-        htmlFile.write('<td><h3>%s(%s)<h3></td></tr>'%(pltName,outDir))
-        htmlFile.write('<tr><td>')  
-        htmlFile.write('<a href="%s" target="_blank">' %regPlt) 
-        htmlFile.write('<img  alt="%s Plot" src="%s">' %(regPlt,regPlt)) 
-        htmlFile.write('</a></td><td>')  
-        htmlFile.write('<a href="%s" target="_blank">' %outPlt)  
-        htmlFile.write('<img  alt="%s Plot" src="%s">' %(outPlt,outPlt)) 
-        htmlFile.write('</a></td></tr></Table>\n')
-        htmlFile.write('<footer></footer>\n') 
-      else:
-        print('Missing %s for version:%s'%(pltName,regDir))
-        htmlFile.write('<p>Missing %s for version:%s</p><br>'%(pltName,regDir))
-    else:
-      print('Missing %s for version:%s'%(pltName,outDir))
-      htmlFile.write('<p>Missing %s for version:%s</p><br>'%(pltName,outDir))
-            
-  else:    
-            
-    regFile = os.path.join(regDir,pltName)
-    outFile = pltName
-    if os.path.exists(regFile):
-      if os.path.exists(outFile):
-        diffLines = htmlDiff.make_table(open(regFile).readlines(), open(outFile).readlines(), fromdesc='', todesc='',\
-                              context=False, numlines=2)
-        htmlFile.write('<p>Difference in %s for version:%s and %s</p><br>'%(pltName,regDir,outDir))
-        print 'Difference in %s for version:%s and %s'%(pltName,regDir,outDir)
-        htmlFile.write(diffLines)
-      else:
-        #htmlFile.write('<p>Missing %s for version:%s</p><br>'%(pltName,outDir))
-        print 'Missing %s'%outFile
-    else:
-      #htmlFile.write('<p>Missing %s for version:%s</p><br>'%(pltName,regDir))
-      print 'Missing %s'%regFile
-
+  htmlFile.write('\n<Table>\n<tr><td>') 
+  htmlFile.write('<h3>%s<br></h3></td></tr>\n'%keyName)  
+  for i in range(0,len(pltNames),2):
+    print 'Add %s'%pltNames[i]  
+    htmlFile.write('\n<tr><td>')  
+    htmlFile.write('<a href="%s" target="_blank">' %pltNames[i]) 
+    htmlFile.write('<img  alt="%s Plot" src="%s">' %(pltNames[i],pltNames[i])) 
+    if i+1 < len(pltNames):
+      htmlFile.write('</a></td>\n  <td>')
+      print 'Add %s'%pltNames[i+1]    
+      htmlFile.write('<a href="%s" target="_blank">' %pltNames[i+1])  
+      htmlFile.write('<img  alt="%s Plot" src="%s">' %(pltNames[i+1],pltNames[i+1])) 
+    htmlFile.write('</a></td> </tr>\n')
+  htmlFile.write('\n<footer></footer>\n') # To keep each plot on separate page
+  htmlFile.write('</Table>\n')             
   print
 
 htmlFile.write(' </body></html>\n')
 htmlFile.close()
 print 'Completed creating html report file %s in %s\n'%(ReportFile,os.getcwd())
 
-os.chdir(curDir)
