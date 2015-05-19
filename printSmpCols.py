@@ -7,12 +7,19 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import copy
-
+'''^^^^^^^^^^^^
+Leave first 4 columns of asmp
+Leave fistr column of smp
+Create diff as data Frame
+plot the diff
+#^^^^^^^^^^^^^^^^^^
+'''
 class smp(object):
     
   def __init__(self,fSmp,fSam=None):
     self.fsmp     = fSmp
     self.fsam     = fSam
+    self.fasmp    = None
     self.wrap     = False
     self.splist   = []
     self.nspc     = 0
@@ -28,6 +35,17 @@ class smp(object):
     self.nTime    = 1
     self.Times    = [0.,]
     self.skiprows = 1
+    self.asmpDF   = None
+    
+    print smpFile
+    self.fasmp = smpFile.replace('.smp','') + '.asmp'
+
+    print self.fasmp
+    print os.getcwd()
+    
+    
+    #if os.path.isfile(self.fasmp):
+    #  print 'asmp file exists'
     
   def getColNames(self,line):
     colNames   = line.split()
@@ -165,6 +183,7 @@ smpFile = sys.argv[1]
 print 'smpFile = ',os.path.join(os.getcwd(),smpFile)
 outFile = open(smpFile.replace('.','_') + '.out','w')
 
+
 varNames = sys.argv[2].split(',')
 print 'varNames = ',varNames
 
@@ -184,10 +203,15 @@ chSize = 10000
 if not mySmp.wrap:
   if isFirst:
     df  = pd.read_table(mySmp.fsmp,skiprows=mySmp.skiprows,sep=r'\s*',names=mySmp.colNames,iterator=True,chunksize=chSize)
+    adf  = pd.read_table(mySmp.fasmp,skiprows=mySmp.skiprows,sep=r'\s*',names=mySmp.colNames,iterator=True,chunksize=chSize)
     isFirst = False
   else:
     df  = pd.read_table(mySmp.fsmp,sep=r'\s*',names=mySmp.colNames,chunksize=chSize)
-smpDat = pd.concat(list(df), ignore_index=True)    
+    adf  = pd.read_table(mySmp.fasmp,sep=r'\s*',names=mySmp.colNames,chunksize=chSize)
+smpDat = pd.concat(list(df), ignore_index=True)  
+asmpDat = pd.concat(list(adf), ignore_index=True) 
+print smpDat.head()
+print asmpDat.head()
 #for chunk in smpDat:
 #  print 'chunk1 ',chunk
 
@@ -197,6 +221,7 @@ outFile.write("====================================\n")
 
 for colNo in mySmp.varCols:
   colName = smpDat.columns[colNo]
+  
   cMax = smpDat[colName].max()
   iMax = smpDat[colName].idxmax()
   outFile.write('%8s %13.4e %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax*1e+9))
@@ -205,7 +230,8 @@ outFile.write('\n')
 if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
   colList = []
   for colNo in mySmp.varCols:
-    colList.append(smpDat.columns[colNo])
+    if smpDat.columns[colNo] not in colList:
+      colList.append(smpDat.columns[colNo])
   for colName in colList:
     outFile.write('%8s '%colName)
   outFile.write('\n')
@@ -225,10 +251,9 @@ if True:
     if colName == 'T':
       continue
     
-    plt.plot(smpDat['T'],smpDat[colName], label="%s"%colName)
+    plt.plot(smpDat['T'],smpDat[colName]-asmpDat[colName], label="%s"%colName)
   plt.title('Plot from %s'%colName)
-  plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=5,
-           ncol=2, mode="expand", borderaxespad=0.)
+  plt.legend(bbox_to_anchor=(0.9,0.96),ncol=1)
   plt.hold(False)
   plt.savefig('%s.png'%colName)
   print 'Created %s.png\n'%colName
