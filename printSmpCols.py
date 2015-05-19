@@ -35,7 +35,7 @@ class smp(object):
     self.nTime    = 1
     self.Times    = [0.,]
     self.skiprows = 1
-    self.asmpDF   = None
+  
     
     print smpFile
     self.fasmp = smpFile.replace('.smp','') + '.asmp'
@@ -44,8 +44,11 @@ class smp(object):
     print os.getcwd()
     
     
-    #if os.path.isfile(self.fasmp):
-    #  print 'asmp file exists'
+    if os.path.isfile(self.fasmp):
+      print 'asmp file exists'
+    else:
+      self.fasmp = None
+      print '*****asmp file does not exist'
     
   def getColNames(self,line):
     colNames   = line.split()
@@ -203,15 +206,17 @@ chSize = 10000
 if not mySmp.wrap:
   if isFirst:
     df  = pd.read_table(mySmp.fsmp,skiprows=mySmp.skiprows,sep=r'\s*',names=mySmp.colNames,iterator=True,chunksize=chSize)
-    adf  = pd.read_table(mySmp.fasmp,skiprows=mySmp.skiprows,sep=r'\s*',names=mySmp.colNames,iterator=True,chunksize=chSize)
+    if mySmp.fasmp!=None:
+      adf  = pd.read_table(mySmp.fasmp,skiprows=mySmp.skiprows,sep=r'\s*',names=mySmp.colNames,iterator=True,chunksize=chSize)
     isFirst = False
   else:
     df  = pd.read_table(mySmp.fsmp,sep=r'\s*',names=mySmp.colNames,chunksize=chSize)
-    adf  = pd.read_table(mySmp.fasmp,sep=r'\s*',names=mySmp.colNames,chunksize=chSize)
-smpDat = pd.concat(list(df), ignore_index=True)  
-asmpDat = pd.concat(list(adf), ignore_index=True) 
-print smpDat.head()
-print asmpDat.head()
+    if mySmp.fasmp!=None:
+      adf  = pd.read_table(mySmp.fasmp,sep=r'\s*',names=mySmp.colNames,chunksize=chSize)
+smpDat = pd.concat(list(df), ignore_index=True) 
+if mySmp.fasmp!=None: 
+  asmpDat = pd.concat(list(adf), ignore_index=True) 
+
 #for chunk in smpDat:
 #  print 'chunk1 ',chunk
 
@@ -250,8 +255,10 @@ if True:
     colName = smpDat.columns[colNo]
     if colName == 'T':
       continue
-    
-    plt.plot(smpDat['T'],smpDat[colName]-asmpDat[colName], label="%s"%colName)
+    if mySmp.fasmp!=None:
+      plt.plot(smpDat['T'],smpDat[colName]-asmpDat[colName], label="%s"%colName)
+    else:
+      plt.plot(smpDat['T'],smpDat[colName], label="%s"%colName)
   plt.title('Plot from %s'%colName)
   plt.legend(bbox_to_anchor=(0.9,0.96),ncol=1)
   plt.hold(False)
