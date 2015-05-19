@@ -9,22 +9,26 @@ import sqlite3
 import time
 
 # Local modules
-sys.path.append('C:\\cygwin\\home\\sid\\python')
+#sys.path.append('C:\\cygwin\\home\\sid\\python')
+sys.path.append('/home/user/bnc/python')
 import utilDb
 
 # Code for SCICHEM 2012 plots
 
 def mainProg():
 
-  os.chdir('D:\\SCIPUFF\\runs\\EPRI\\Lynne\\quatar')
+  os.chdir('/home/user/bnc/scipuff/runs/EPRI/v3b3_Tests/Linux/so2_2005')
+  #dataFile = 'KBOI_2005.SFC'
+  dataFile = 'KBOI.2005.PFL'
+  #os.chdir('D:\\SCIPUFF\\runs\\EPRI\\Lynne\\quatar')
+  #dataFile = 'quatar.sfc'
   #os.chdir('D:\\SCIPUFF\\runs\\EPRI\\DES_NH\\140905')
-  #os.chdir('D:\\SCIPUFF\\runs\\EPRI\\aermod\\kinso2\\SCICHEM')
-  #os.chdir('/home/user/bnc/scipuff/runs/EPRI/wwright')
-
-  dataFile = 'quatar.sfc'
   #dataFile = 'Concord2008v2.SFC'
+  #os.chdir('D:\\SCIPUFF\\runs\\EPRI\\aermod\\kinso2\\SCICHEM')
   #dataFile = 'kinso2.sfc'
   #dataFile = 'kinso2.pfl'
+  #os.chdir('/home/user/bnc/scipuff/runs/EPRI/wwright')
+
   colNames = ''
   colFormats = ''
 

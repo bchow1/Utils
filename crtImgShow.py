@@ -7,8 +7,12 @@ import fileinput
 
 # Current Output Directory
 curDir     = os.getcwd()
-regDir     = '1405'
-outDir     = '1502'
+
+#regDir     = '1405'
+#outDir     = '1502'
+regDir     = 'Dyn'
+outDir     = 'Prise34'
+
 ReportFile = 'Compare_%s_%s.html'%(regDir,outDir)
 
 print 'Regression Dir = ',regDir
