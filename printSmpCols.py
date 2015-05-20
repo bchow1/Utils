@@ -7,6 +7,27 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import copy
+import socket
+
+compName = socket.gethostname()
+
+# Local modules
+if compName == 'sm-bnc' or compName == 'sage-d600':
+  sys.path.append('C:\\Users\\sid\\python')
+if  compName == 'pj-linux4':
+  sys.path.append('/home/user/bnc/python')
+
+
+if compName == 'Durga':
+  sys.path.append('C:\\Users\\Bishusunita\\BNC\\python')
+  sys.path.append('C:\\Users\\Bishusunita\\BNC\\TestSCICHEM\\Scripts')
+  sys.path.append('C:\\Users\\Bishusunita\\BNC\\TestSCICHEM\\Scripts\\Chemistry')
+  sys.path.append('C:\\Users\\Bishusunita\\BNC\\TestSCICHEM\\Scripts\\AERMOD')
+
+  
+import measure
+import utilDb
+import setSCIparams as SCI
 '''^^^^^^^^^^^^
 Leave first 4 columns of asmp
 Leave fistr column of smp
@@ -22,6 +43,7 @@ class smp(object):
     self.fasmp    = None
     self.wrap     = False
     self.splist   = []
+    self.spDict   = {}
     self.nspc     = 0
     self.spClStrt = 9999
     self.hdr      = False
@@ -69,6 +91,7 @@ class smp(object):
         break
       if self.nspc > 0 and colNo >= self.spClStrt:        
         print '%3d   %s   %s'%(colNo,varNames[colNo],self.splist[colNo-self.spClStrt])
+        self.spDict.update({varNames[colNo]:self.splist[colNo-self.spClStrt]})
       else:
         print '%3d   %s'%(colNo,varNames[colNo])
     self.varNames = varNames
@@ -184,8 +207,18 @@ if sys.argv.__len__() < 3:
 smpFile = sys.argv[1]
 
 print 'smpFile = ',os.path.join(os.getcwd(),smpFile)
-outFile = open(smpFile.replace('.','_') + '.out','w')
 
+#Create DB for testing
+prjName= smpFile.replace('.smp','')
+mySciFiles = SCI.Files(prjName)
+
+smpDb = '%s.smp.db'%(prjName)
+print '%%%%%%%%%%%%', smpDb
+    # Create database for calculated data 
+    ## print 'Create smpDb ',smpDb,' in ',os.getcwd()
+(smpDbConn,smpDbCur,smpCreateDb) = utilDb.Smp2Db(smpDb,mySciFiles)
+
+outFile = open(smpFile.replace('.','_') + '.out','w')
 
 varNames = sys.argv[2].split(',')
 print 'varNames = ',varNames
@@ -199,6 +232,11 @@ mySmp.setType()
 
 mySmp.getVarCols(varNames=varNames,smpNos=smpNos)
 
+if len(mySmp.splist) > 0:
+  for k,v in mySmp.spDict.items():
+    for icol,colName in enumerate(mySmp.colNames):
+      mySmp.colNames[icol] = colName.replace(k + '_',v + '_')
+  
 # Load sampler data
 isFirst = True
 chSize = 10000
@@ -229,7 +267,13 @@ for colNo in mySmp.varCols:
   
   cMax = smpDat[colName].max()
   iMax = smpDat[colName].idxmax()
-  outFile.write('%8s %13.4e %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax*1e+9))
+  if colName == 'T':
+    outFile.write('%8s %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.)))
+  elif '_' in colName:
+    outFile.write('%8s %13.4e %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax))
+  else:
+    outFile.write('%8s %13.4e %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax*1e+9))
+  
 outFile.write('\n')
 
 if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
