@@ -207,8 +207,18 @@ if sys.argv.__len__() < 3:
 smpFile = sys.argv[1]
 
 print 'smpFile = ',os.path.join(os.getcwd(),smpFile)
-outFile = open(smpFile.replace('.','_') + '.out','w')
 
+#Create DB for testing
+prjName= smpFile.replace('.smp','')
+mySciFiles = SCI.Files(prjName)
+
+smpDb = '%s.smp.db'%(prjName)
+print '%%%%%%%%%%%%', smpDb
+    # Create database for calculated data 
+    ## print 'Create smpDb ',smpDb,' in ',os.getcwd()
+(smpDbConn,smpDbCur,smpCreateDb) = utilDb.Smp2Db(smpDb,mySciFiles)
+
+outFile = open(smpFile.replace('.','_') + '.out','w')
 
 varNames = sys.argv[2].split(',')
 print 'varNames = ',varNames
@@ -230,17 +240,6 @@ if len(mySmp.splist) > 0:
 # Load sampler data
 isFirst = True
 chSize = 10000
-
-#Create DB for testing
-prjName='tva_980825'
-mySciFiles = SCI.Files(prjName)
-
-smpDb = '%s.smp.db'%(prjName)
-print '%%%%%%%%%%%%', smpDb
-    # Create database for calculated data 
-    ## print 'Create smpDb ',smpDb,' in ',os.getcwd()
-(smpDbConn,smpDbCur,smpCreateDb) = utilDb.Smp2Db(smpDb,mySciFiles)
-
 
 if not mySmp.wrap:
   if isFirst:
