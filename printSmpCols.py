@@ -7,6 +7,27 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import copy
+import socket
+
+compName = socket.gethostname()
+
+# Local modules
+if compName == 'sm-bnc' or compName == 'sage-d600':
+  sys.path.append('C:\\Users\\sid\\python')
+if  compName == 'pj-linux4':
+  sys.path.append('/home/user/bnc/python')
+
+
+if compName == 'Durga':
+  sys.path.append('C:\\Users\\Bishusunita\\BNC\\python')
+  sys.path.append('C:\\Users\\Bishusunita\\BNC\\TestSCICHEM\\Scripts')
+  sys.path.append('C:\\Users\\Bishusunita\\BNC\\TestSCICHEM\\Scripts\\Chemistry')
+  sys.path.append('C:\\Users\\Bishusunita\\BNC\\TestSCICHEM\\Scripts\\AERMOD')
+
+  
+import measure
+import utilDb
+import setSCIparams as SCI
 '''^^^^^^^^^^^^
 Leave first 4 columns of asmp
 Leave fistr column of smp
@@ -202,6 +223,17 @@ mySmp.getVarCols(varNames=varNames,smpNos=smpNos)
 # Load sampler data
 isFirst = True
 chSize = 10000
+
+#Create DB for testing
+prjName='tva_980825'
+mySciFiles = SCI.Files(prjName)
+
+smpDb = '%s.smp.db'%(prjName)
+print '%%%%%%%%%%%%', smpDb
+    # Create database for calculated data 
+    ## print 'Create smpDb ',smpDb,' in ',os.getcwd()
+(smpDbConn,smpDbCur,smpCreateDb) = utilDb.Smp2Db(smpDb,mySciFiles)
+
 
 if not mySmp.wrap:
   if isFirst:
