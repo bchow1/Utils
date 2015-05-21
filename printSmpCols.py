@@ -267,6 +267,7 @@ for colNo in mySmp.varCols:
   
   cMax = smpDat[colName].max()
   iMax = smpDat[colName].idxmax()
+  
   if colName == 'T':
     outFile.write('%8s %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.)))
   elif '_' in colName:
@@ -284,13 +285,32 @@ if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
   for colName in colList:
     outFile.write('%8s '%colName)
   outFile.write('\n')
+  
   for row in range(len(smpDat['T'])):
     for colName in colList:
-      outFile.write('%13.4e'%(smpDat[colName][row]))
+      #outFile.write('%13.4e'%(smpDat[colName][row]))
+      outFile.write('%-10s' %(smpDat[colName][row]))
+
     outFile.write('\n')
   outFile.write('\n')
+  myMaxConc = []  
+  for cName in colList:
+    #print smpDat[cName]
+    if cName !='T':
+      maxVal = max(smpDat[cName])
+      print 'Max value for ', cName, maxVal, '\n'
+      myMaxConc.append(maxVal)
+      outFile.write('Max value for  %s, %-10s \n' %(cName, max(smpDat[cName])))
+  #print max(myMaxConc)
+  print myMaxConc  
+  print 'Maximum conc is', max(myMaxConc) 
+  maxVal = max(myMaxConc) 
+  outFile.write('Maximum conc is %13.4e' %(maxVal) )
+
   
+  #print myMaxConc.max()
 # Create Plots
+
 if True:
   plt.figure()
   plt.hold(True)
