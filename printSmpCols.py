@@ -324,7 +324,7 @@ if True:
     else:
       plt.plot(smpDat['T'],smpDat[colName], label="%s"%colName)
   plt.title('Plot from %s'%colName)
-  plt.legend(bbox_to_anchor=(0.9,0.96),ncol=1)
+  plt.legend(bbox_to_anchor=(1.1,1.05))
   plt.hold(False)
   plt.savefig('%s.png'%colName)
   print 'Created %s.png\n'%colName
