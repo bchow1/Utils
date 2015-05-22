@@ -261,7 +261,7 @@ if mySmp.fasmp!=None:
 outFile.write("\n===================================\n")
 outFile.write(" varName       Tmax(Days)         CMax(ug/m3)\n")  
 outFile.write("====================================\n")
-
+myMaxConc = []  
 for colNo in mySmp.varCols:
   colName = smpDat.columns[colNo]
   
@@ -274,8 +274,16 @@ for colNo in mySmp.varCols:
     outFile.write('%8s %13.4e %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax))
   else:
     outFile.write('%8s %13.4e %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax*1e+9))
-  
+   
+  #if cName !='T':
+    maxVal = max(smpDat[colName])
+    myMaxConc.append(maxVal)
+    outFile.write('Max value for  %s, %-10s \n' %(colName, max(smpDat[colName])))
 outFile.write('\n')
+print myMaxConc  
+print 'Maximum conc is', max(myMaxConc) 
+maxVal = max(myMaxConc) 
+outFile.write('Maximum conc is %13.4e' %(maxVal) )
 
 if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
   colList = []
@@ -293,6 +301,7 @@ if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
 
     outFile.write('\n')
   outFile.write('\n')
+  '''
   myMaxConc = []  
   for cName in colList:
     #print smpDat[cName]
@@ -307,7 +316,7 @@ if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
   maxVal = max(myMaxConc) 
   outFile.write('Maximum conc is %13.4e' %(maxVal) )
 
-  
+  '''
   #print myMaxConc.max()
 # Create Plots
 
