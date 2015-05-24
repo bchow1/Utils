@@ -10,6 +10,8 @@ import copy
 import socket
 
 compName = socket.gethostname()
+#setLocalPath(compName)
+
 
 # Local modules
 if compName == 'sm-bnc' or compName == 'sage-d600':
@@ -24,17 +26,14 @@ if compName == 'Durga':
   sys.path.append('C:\\Users\\Bishusunita\\BNC\\TestSCICHEM\\Scripts\\Chemistry')
   sys.path.append('C:\\Users\\Bishusunita\\BNC\\TestSCICHEM\\Scripts\\AERMOD')
 
+
   
 import measure
 import utilDb
 import setSCIparams as SCI
-'''^^^^^^^^^^^^
-Leave first 4 columns of asmp
-Leave fistr column of smp
-Create diff as data Frame
-plot the diff
-#^^^^^^^^^^^^^^^^^^
-'''
+
+
+
 class smp(object):
     
   def __init__(self,fSmp,fSam=None):
@@ -275,15 +274,16 @@ for colNo in mySmp.varCols:
   else:
     outFile.write('%8s %13.4e %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax*1e+9))
    
-  #if cName !='T':
-    maxVal = max(smpDat[colName])
-    myMaxConc.append(maxVal)
-    outFile.write('Max value for  %s, %-10s \n' %(colName, max(smpDat[colName])))
+  if colName !='T':
+    #maxVal = max(smpDat[colName])
+    myMaxConc.append(cMax)
+outFile.write('Max value for  %s, %-10s \n' %(colName, max(myMaxConc)))
 outFile.write('\n')
 print myMaxConc  
 print 'Maximum conc is', max(myMaxConc) 
 maxVal = max(myMaxConc) 
 outFile.write('Maximum conc is %13.4e' %(maxVal) )
+
 
 if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
   colList = []
@@ -320,21 +320,22 @@ if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
   #print myMaxConc.max()
 # Create Plots
 
-if True:
-  plt.figure()
-  plt.hold(True)
-  plt.clf()
-  for colNo in mySmp.varCols:
-    colName = smpDat.columns[colNo]
-    if colName == 'T':
-      continue
-    if mySmp.fasmp!=None:
-      plt.plot(smpDat['T'],smpDat[colName]-asmpDat[colName], label="%s"%colName)
-    else:
-      plt.plot(smpDat['T'],smpDat[colName], label="%s"%colName)
-  plt.title('Plot from %s'%colName)
-  plt.legend(bbox_to_anchor=(1.1,1.05))
-  plt.hold(False)
-  plt.savefig('%s.png'%colName)
-  print 'Created %s.png\n'%colName
+if False:
+  for colName in varNames:
+      plt.figure()
+      plt.hold(True)
+      plt.clf()
+      for colNo in mySmp.varCols:
+        #colName = smpDat.columns[colNo]
+        if colName == 'T':
+          continue
+        if mySmp.fasmp!=None:
+          plt.plot(smpDat['T'],smpDat[colName]-asmpDat[colName], label="%s"%colName)
+        else:
+          plt.plot(smpDat['T'],smpDat[colName], label="%s"%colName)
+      plt.title('Plot from %s'%colName)
+      plt.legend(bbox_to_anchor=(1.1,1.05))
+      plt.hold(False)
+      plt.savefig('%s.png'%colName)
+      print 'Created %s.png\n'%colName
     
