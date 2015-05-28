@@ -206,6 +206,13 @@ class smp(object):
             continue
       fileinput.close()
       
+def opForm(x):
+  if x > 1e-3 and x < 999.0:
+    xStr = '%-10.2f'%x
+  else:
+    xStr ='%10.3e'%x
+  return xStr
+      
 # Main program
 
       
@@ -291,6 +298,12 @@ for varName in varNames:
 maxVal = max(maxConc) 
 outFile.write('Maximum conc of %s is %13.4e' %(varName,maxVal) )
 
+if True:
+    plt.figure()
+    plt.hold(True)
+    plt.clf()
+    plt.plot(maxConc)
+    plt.show()
 #if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
 # Create Plots
 
