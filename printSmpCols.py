@@ -10,6 +10,8 @@ import copy
 import socket
 
 compName = socket.gethostname()
+#setLocalPath(compName)
+
 
 # Local modules
 if compName == 'sm-bnc' or compName == 'sage-d600':
@@ -24,19 +26,25 @@ if compName == 'Durga':
   sys.path.append('C:\\Users\\Bishusunita\\BNC\\TestSCICHEM\\Scripts\\Chemistry')
   sys.path.append('C:\\Users\\Bishusunita\\BNC\\TestSCICHEM\\Scripts\\AERMOD')
 
+'''
+Class smp
+Reads sam file: reads number of samplers
+Reads smp file: reads header for column names and variable names
+'''
+
   
 import measure
 import utilDb
 import setSCIparams as SCI
-'''^^^^^^^^^^^^
-Leave first 4 columns of asmp
-Leave fistr column of smp
-Create diff as data Frame
-plot the diff
-#^^^^^^^^^^^^^^^^^^
-'''
+
+
+
 class smp(object):
-    
+  
+  ###############################
+  # Set smp filename
+  #
+  ############################### 
   def __init__(self,fSmp,fSam=None):
     self.fsmp     = fSmp
     self.fsam     = fSam
@@ -198,7 +206,15 @@ class smp(object):
             continue
       fileinput.close()
       
+def opForm(x):
+  if x > 1e-3 and x < 999.0:
+    xStr = '%-10.2f'%x
+  else:
+    xStr ='%10.3e'%x
+  return xStr
+      
 # Main program
+
       
 if sys.argv.__len__() < 3:
   print 'Usage: printSmpCols.py smpFile varNames [smpNos]'
@@ -213,7 +229,6 @@ prjName= smpFile.replace('.smp','')
 mySciFiles = SCI.Files(prjName)
 
 smpDb = '%s.smp.db'%(prjName)
-print '%%%%%%%%%%%%', smpDb
     # Create database for calculated data 
     ## print 'Create smpDb ',smpDb,' in ',os.getcwd()
 (smpDbConn,smpDbCur,smpCreateDb) = utilDb.Smp2Db(smpDb,mySciFiles)
@@ -254,87 +269,60 @@ if not mySmp.wrap:
 smpDat = pd.concat(list(df), ignore_index=True) 
 if mySmp.fasmp!=None: 
   asmpDat = pd.concat(list(adf), ignore_index=True) 
-
+  
 #for chunk in smpDat:
 #  print 'chunk1 ',chunk
 
-outFile.write("\n===================================\n")
-outFile.write(" varName       Tmax(Days)         CMax(ug/m3)\n")  
-outFile.write("====================================\n")
-myMaxConc = []  
-for colNo in mySmp.varCols:
-  colName = smpDat.columns[colNo]
-  
-  cMax = smpDat[colName].max()
-  iMax = smpDat[colName].idxmax()
-  
-  if colName == 'T':
-    outFile.write('%8s %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.)))
-  elif '_' in colName:
-    outFile.write('%8s %13.4e %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax))
-  else:
-    outFile.write('%8s %13.4e %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax*1e+9))
-   
-  #if cName !='T':
-    maxVal = max(smpDat[colName])
-    myMaxConc.append(maxVal)
-    outFile.write('Max value for  %s, %-10s \n' %(colName, max(smpDat[colName])))
-outFile.write('\n')
-print myMaxConc  
-print 'Maximum conc is', max(myMaxConc) 
-maxVal = max(myMaxConc) 
-outFile.write('Maximum conc is %13.4e' %(maxVal) )
+outFile.write("\n=====================================\n")
+outFile.write(" varName    Tmax(Days)    CMax(ug/m3)")  
+outFile.write("\n=====================================\n")
 
-if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
-  colList = []
-  for colNo in mySmp.varCols:
-    if smpDat.columns[colNo] not in colList:
-      colList.append(smpDat.columns[colNo])
-  for colName in colList:
-    outFile.write('%8s '%colName)
-  outFile.write('\n')
-  
-  for row in range(len(smpDat['T'])):
-    for colName in colList:
-      #outFile.write('%13.4e'%(smpDat[colName][row]))
-      outFile.write('%-10s' %(smpDat[colName][row]))
-
-    outFile.write('\n')
-  outFile.write('\n')
-  '''
-  myMaxConc = []  
-  for cName in colList:
-    #print smpDat[cName]
-    if cName !='T':
-      maxVal = max(smpDat[cName])
-      print 'Max value for ', cName, maxVal, '\n'
-      myMaxConc.append(maxVal)
-      outFile.write('Max value for  %s, %-10s \n' %(cName, max(smpDat[cName])))
-  #print max(myMaxConc)
-  print myMaxConc  
-  print 'Maximum conc is', max(myMaxConc) 
-  maxVal = max(myMaxConc) 
-  outFile.write('Maximum conc is %13.4e' %(maxVal) )
-
-  '''
-  #print myMaxConc.max()
-# Create Plots
+for varName in varNames:
+  print varName
+  if varName == 'T':
+    continue
+  varNameCols = [colName for colName in smpDat.columns if varName == colName[:-4]]
+  if len(mySmp.smpNos) > 0:
+    smpNoCols = [colName for colName in varNameCols if int(colName[-3:]) in mySmp.smpNos]
+    varNameCols = smpNoCols
+  maxConc = []  
+  for colName in varNameCols:        
+    cMax = smpDat[colName].max()
+    iMax = smpDat[colName].idxmax()  
+    #print smpDat.groupby('T').size()   
+    if '_' in colName:
+      outFile.write('%8s %13.4e %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax))
+    else:
+      outFile.write('%8s %13.4e %13.4e\n'%(colName,smpDat['T'][iMax]/(3600.*24.),cMax*1e+9))
+    maxConc.append(cMax)
+maxVal = max(maxConc) 
+outFile.write('Maximum conc of %s is %13.4e' %(varName,maxVal) )
 
 if True:
-  plt.figure()
-  plt.hold(True)
-  plt.clf()
-  for colNo in mySmp.varCols:
-    colName = smpDat.columns[colNo]
-    if colName == 'T':
-      continue
-    if mySmp.fasmp!=None:
-      plt.plot(smpDat['T'],smpDat[colName]-asmpDat[colName], label="%s"%colName)
-    else:
-      plt.plot(smpDat['T'],smpDat[colName], label="%s"%colName)
-  plt.title('Plot from %s'%colName)
-  plt.legend(bbox_to_anchor=(1.1,1.05))
-  plt.hold(False)
-  plt.savefig('%s.png'%colName)
-  print 'Created %s.png\n'%colName
-    
+    plt.figure()
+    plt.hold(True)
+    plt.clf()
+    plt.plot(maxConc)
+    plt.show()
+#if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
+# Create Plots
+
+if False:
+  for colName in varNames:
+    plt.figure()
+    plt.hold(True)
+    plt.clf()
+    for colNo in mySmp.varCols:
+      #colName = smpDat.columns[colNo]
+      if colName == 'T':
+        continue
+      if mySmp.fasmp!=None:
+        plt.plot(smpDat['T'],smpDat[colName]-asmpDat[colName], label="%s"%colName)
+      else:
+        plt.plot(smpDat['T'],smpDat[colName], label="%s"%colName)
+    plt.title('Plot from %s'%colName)
+    plt.legend(bbox_to_anchor=(1.1,1.05))
+    plt.hold(False)
+    plt.savefig('%s.png'%colName)
+    print 'Created %s.png\n'%colName
+  
