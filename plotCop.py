@@ -220,9 +220,13 @@ plt.hold(False)
 plt.savefig('cop_ord.eps', dpi=300)
 print 'Done plotting in ',os.getcwd()
 '''
-#clr = ['1.0','0.75','0.5']
+clr = ['0.','0.25','0.5']
 #clr = ['red','blue','green']
-cMx = [[.5,8.],[0.,4.],[0.,3.]]
+#cMx = [[.5,8.],[0.,4.],[0.,3.]]
+
+fig = plt.figure()
+plt.clf()
+plt.hold(True)
 
 for arc in range(3):
   
@@ -241,28 +245,39 @@ for arc in range(3):
   #for i in range(len(stdCo)):
   #  print i,stdCo[i],stdCp[i]
   #print 'skew'
-  #for i in range(len(skewCp)):
+  #for i in range(len(skewCp))
   #  print i,skewCo[i],skewCp[i]
   
-  fig = plt.figure()
-  plt.clf()
-  plt.hold(True)
+  for Cp in skewCp:
+    smpNo = np.where(Cp == cSkewOP[:,1])[0]
+    print 'cSkewOP = ',arc,Cp,smpNo,cSkewOP[smpNo,1]
+    hskew = plt.scatter(cSkewOP[smpNo,0],cSkewOP[smpNo,1],color=clr[arc],marker='o',s=30)
+    
+  for Cp in stdCp:
+    smpNo = np.where(Cp == cStdOP[:,1])[0]
+    print 'cStdCp = ',arc,Cp,smpNo,cStdOP[smpNo,1]
+    hstd  = plt.scatter(cStdOP[smpNo,0],cStdOP[smpNo,1],color=clr[arc],marker='^',s=30)
+
+  '''   
+  hskew = plt.scatter(cSkewOP[:,0],cSkewOP[:,1],color='black',marker='o',s=30)
+  hstd  = plt.scatter(cStdOP[:,0],cStdOP[:,1],color='black',marker='^',s=30)
+
   
   hskew = plt.scatter(skewCo,skewCp,color='k',marker='o',s=30)
   hstd  = plt.scatter(stdCo,stdCp,color='k',marker='^',s=30)
   
-  vmin = cMx[arc][0]
-  vmax = cMx[arc][1]
+  '''
+vmin = 0. #cMx[arc][0]
+vmax = 8. #cMx[arc][1]
   
-  plt.xlim([vmin,vmax])
-  plt.ylim([vmin,vmax])
-  plt.plot([vmin,vmax],[vmin,vmax],'k-')
-  plt.xlabel(r'Observed ($\mu g/m^3$)', fontsize=10)
-  plt.ylabel(r'Predicted ($\mu g/m^3$)', fontsize = 10)
-  plt.legend([hskew,hstd],['Skewed Model','Standard Model'],bbox_to_anchor=(0.25,0.97))
+plt.xlim([vmin,vmax])
+plt.ylim([vmin,vmax])
+plt.plot([vmin,vmax],[vmin,vmax],'k-')
+plt.xlabel(r'Observed ($\mu g/m^3$)', fontsize=10)
+plt.ylabel(r'Predicted ($\mu g/m^3$)', fontsize = 10)
+plt.legend([hskew,hstd],['Skewed Model','Standard Model'],bbox_to_anchor=(0.25,0.97))
   
-  plt.hold(False)
-  plt.savefig('cop_ord_arc%d.png'%arc)
-  
+plt.hold(False)
+plt.savefig('cop_ord_arc.png')
 print 'Done plotting in ',os.getcwd()
 
