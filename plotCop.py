@@ -15,6 +15,9 @@ compName = socket.gethostname()
 # Local modules
 if  compName == 'pj-linux4':
   sys.path.append('/home/user/bnc/python')
+  
+zoL = [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5] 
+
 
 def readcOP(fileName, run):
   cOP   = []
@@ -36,7 +39,7 @@ def readcOP(fileName, run):
   print arcOP.shape
   print run
   
-  plt.hold(True)
+  #plt.hold(True)
   for arc in range(3):
     getStats(arcOP[arc,:,1], arcOP[arc,:,0], statFile, run ,str(arc))
   #print cOP  #
@@ -74,6 +77,7 @@ def getStats(data1, data2, statFile, case, arc):
       std = []
     std.append(data1)
     obs.append(data2)
+    '''
     if arc == '2':
       #plt.hold(True)
       for i in range(3):
@@ -90,12 +94,12 @@ def getStats(data1, data2, statFile, case, arc):
         diff2 = data2 - data2.mean()
         diff3 = data3 - data3.mean()
         print i,diff1,diff2,diff3
-        plt.scatter(diff2,diff1,color='red')
-        plt.scatter(diff2,diff3,color='green')
+        #plt.scatter(diff2,diff1,color='red')
+        #plt.scatter(diff2,diff3,color='green')
         #plt.show()
       #plt.hold(False)
       #plt.show() 
-          
+    '''   
   print 'getStats:'
   print 'obs =',data2
   print 'pre =',data1
@@ -220,13 +224,18 @@ plt.hold(False)
 plt.savefig('cop_ord.eps', dpi=300)
 print 'Done plotting in ',os.getcwd()
 '''
-clr = ['0.','0.25','0.5']
+clr = ['0.5','0.5','0.5']
 #clr = ['red','blue','green']
 #cMx = [[.5,8.],[0.,4.],[0.,3.]]
+mSkw = ['o','*','s']
+mStd = ['^','D','d']
 
 fig = plt.figure()
 plt.clf()
 plt.hold(True)
+
+phdl = []
+plbl = []
 
 for arc in range(3):
   
@@ -249,14 +258,22 @@ for arc in range(3):
   #  print i,skewCo[i],skewCp[i]
   
   for Cp in skewCp:
-    smpNo = np.where(Cp == cSkewOP[:,1])[0]
-    print 'cSkewOP = ',arc,Cp,smpNo,cSkewOP[smpNo,1]
-    hskew = plt.scatter(cSkewOP[smpNo,0],cSkewOP[smpNo,1],color=clr[arc],marker='o',s=30)
+    smpNo = np.where(Cp == cSkewOP[:,1])[0][0]
+    print 'cSkewOP = ',arc,Cp,smpNo,cSkewOP[smpNo,0],cSkewOP[smpNo,1]
+    hskew = plt.scatter(cSkewOP[smpNo,0],cSkewOP[smpNo,1],edgecolor='k',color=clr[arc],marker=mSkw[arc],s=30)
+  
+  phdl.append(hskew)  
+  plbl.append('Skewed   (Arc%d)'%(arc+1))
     
   for Cp in stdCp:
-    smpNo = np.where(Cp == cStdOP[:,1])[0]
-    print 'cStdCp = ',arc,Cp,smpNo,cStdOP[smpNo,1]
-    hstd  = plt.scatter(cStdOP[smpNo,0],cStdOP[smpNo,1],color=clr[arc],marker='^',s=30)
+    smpNo = np.where(Cp == cStdOP[:,1])[0][0]
+    print 'cStdCp = ',arc,Cp,smpNo,cStdOP[smpNo,0],cStdOP[smpNo,1]
+    hstd  = plt.scatter(cStdOP[smpNo,0],cStdOP[smpNo,1],edgecolor='k',color=clr[arc],marker=mStd[arc],s=30)
+  
+  #sys.exit()
+  
+  phdl.append(hstd)
+  plbl.append('Standard (Arc%d)'%(arc+1))
 
   '''   
   hskew = plt.scatter(cSkewOP[:,0],cSkewOP[:,1],color='black',marker='o',s=30)
@@ -275,9 +292,10 @@ plt.ylim([vmin,vmax])
 plt.plot([vmin,vmax],[vmin,vmax],'k-')
 plt.xlabel(r'Observed ($\mu g/m^3$)', fontsize=10)
 plt.ylabel(r'Predicted ($\mu g/m^3$)', fontsize = 10)
-plt.legend([hskew,hstd],['Skewed Model','Standard Model'],bbox_to_anchor=(0.25,0.97))
+plt.legend(phdl,plbl,bbox_to_anchor=(0.25,0.97))
   
 plt.hold(False)
-plt.savefig('cop_ord_arc.png')
-print 'Done plotting in ',os.getcwd()
+plt.show()
+#plt.savefig('cop_ord_arc.png')
+#print 'Done plotting in ',os.getcwd()
 
