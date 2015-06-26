@@ -16,7 +16,11 @@ compName = socket.gethostname()
 if  compName == 'pj-linux4':
   sys.path.append('/home/user/bnc/python')
   
-zoL = [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5] 
+zoL = [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
+pgtbc = 'green' #0.5'
+pgtc  = 'blue' #'0.25'
+pgtd = 'red' #0.0'
+pgt = [pgtc,pgtc,pgtc,pgtc,pgtc,pgtd,pgtbc,pgtbc,pgtd]
 
 
 def readcOP(fileName, run):
@@ -51,7 +55,7 @@ def getMaskedArray(cOP):
     cOP[:,0] = np.sort(cOP[:,0])
     cOP[:,1] = np.sort(cOP[:,1])
     cOP = ma.masked_where(cOP<-98.0,cOP)*1e-3
-    print cOP
+    print 'Sorted cOP = ',cOP
     return cOP
 
 def getStats(data1, data2, statFile, case, arc):
@@ -185,7 +189,7 @@ def pltWPDF():
 statFile = open("COP_stat.csv","w")
 statFile.write("Case, Arc, upa, nmse_1, mfbe, fac2\n")
 
-fileName = os.path.join(runDir,'cop.all')
+fileName = os.path.join(runDir,'cop_new.all')
 cSkewOP,arcSkewOP  = readcOP(fileName, "Skew")
 #print 'cSkewOP',cSkewOP
 #print 'arcSkewOP',arcSkewOP
@@ -241,48 +245,59 @@ for arc in range(3):
   
   stdCo = arcStdOP[arc,:,0]
   stdCp = arcStdOP[arc,:,1]
-  stdCp = np.sort(stdCp[stdCo > 0.])*1e-3
-  stdCo = np.sort(stdCo[stdCo > 0.])*1e-3
+  stdCp = np.sort(stdCp)
+  stdCp = ma.masked_where(stdCo<-98.0,stdCp)*1e-3
+  stdCo = np.sort(stdCo)
+  stdCo = ma.masked_where(stdCo<-98.0,stdCo)*1e-3
   
   skewCo = arcSkewOP[arc,:,0]
   skewCp = arcSkewOP[arc,:,1]
-  skewCp = np.sort(skewCp[skewCo > 0.])*1e-3
-  skewCo = np.sort(skewCo[skewCo > 0.])*1e-3
+  skewCp = np.sort(skewCp)
+  skewCp = ma.masked_where(skewCo<-98.0,skewCp)*1e-3
+  skewCo = np.sort(skewCo)
+  skewCo = ma.masked_where(skewCo<-98.0,skewCo)*1e-3
   
   print 'Arc = ',arc,skewCo[0],skewCp[0],stdCo[0],stdCp[0]
   #print 'std'
   #for i in range(len(stdCo)):
-  #  print i,stdCo[i],stdCp[i]
-  #print 'skew'
-  #for i in range(len(skewCp))
-  #  print i,skewCo[i],skewCp[i]
+    #print i,stdCo[i],stdCp[i]
+  #hstd  = plt.scatter(stdCo[:],stdCp[:],edgecolor='k',color=clr[arc],marker=mStd[arc],s=30)
+    
+  print 'skew sorted'
+  for i in range(len(skewCp)):
+    print i,skewCo[i],skewCp[i]
+  #hskew = plt.scatter(skewCo[:],skewCp[:],edgecolor='k',color=clr[arc],marker=mSkw[arc],s=30)
   
+  cSkewOP = ma.filled(cSkewOP,-99)
   for Cp in skewCp:
-    smpNo = np.where(Cp == cSkewOP[:,1])[0][0]
+    try:
+      smpNo = np.where(Cp == cSkewOP[:,1])[0][0]
+    except IndexError:
+      print 'Missing Cp = ',Cp
+      continue
     print 'cSkewOP = ',arc,Cp,smpNo,cSkewOP[smpNo,0],cSkewOP[smpNo,1]
     hskew = plt.scatter(cSkewOP[smpNo,0],cSkewOP[smpNo,1],edgecolor='k',color=clr[arc],marker=mSkw[arc],s=30)
-  
+    hstd  = plt.scatter(cSkewOP[smpNo,0],cStdOP[smpNo,1],edgecolor='k',color=clr[arc],marker=mStd[arc],s=30)
+
   phdl.append(hskew)  
   plbl.append('Skewed   (Arc%d)'%(arc+1))
-    
+  
+  '''
+  cStdOP = ma.filled(cStdOP,-99)
   for Cp in stdCp:
     smpNo = np.where(Cp == cStdOP[:,1])[0][0]
     print 'cStdCp = ',arc,Cp,smpNo,cStdOP[smpNo,0],cStdOP[smpNo,1]
-    hstd  = plt.scatter(cStdOP[smpNo,0],cStdOP[smpNo,1],edgecolor='k',color=clr[arc],marker=mStd[arc],s=30)
-  
-  #sys.exit()
-  
+    #hstd  = plt.scatter(cStdOP[smpNo,0],cStdOP[smpNo,1],edgecolor='k',color=clr[arc],marker=mStd[arc],s=30)
+  '''
   phdl.append(hstd)
   plbl.append('Standard (Arc%d)'%(arc+1))
 
-  '''   
+  '''
   hskew = plt.scatter(cSkewOP[:,0],cSkewOP[:,1],color='black',marker='o',s=30)
   hstd  = plt.scatter(cStdOP[:,0],cStdOP[:,1],color='black',marker='^',s=30)
 
-  
   hskew = plt.scatter(skewCo,skewCp,color='k',marker='o',s=30)
-  hstd  = plt.scatter(stdCo,stdCp,color='k',marker='^',s=30)
-  
+  hstd  = plt.scatter(stdCo,stdCp,color='k',marker='^',s=30)  
   '''
 vmin = 0. #cMx[arc][0]
 vmax = 8. #cMx[arc][1]
@@ -295,7 +310,80 @@ plt.ylabel(r'Predicted ($\mu g/m^3$)', fontsize = 10)
 plt.legend(phdl,plbl,bbox_to_anchor=(0.25,0.97))
   
 plt.hold(False)
+#plt.show()
+plt.savefig('cop_ord_arc.png')
+
+# Plot based on stability classes
+
+zMin = min(zoL)
+zMax = max(zoL)
+
+fig = plt.figure()
+plt.clf()
+plt.hold(True)
+
+phdl = []
+plbl = []
+
+for rNo in range(9):
+
+  stdCo = arcStdOP[:,rNo:rNo+3,0].flatten()
+  stdCp = arcStdOP[:,rNo:rNo+3,1].flatten()
+  stdCp = ma.masked_where(stdCo<-98.0,stdCp)
+  stdCp = np.sort(stdCp)*1e-3
+  stdCo = ma.masked_where(stdCo<-98.0,stdCo)
+  stdCo = np.sort(stdCo)*1e-3
+  
+  skewCo = arcSkewOP[:,rNo:rNo+3,0].flatten()
+  skewCp = arcSkewOP[:,rNo:rNo+3,1].flatten()
+  skewCp = ma.masked_where(skewCo<-98.0,skewCp)
+  skewCp = np.sort(skewCp)*1e-3
+  skewCo = ma.masked_where(skewCo<-98.0,skewCo)
+  skewCo = np.sort(skewCo)*1e-3
+
+  print 'runNo = ',rNo
+  clr  = str((zoL[rNo]-zMin)/(zMax-zMin))
+    
+  print 'Run No. = ',rNo,skewCo[0],skewCp[0],stdCo[0],stdCp[0],zoL[rNo], pgt[rNo]
+  #print 'std'
+  #for i in range(len(stdCo)):
+    #print i,stdCo[i],stdCp[i]
+  #hstd  = plt.scatter(stdCo[:],stdCp[:],edgecolor='k',color=clr[arc],marker=mStd[arc],s=30)
+    
+  #print 'skew sorted'
+  #for i in range(len(skewCp)):
+  #  print i,skewCo[i],skewCp[i]
+  #hskew = plt.scatter(skewCo[:],skewCp[:],edgecolor='k',color=clr[arc],marker=mSkw[arc],s=30)
+  
+  cSkewOP = ma.filled(cSkewOP,-99)
+  for Cp in skewCp:
+    try:
+      smpNo = np.where(Cp == cSkewOP[:,1])[0][0]
+    except IndexError:
+      print 'Missing Cp = ',Cp
+      continue
+    print 'cSkewOP = ',rNo,Cp,smpNo,cSkewOP[smpNo,0],cSkewOP[smpNo,1],pgt[rNo]
+    hskew = plt.scatter(cSkewOP[smpNo,0],cSkewOP[smpNo,1],edgecolor='k',color=pgt[rNo],marker='o',s=30)
+    hstd  = plt.scatter(cSkewOP[smpNo,0],cStdOP[smpNo,1],edgecolor='k',color=pgt[rNo],marker='^',s=30)
+
+  phdl.append(hskew)  
+  plbl.append('Skewed')
+  phdl.append(hstd)
+  plbl.append('Standard')
+
+vmin = 0. #cMx[arc][0]
+vmax = 8. #cMx[arc][1]
+  
+plt.xlim([vmin,vmax])
+plt.ylim([vmin,vmax])
+plt.plot([vmin,vmax],[vmin,vmax],'k-')
+plt.xlabel(r'Observed ($\mu g/m^3$)', fontsize=10)
+plt.ylabel(r'Predicted ($\mu g/m^3$)', fontsize = 10)
+plt.legend(phdl,plbl,bbox_to_anchor=(0.25,0.97))
+  
+plt.hold(False)
 plt.show()
-#plt.savefig('cop_ord_arc.png')
-#print 'Done plotting in ',os.getcwd()
+plt.savefig('cop_ord_pgt.png')
+
+print 'Done plotting in ',os.getcwd()
 
