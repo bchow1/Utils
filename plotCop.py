@@ -20,7 +20,8 @@ zoL = [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
 pgtbc = 'green' #0.5'
 pgtc  = 'blue' #'0.25'
 pgtd = 'red' #0.0'
-pgt = [pgtc,pgtc,pgtc,pgtc,pgtc,pgtd,pgtbc,pgtbc,pgtd]
+#pgt = [pgtc,pgtc,pgtc,pgtc,pgtc,pgtd,pgtbc,pgtbc,pgtd]
+pgt = ['red','blue','red','green','green','green','red','red','blue']
 
 
 def readcOP(fileName, run):
@@ -66,7 +67,7 @@ def getStats(data1, data2, statFile, case, arc):
   predMean = np.mean(data1)
   nmse = measure.nmse_1(data1, data2, cutoff=0.0)
   nmb  = measure.nmb(data1,data2)
-  #fac2 = measure.fac2(data1, data2)
+  fac2 = measure.fac2(data1, data2)
   #mfbe = measure.mfbe(data1, data2, cutoff=0.0)
   #mbe = measure.mbe(data1,data2, cutoff=0.0)
   #biasFac = measure.bf(data1,data2, cutoff=0.0)
@@ -105,9 +106,9 @@ def getStats(data1, data2, statFile, case, arc):
       #plt.show() 
     '''   
   print 'getStats:'
-  print 'obs =',data2
-  print 'pre =',data1
-  print 'Case,arc,stats: ',case,arc,obsMean, predMean, nmse, nmb, correlation
+  #print 'obs =',data2
+  #print 'pre =',data1
+  print 'Case,arc,stats: ',case,arc,obsMean, predMean, nmse, nmb, correlation, fac2
   if statFile is not None:
     #statFile.write("%s,%s,%8.3f, %8.3f, %8.3f, %8.3f\n"%(case, arc, upa, nmse, mfbe,fac2))
     statFile.write("%8.2f, %8.2f, %8.2f, %8.2f,%8.2f\n"%(obsMean, predMean, nmse, nmb, correlation))    
@@ -325,22 +326,46 @@ plt.hold(True)
 phdl = []
 plbl = []
 
+zl10 = []
+zl5  = []
+z11  = []
+
+lgdList = []
+
 for rNo in range(9):
 
-  stdCo = arcStdOP[:,rNo:rNo+3,0].flatten()
-  stdCp = arcStdOP[:,rNo:rNo+3,1].flatten()
+  stdCo = arcStdOP[:,3*rNo:3*(rNo+1),0].flatten()
+  stdCp = arcStdOP[:,3*rNo:3*(rNo+1),1].flatten()
   stdCp = ma.masked_where(stdCo<-98.0,stdCp)
   stdCp = np.sort(stdCp)*1e-3
   stdCo = ma.masked_where(stdCo<-98.0,stdCo)
   stdCo = np.sort(stdCo)*1e-3
   
-  skewCo = arcSkewOP[:,rNo:rNo+3,0].flatten()
-  skewCp = arcSkewOP[:,rNo:rNo+3,1].flatten()
+  skewCo = arcSkewOP[:,3*rNo:3*(rNo+1),0].flatten()
+  skewCp = arcSkewOP[:,3*rNo:3*(rNo+1),1].flatten()
   skewCp = ma.masked_where(skewCo<-98.0,skewCp)
   skewCp = np.sort(skewCp)*1e-3
   skewCo = ma.masked_where(skewCo<-98.0,skewCo)
   skewCo = np.sort(skewCo)*1e-3
 
+  stdCo  = ma.filled(stdCo,-99)
+  stdCp  = ma.filled(stdCp,-99)
+  skewCo = ma.filled(skewCo,-99)
+  skewCp = ma.filled(skewCp,-99)
+
+  
+  for c in zip(stdCo,stdCp,skewCo,skewCp):
+    if zoL[rNo] > 10.:  #  [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
+      zl10.append(c)     
+    elif zoL[rNo] > 4.:  #  [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
+      zl5.append(c)     
+    else:  #  [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
+      z11.append(c)     
+
+  print zl10
+  print zl5
+  print z11
+  
   print 'runNo = ',rNo
   clr  = str((zoL[rNo]-zMin)/(zMax-zMin))
     
@@ -366,10 +391,24 @@ for rNo in range(9):
     hskew = plt.scatter(cSkewOP[smpNo,0],cSkewOP[smpNo,1],edgecolor='k',color=pgt[rNo],marker='o',s=30)
     hstd  = plt.scatter(cSkewOP[smpNo,0],cStdOP[smpNo,1],edgecolor='k',color=pgt[rNo],marker='^',s=30)
 
-  phdl.append(hskew)  
-  plbl.append('Skewed')
-  phdl.append(hstd)
-  plbl.append('Standard')
+  if pgt[rNo] not in lgdList:
+    phdl.append(hskew)  
+    if zoL[rNo] > 10.:  #  [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
+      plbl.append('Skewed (z/L < -10)')
+    elif zoL[rNo] > 4.:  #  [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
+      plbl.append('Skewed (-10 < z/L < -4)')
+    else:  #  [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
+      plbl.append('Skewed (z/L > -4)')
+
+    phdl.append(hstd)  
+    if zoL[rNo] > 10.:  #  [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
+      plbl.append('Standard (z/L < -10)')
+    elif zoL[rNo] > 4.:  #  [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
+      plbl.append('Standard (-10 < z/L < -4)')
+    else:  #  [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
+      plbl.append('Standard (z/L > -4)')
+    
+    lgdList.append(pgt[rNo])
 
 vmin = 0. #cMx[arc][0]
 vmax = 8. #cMx[arc][1]
@@ -382,8 +421,24 @@ plt.ylabel(r'Predicted ($\mu g/m^3$)', fontsize = 10)
 plt.legend(phdl,plbl,bbox_to_anchor=(0.25,0.97))
   
 plt.hold(False)
-plt.show()
+#plt.show()
 plt.savefig('cop_ord_pgt.png')
+
+zl10 = np.array(zl10)
+zl10 = ma.masked_where(zl10<-98.0,zl10)
+zl5 = np.array(zl5)
+zl5 = ma.masked_where(zl5<-98.0,zl5)
+z11 = np.array(z11)
+z11 = ma.masked_where(z11<-98.0,z11)
+
+getStats(zl10[:,1], zl10[:,0], statFile, 'Std' ,'zl10')
+getStats(zl10[:,3], zl10[:,2], statFile, 'Skew' ,'zl10')
+getStats(zl5[:,1], zl5[:,0], statFile, 'Std' ,'zl5')
+getStats(zl5[:,3], zl5[:,2], statFile, 'Skew' ,'zl5')
+getStats(z11[:,1], z11[:,0], statFile, 'Std' ,'z11')
+getStats(z11[:,3], z11[:,2], statFile, 'Skew' ,'z11')
+
+
 
 print 'Done plotting in ',os.getcwd()
 
