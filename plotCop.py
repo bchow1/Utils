@@ -15,14 +15,15 @@ compName = socket.gethostname()
 # Local modules
 if  compName == 'pj-linux4':
   sys.path.append('/home/user/bnc/python')
-  
+
+isColor = True
 zoL = [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
 pgtbc = 'green' #0.5'
 pgtc  = 'blue' #'0.25'
 pgtd = 'red' #0.0'
 #pgt = [pgtc,pgtc,pgtc,pgtc,pgtc,pgtd,pgtbc,pgtbc,pgtd]
-pgt = ['red','blue','red','green','green','green','red','red','blue']
-
+#pgt = ['red','blue','red','green','green','green','red','red','blue']
+pgt = ['0.0','0.5','0.0','1.0','1.0','1.0','0.0','0.0','0.5']
 
 def readcOP(fileName, run):
   cOP   = []
@@ -105,13 +106,13 @@ def getStats(data1, data2, statFile, case, arc):
       #plt.hold(False)
       #plt.show() 
     '''   
-  print 'getStats:'
+  #print 'getStats:'
   #print 'obs =',data2
   #print 'pre =',data1
   print 'Case,arc,stats: ',case,arc,obsMean, predMean, nmse, nmb, correlation, fac2
   if statFile is not None:
     #statFile.write("%s,%s,%8.3f, %8.3f, %8.3f, %8.3f\n"%(case, arc, upa, nmse, mfbe,fac2))
-    statFile.write("%8.2f, %8.2f, %8.2f, %8.2f,%8.2f\n"%(obsMean, predMean, nmse, nmb, correlation))    
+    statFile.write("%s, %s, %8.2f, %8.2f, %8.2f, %8.2f, %8.2f, %8.3f\n"%(case, arc, obsMean, predMean, nmse, nmb, correlation, fac2))    
 
 if compName == 'sage-d600':
   runDir = 'D:\\SCICHEM-2012\\Cop'
@@ -143,6 +144,7 @@ def pltWPDF():
   z = 0.5
   sigw = math.sqrt(1.1*(1.05-z)*z**(2./3.))
   mark = ['o','s','d']
+  clr  = ['green','blue','red']
   
   for i,S in enumerate(sVals):
     pdf = np.zeros(len(wVals))
@@ -163,7 +165,11 @@ def pltWPDF():
       for j,w in enumerate(wVals):
         pdf[j] = L1/(math.sqrt(2.*math.pi)*sigw1) * math.exp(-0.5*(w-w1)**2/sigw1**2) + \
                   L2/(math.sqrt(2.*math.pi)*sigw2) * math.exp(-0.5*(w-w2)**2/sigw2**2)
-    lh, = plt.plot(wVals,pdf,color='black',marker=mark[i])            
+    if isColor:
+      lh, = plt.plot(wVals,pdf,color=clr[i],marker=mark[i])
+    else:            
+      lh, = plt.plot(wVals,pdf,color='black',marker=mark[i])            
+
     lH.append(lh)
     lT.append(r'$S$=%2.1f'%S)
   
@@ -177,18 +183,21 @@ def pltWPDF():
   plt.text(-1.7,0.6,r'P($w$)',rotation='vertical',fontsize=10)
   #plt.title(r'$w-PDF$ as function of $S$',fontsize=10)
   figCaption1 = r'Figure 1:  The Probability Density Function of $w$ as function of Skewness'
-  plt.text(-1.5,-0.1,figCaption1,fontsize=10)#transform=ax.transAxes,
+  # plt.text(-1.5,-0.1,figCaption1,fontsize=10)#transform=ax.transAxes,
   plt.legend(lH,lT)
   plt.hold(False)
   #plt.show()
-  plt.savefig('w-pdf.eps',dpi=300)
+  if isColor:
+    plt.savefig('Fig1_Color_w-pdf.png') #,dpi=300)
+  else:
+    plt.savefig('Fig1_w-pdf.png')#,dpi=300)
+  #plt.savefig('w-pdf.eps',dpi=300)
   print "Done plotting w-pdf"
    
-#pltWPDF()
-
+pltWPDF()
 
 statFile = open("COP_stat.csv","w")
-statFile.write("Case, Arc, upa, nmse_1, mfbe, fac2\n")
+statFile.write("Case, Arc, ObsMean, PredMean, NMSE, NMB, Correlation, Fac2\n")
 
 fileName = os.path.join(runDir,'cop_new.all')
 cSkewOP,arcSkewOP  = readcOP(fileName, "Skew")
@@ -229,8 +238,10 @@ plt.hold(False)
 plt.savefig('cop_ord.eps', dpi=300)
 print 'Done plotting in ',os.getcwd()
 '''
-clr = ['0.5','0.5','0.5']
-#clr = ['red','blue','green']
+if isColor:
+  clr = ['red','blue','green']
+else:
+  clr = ['0.5','0.5','0.5']
 #cMx = [[.5,8.],[0.,4.],[0.,3.]]
 mSkw = ['o','*','s']
 mStd = ['^','D','d']
@@ -312,7 +323,11 @@ plt.legend(phdl,plbl,bbox_to_anchor=(0.25,0.97))
   
 plt.hold(False)
 #plt.show()
-plt.savefig('cop_ord_arc.png')
+if isColor:
+  pltName = 'Fig3_Color_cop_ord_arc.png'
+else:
+  pltName = 'Fig3_cop_ord_arc.png'  
+plt.savefig(pltName) #,dpi=300)
 
 # Plot based on stability classes
 
@@ -394,19 +409,19 @@ for rNo in range(9):
   if pgt[rNo] not in lgdList:
     phdl.append(hskew)  
     if zoL[rNo] > 10.:  #  [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
-      plbl.append('Skewed (z/L < -10)')
+      plbl.append(r'Skewed   ($-z_i/L \geq 10$)')
     elif zoL[rNo] > 4.:  #  [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
-      plbl.append('Skewed (-10 < z/L < -4)')
+      plbl.append(r'Skewed   ($10 > -z_i/L \geq 4$)')
     else:  #  [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
-      plbl.append('Skewed (z/L > -4)')
+      plbl.append(r'Skewed   ($-z_i/L < 4$)')
 
     phdl.append(hstd)  
     if zoL[rNo] > 10.:  #  [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
-      plbl.append('Standard (z/L < -10)')
+      plbl.append(r'Standard ($-z_i/L \geq 10$)')
     elif zoL[rNo] > 4.:  #  [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
-      plbl.append('Standard (-10 < z/L < -4)')
+      plbl.append(r'Standard ($10 > -z_i/L \geq 4$)')
     else:  #  [43.0,5.0,10.4,2.3,1.4,2.3,13.6,11.3,5.5]
-      plbl.append('Standard (z/L > -4)')
+      plbl.append(r'Standard ($-z_i/L < 4$)')
     
     lgdList.append(pgt[rNo])
 
@@ -418,7 +433,7 @@ plt.ylim([vmin,vmax])
 plt.plot([vmin,vmax],[vmin,vmax],'k-')
 plt.xlabel(r'Observed ($\mu g/m^3$)', fontsize=10)
 plt.ylabel(r'Predicted ($\mu g/m^3$)', fontsize = 10)
-plt.legend(phdl,plbl,bbox_to_anchor=(0.25,0.97))
+plt.legend(phdl,plbl,bbox_to_anchor=(0.32,0.98))
   
 plt.hold(False)
 #plt.show()
@@ -438,6 +453,33 @@ getStats(zl5[:,3], zl5[:,2], statFile, 'Skew' ,'zl5')
 getStats(z11[:,1], z11[:,0], statFile, 'Std' ,'z11')
 getStats(z11[:,3], z11[:,2], statFile, 'Skew' ,'z11')
 
+
+# Unordered plot
+fig = plt.figure()
+plt.clf()
+plt.hold(True)
+
+plt.scatter(zl10[:,2],zl10[:,3],edgecolor='k',color='0.',marker='o',s=30)
+plt.scatter(zl10[:,0], zl10[:,1],edgecolor='k',color='0.',marker='^',s=30)
+
+plt.scatter(zl5[:,2],zl5[:,3],edgecolor='k',color='0.5',marker='o',s=30)
+plt.scatter(zl5[:,0], zl5[:,1],edgecolor='k',color='0.5',marker='^',s=30)
+
+plt.scatter(z11[:,2],z11[:,3],edgecolor='k',color='1.0',marker='o',s=30)
+plt.scatter(z11[:,0], z11[:,1],edgecolor='k',color='1.0',marker='^',s=30)
+
+vmin = 0. #cMx[arc][0]
+vmax = 8. #cMx[arc][1]
+  
+plt.xlim([vmin,vmax])
+plt.ylim([vmin,vmax])
+plt.plot([vmin,vmax],[vmin,vmax],'k-')
+plt.xlabel(r'Observed ($\mu g/m^3$)', fontsize=10)
+plt.ylabel(r'Predicted ($\mu g/m^3$)', fontsize = 10)
+plt.legend(phdl,plbl,bbox_to_anchor=(0.32,0.98))
+  
+plt.hold(False)
+plt.show()
 
 
 print 'Done plotting in ',os.getcwd()
