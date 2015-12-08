@@ -7,7 +7,7 @@ import difflib
 
 # patterns
 hpacPatt  = re.compile('(.*)hpac(.*)',re.I)
-exts = ('.f','.f90','.F','.F90','.mak','.sh','.vfproj','.vcproj','.sln')
+exts = ('.f','.f90','.F','.F90','.h','.rc','.mak','.sh','.vfproj','.vcproj','.sln')
 #exts = ('.new')
 
 def getFnames(baseDir='.'):
@@ -38,7 +38,7 @@ if __name__ == '__main__':
      if 'FILE:' in sys.argv[1]:
        fNames = sys.argv[1].replace('FILE:','')
        isFile = True
-       ans = raw_input('Rename files %s\n Continue? '%arg1)
+       ans = raw_input('Rename files %s\n Continue? '%sys.argv[1])
      else:
        dName = sys.argv[1]
        ans = raw_input('  Renaming directories and files in %s\n Continue? '%dName)
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     fList = fNames.split(';')
   else:
     fList = getFnames()
-    print fList
+    #print fList
 
   for fName in fList:
     print 'Renaming File:',fName
