@@ -36,7 +36,7 @@ else:
   runsci      = os.path.join(binDir,'runsci')
   rdsrf       = os.path.join(binDir,'readsrf')
 
-os.chdir(runDir)
+#os.chdir(runDir)
 print 'Using runsci from ',binDir,' in ',runDir,'\n'
 tSecs = os.path.getmtime(os.path.join(binDir,runsci))
 print '  with mod time of %s'%datetime.datetime.fromtimestamp(tSecs)
@@ -224,20 +224,24 @@ def pltnPuffs(nPuffs,ip,ntList):
 if __name__ == '__main__':
   
   ntList = [1,4]
-  basePrj = 'stLouis'
-  runPrj(basePrj,ntList) 
+  #basePrj = 'stLouis'
+  #runPrj(basePrj,ntList) 
   
   # In /home/user/bnc/scipuff/runs/AFTAC/OpenMP/stLouis2
   # prjNames  = ['stLouis_p1','stLouis_p4','win_p1','win_p4','sL08_t1','sL08_t4']
   
   # In /home/user/bnc/scipuff/runs/AFTAC/OpenMP/StLouis_Jan06'
-  prjNames  = ['stLouis_p1','stLouis_p4' ] #,'win_p1','win_p4']
+  #prjNames  = ['stLouis_p1','stLouis_p4' ] #,'win_p1','win_p4']
+  #prjNames  = ['tva_990706_v3b2_TN3_HiRes','tva_990706_v3b2_TN3']
+  prjNames  = ['tva_980825_v3b2_TN3_HiRes','tva_980825_v3b2_TN3']
   
-  npArray = crtNpArray(prjNames)
+  #npArray = crtNpArray(prjNames)
   #prtNPuff(prjNames,npArray)
   
-  crtNcArray(env,rdsrf,prjNames)
+  #crtNcArray(env,rdsrf,prjNames)
   #prtNCells(prjNames,ncCells)
   
-  #nPuffs = countPuffs(prjName)
-  #pltnPuffs(nPuffs,iproc,ntList) 
+  for iproc,prjName in enumerate(prjNames):
+    nPuffs = np.array(countPuffs(prjName))
+    print nPuffs[:,1].min(),nPuffs[:,1].max()
+    #pltnPuffs(nPuffs,iproc,ntList) 

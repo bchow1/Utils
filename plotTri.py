@@ -34,6 +34,7 @@ print 'Current directory = ',os.getcwd()
 nSkip   = -1
 terSkip = -1
 nodeTer = None
+scaled  = False
 
 for tbreak in range(1):
 
@@ -153,14 +154,19 @@ for tbreak in range(1):
   print 'Max Value = ',maxc
   print 'No. of points = ',npts
   
-  c = c/maxc
+  if scaled:
+    c = c/maxc
   c = ma.masked_where(c<1e-30,c)
   c = ma.filled(c,1e-30)
   
   if isLog:
     logBase = 10.
-    clrmin = -6
-    clrmax = 0
+    if scaled:
+      clrmin = -6
+      clrmax = 0
+    else:
+      clrmax = np.log10(maxc) + 1
+      clrmin = clrmax - 7
     clrlev = (clrmax - clrmin + 1)
     levels = np.logspace(clrmin,clrmax,num=clrlev,base=logBase)
     clrmap = cm.get_cmap('jet',clrlev-1)

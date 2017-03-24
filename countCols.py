@@ -11,7 +11,7 @@ print os.getcwd()
 # Call main program
 if __name__ == '__main__':
   
-  os.chdir('d:\\SCIPUFF\\EPRI\\runs\\negativeO3\\SCICHEM-ROME')
+  #os.chdir('d:\\SCIPUFF\\EPRI\\runs\\negativeO3\\SCICHEM-ROME')
   
   # Parse arguments
   arg = optparse.OptionParser()

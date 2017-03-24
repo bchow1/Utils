@@ -4,6 +4,7 @@
 import os
 import sys
 import re
+import math
 import fileinput
 import sqlite3
 
@@ -39,6 +40,14 @@ def getFnames(baseDir='./',skipDirs=None):
       if fName.lower().endswith('.f') or fName.lower().endswith('.f90'):
         fList.append(os.path.join(root,fName))
   return fList
+
+def countLines(fList):
+   totLines = 0
+   for fName in fList:
+     nLines = sum(1 for line in open(fName))
+     print fName,nLines
+     totLines += nLines
+   return totLines
 
 def getCalledNames(fName):
 
@@ -261,21 +270,30 @@ def getTree(subName,dbName):
 
 if __name__ == '__main__':
 
-  #ver,subName = raw_input('Version [f|m], subroutine ? ').split(' ')
-  ver = 'f'
-  subName = 'AddChemAmbientDoseMC'
-  if ver == 'f':
-    dbFile = 'SciEpri.db'
-  elif ver == 'm':
-    dbFile = 'scichem_v1900.db'
+
+  dbFile   = None
+  skipDirs = ['CVS']
+
+  if False: # sys.argv.__len__() > 1:
+    # Count number of lines of code
+    baseDir = sys.argv[1]
+    os.chdir(baseDir)
+    fList = getFnames(baseDir,skipDirs=skipDirs)
+    print countLines(fList)
+    sys.exit()
   else:
-    dbFile = None
+    #ver,subName = raw_input('Version [f|m], subroutine ? ').split(' ')
+    ver = 'f'
+    subName = sys.argv[1] #'hpacgetprojectpuff'
+    if ver == 'f':
+      dbFile = 'Scipuff.db'
+    elif ver == 'm':
+      dbFile = 'scichem_v1900.db'
     
   if dbFile is not None:
-    skipDirs = ['CVS']
     #
-    if dbFile == 'SciEpri.db':
-      baseDir = 'D:\SCIPUFF\EPRI\Processed\EPRI\Linux\src'
+    if dbFile == 'Scipuff.db':
+      baseDir = './'
       #baseDir = 'D:\\SCIPUFF\\SCIPUFFpcl4\\src\\lib'
     if dbFile == 'scichem_v1900.db':
       baseDir = 'd:\\EPRI\\SCICHEM_MADRID\\V1900\\src'

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 import sys
 import shutil
@@ -38,7 +39,7 @@ if __name__ == '__main__':
      if 'FILE:' in sys.argv[1]:
        fNames = sys.argv[1].replace('FILE:','')
        isFile = True
-       ans = raw_input('Rename files %s\n Continue? '%sys.argv[1])
+       ans = raw_input('Rename files %s\n Continue? '%fNames)
      else:
        dName = sys.argv[1]
        ans = raw_input('  Renaming directories and files in %s\n Continue? '%dName)

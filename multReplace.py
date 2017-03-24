@@ -87,6 +87,8 @@ print replacements
   
 for inName in fList:
   
+  if os.path.isdir(inName):
+    continue
   inFile  = open(inName,'r')
   outName = inName + '.' + subStr
   outFile = open(outName,'w')

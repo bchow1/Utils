@@ -17,9 +17,12 @@ import utilDb
 
 def mainProg():
 
-  os.chdir('/home/user/bnc/scipuff/runs/EPRI/v3b3_Tests/Linux/so2_2005')
-  #dataFile = 'KBOI_2005.SFC'
-  dataFile = 'KBOI.2005.PFL'
+  #os.chdir('/home/user/bnc/scipuff/runs/EPRI/v3b3_Tests/Linux/so2_2005')
+  if sys.argv.__len__() > 1:
+    dataFile = sys.argv[1]
+  else:
+    #dataFile = 'KBOI_2005.SFC'
+    dataFile = 'KBOI.2005.PFL'
   #os.chdir('D:\\SCIPUFF\\runs\\EPRI\\Lynne\\quatar')
   #dataFile = 'quatar.sfc'
   #os.chdir('D:\\SCIPUFF\\runs\\EPRI\\DES_NH\\140905')

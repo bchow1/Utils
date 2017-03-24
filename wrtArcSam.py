@@ -18,10 +18,10 @@ def getFloat(x):
 #ht = getFloat(raw_input('Heights? ')
 #dt = getFloat(raw_input('Distances? ')
 
-os.chdir('d:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\runs\\tva\\tva_990715')
+#os.chdir('d:\\SCIPUFF\\EPRIx\\SCICHEM-2012\\runs\\tva\\tva_990715')
 arcIn = open('samArc.in','r')
-arcs  = []
-hghts = []
+#arcs  = []
+#hghts = []
 for line in arcIn:
   if len(line.strip()) == 0. or line.startswith('#'):
     continue
@@ -34,12 +34,14 @@ for line in arcIn:
   if varName == 'smpStr':
     smpStr = varData.strip()
   if varName == 'Arc':
-    arcs.append(float(varData))
+    arcs= map(float,varData.split(','))
+    #arcs.append(float(varData))
   if varName == 'Height':
-    hghts.append(map(float,varData.split(',')))
+    #hghts.append(map(float,varData.split(',')))
+    hghts = map(float,varData.split(','))
 arcIn.close()
-print arcs
-print hghts
+print 'Arcs = ',arcs
+print 'Heights = ',hghts
 
 smpFile = open('temp.sam','w')
 smpFile.write('SCIPUFF SENSOR\n')
@@ -48,12 +50,12 @@ for arcNo in range(len(arcs)):
   xr = []
   yr = []
   for theta in range(minTheta,maxTheta+1,dTheta):
-    x = dist*math.cos(math.pi/180.*theta)
-    y = dist*math.sin(math.pi/180.*theta)
+    x   = dist*math.cos(math.pi/180.*theta)
+    y   = dist*math.sin(math.pi/180.*theta)
+    hgt = hghts[arcNo]
     xr.append(x)
     yr.append(y)
-    for hgt in hghts[arcNo]:
-      smpFile.write('%7.3f  %7.3f  %5.1f  %s Arc@%skm\n'%(x, y, hgt, smpStr, dist ))
+    smpFile.write('%7.3f  %7.3f  %5.1f  %s Arc@%skm\n'%(x, y, hgt, smpStr, dist ))
   print xr[0],yr[0],xr[-1],yr[-1]
   plt.clf()
   plt.hold(True)
