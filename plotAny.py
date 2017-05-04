@@ -13,12 +13,65 @@ import matplotlib.tri as tri
 from matplotlib import colors
 import matplotlib.cm as cm
 import matplotlib.dates as mdates
+from itertools import islice
 
 # Local libs
 import measure
 import tab2db
 import utilDb
 import utilPlot
+
+  
+x = np.arange(0.0, 2, 0.01)
+y = x + 1
+plt.plot(x, y,color='black')
+plt.fill_between(x, y, y2=y.max(), where=y>= x+1, facecolor='green', interpolate=True)
+plt.show()
+sys.exit()
+
+'''
+import wx
+app = wx.App(False)  # Create a new app, don't redirect stdout/stderr to a window.
+frame = wx.Frame(None, wx.ID_ANY, "Hello World") # A Frame is a top-level window.
+frame.Show(True)     # Show the frame.
+app.MainLoop()
+sys.exit()
+'''
+
+results = []
+testdir = "C:\\Users\\sid\\notes"
+
+for root,dirs,files in os.walk(testdir):
+  for f in files:
+    if f.endswith('.pdf'):
+      results.append(f)
+print (results)
+
+sys.exit()
+
+N = 1  # starting line number
+n = 10   # size of a chunk
+with open("C:\\Users\\sid\\notes\\notes.txt") as f:
+    f = islice(f, N, None)  # creates an iterator that starts after N lines
+    while True:
+        next_n_lines = list(islice(f, n))
+        for line in next_n_lines:
+            print line.rstrip()
+        if not next_n_lines:
+            print '######'
+            break
+sys.exit()
+
+startNo = 10
+N = 10
+for line in fileinput.input("C:\\Users\\sid\\notes\\notes.txt"):
+  if fileinput.lineno() > startNo + N:
+    break
+  if fileinput.lineno() >= startNo:
+    print fileinput.lineno(),line
+
+
+
 
 compName = socket.gethostname()
 colors  = ['red','blue','green','yellow','cyan','magenta','violet','orange','lavender']

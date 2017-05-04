@@ -129,6 +129,8 @@ for i in range(NumOfTimeSteps):
   plt.xlabel('S/Sm (Normalized Saturation)')
   plt.ylabel('x/L ( Normalized Distance)')
   plt.savefig('Sat%03d.png'%i)
+  if i > 200:
+    sys.exit()
   #plt.show()
 
 

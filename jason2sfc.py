@@ -12,7 +12,7 @@ sfcFile.write('SURFACE\n')
 sfcFile.write('11\n')
 sfcFile.write('ID      YYMMDD  HOUR    LAT     LON     WSPD    DIR     T       P       H       PRATE\n')
 sfcFile.write('NONE            HOURS   N       E       M/S     DEG     C       MB      %       mm/hr\n')
-sfcFile.write('-9999.000\n')
+sfcFile.write('-999.000\n')
 
 lat = 22.65043068
 lon = 88.43845367
@@ -26,6 +26,7 @@ pressurem  Pressure in mBar
 precipm	   Precipitation in mm
 '''
 
+
 for month in range(1,13):
   
   for day in range(1,maxDays[month]+1):
@@ -35,8 +36,11 @@ for month in range(1,13):
     json_string = f.read()
     parsed_json = json.loads(json_string)
     location    = parsed_json['history']['observations']
-    
+
+    prvHr = -1.0
+        
     for i in range(len(location)):
+      
       yr   = int(location[i]['date']['year'])
       mon  = int(location[i]['date']['mon'])
       mday = int(location[i]['date']['mday'])
@@ -51,41 +55,54 @@ for month in range(1,13):
         wspd = float(location[i]['wspdm'])
         wspd = max(0.1,wspd*1e3/3600.)  # m/s
       except:
-        wspd = -9999.00
+        wspd = -999.00
+      if wspd == -9999.000:
+        wspd = -999.00
 
       #  Wind Direction
       try:
         wdir = float(location[i]['wdird'])
       except:
-        wdir = -9999.00
+        wdir = -999.00
+      if wdir == -9999.000:
+        wdir = -999.00
 
       #  Temperature
       try:
         tmpr = float(location[i]['tempm'])
       except:
-        tmpr = -9999.00
+        tmpr = -999.00
+      if tmpr == -9999.000:
+        tmpr = -999.00
 
       #  Pressure
       try:
         pres = float(location[i]['pressurem'])
       except:
-        pres = -9999.00
-
+        pres = -999.00
+      if pres == -9999.000:
+        pres = -999.00
+        
       #  Humidity
       try:
         hum = float(location[i]['hum'])
       except:
-        hum = -9999.00
-
+        hum = -999.00
+      if hum == -9999.000:
+        hum = -999.00
+        
       #  Precipitation
       try:
         prcp = float(location[i]['precipm'])
       except:
-        prcp = -9999.00      
-
-    
-      sfcFile.write('VCC  %02d%02d%02d  %8.3f    %12.8f  %12.8f  %10.3f  %10.3f %10.3f %10.3f %10.3f %10.3f\n'%\
+        prcp = -999.00      
+      if prcp == -9999.000:
+        prcp = -999.00
+        
+      if Hour != prvHr:
+        sfcFile.write('VCC  %02d%02d%02d  %8.3f    %12.8f  %12.8f  %10.3f  %10.3f %10.3f %10.3f %10.3f %10.3f\n'%\
                      (yr,mon,mday,Hour,lat,lon,wspd,wdir,tmpr,pres,hum,prcp))
+      prvHr = Hour
       
     f.close()
 

@@ -4,7 +4,6 @@
 import os
 import sys
 import re
-import math
 import fileinput
 import sqlite3
 
@@ -270,37 +269,38 @@ def getTree(subName,dbName):
 
 if __name__ == '__main__':
 
-
   dbFile   = None
   skipDirs = ['CVS']
-
-  if False: # sys.argv.__len__() > 1:
+  ver = 'f'  # scipuff
+  #ver = 'm' # scichem
+  #subName = 'ReadNamelistScn'
+  subName = 'step_p'
+  
+  countNoLines = False
+  if countNoLines: 
     # Count number of lines of code
     baseDir = sys.argv[1]
     os.chdir(baseDir)
     fList = getFnames(baseDir,skipDirs=skipDirs)
     print countLines(fList)
     sys.exit()
-  else:
-    #ver,subName = raw_input('Version [f|m], subroutine ? ').split(' ')
-    ver = 'f'
-    subName = sys.argv[1] #'hpacgetprojectpuff'
-    if ver == 'f':
-      dbFile = 'Scipuff.db'
-    elif ver == 'm':
-      dbFile = 'scichem_v1900.db'
-    
+  elif sys.argv.__len__() > 1:
+    ver,subName = raw_input('Version [f|m], subroutine ? ').split(' ')
+
+  if ver == 'f':
+    dbFile = 'scipuff.db'
+  elif ver == 'm':
+    dbFile = 'scichem.db'
+ 
   if dbFile is not None:
-    #
-    if dbFile == 'Scipuff.db':
+    if dbFile == 'scipuff.db':
       baseDir = './'
-      #baseDir = 'D:\\SCIPUFF\\SCIPUFFpcl4\\src\\lib'
-    if dbFile == 'scichem_v1900.db':
+      baseDir = 'V:\\scipuff\\Repository\\UNIX\\AFTACx64_OMP\\src\\lib'
+      #baseDir = 'D:\\SCIPUFF\\Repository\\src\\lib'  
+    if dbFile == 'scichem.db':
       baseDir = 'd:\\EPRI\\SCICHEM_MADRID\\V1900\\src'
       skipDirs = ['pcscipuf','contri','ncar','noDll','ntinc','util','CVS']
-    if dbFile == 'SciNGIC.db':
-      baseDir = 'V:\\scipuff\\Repository\\UNIX\\NGICx64\\src\\lib\\SCIPUFFlib\\SCIPUFF'
-      #baseDir = 'D:\\SCIPUFF\\Repository\\src\\lib'      
+
     #
     os.chdir(baseDir)
     if not os.path.exists(dbFile):

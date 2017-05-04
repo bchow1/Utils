@@ -284,8 +284,9 @@ for colNo in mySmp.varCols:
 
 #outFile.write('Max value for  %s, %-10s \n' %(colName, max(smpDat[colName])))
 #outFile.write('\n')
+writeVals = True # len(mySmp.smpNos) == 0
 
-if sys.argv.__len__() == 4 or len(mySmp.smpNos) == 0:
+if sys.argv.__len__() == 4 or writeVals:
   colList = []
   for colNo in mySmp.varCols:
     if smpDat.columns[colNo] not in colList:
@@ -310,12 +311,14 @@ if True:
   plt.clf()
   for colNo in mySmp.varCols:
     colName = smpDat.columns[colNo]
+    smpVal  = np.zeros(smpDat[colName].shape)
     if colName == 'T':
       continue
     if mySmp.fasmp is not None:
-      plt.plot(smpDat['T'], smpDat[colName]-asmpDat[colName], label="%s"%colName)
+      smpVal = smpDat[colName]-asmpDat[colName]
     else:
-      plt.plot(smpDat['T'], smpDat[colName], label="%s"%colName)
+      smpVal = smpDat[colName]
+    plt.plot(smpDat['T'], smpVal, label="%s"%colName)
   plt.title('Plot from %s'%colName)
   plt.legend(bbox_to_anchor=(1.1,1.05))
   plt.hold(False)
